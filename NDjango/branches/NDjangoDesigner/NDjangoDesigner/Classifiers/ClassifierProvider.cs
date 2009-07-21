@@ -1,0 +1,32 @@
+﻿using System.ComponentModel.Composition;
+using Microsoft.VisualStudio.Text.Classification;
+using Microsoft.VisualStudio.Utilities;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.ApplicationModel.Environments;
+using NDjango.Designer.Parsing;
+
+namespace NDjango.Designer.Classifiers
+{
+    /// <summary>
+    /// Provides classifiers for TextBuffers
+    /// </summary>
+    /// <remarks>Imports the Parser object and passes it on to the new classifiers so that 
+    /// classifiers can generate tokenzers</remarks>
+    [Export(typeof(IClassifierProvider))]
+    [ContentType(Constants.NDJANGO)]
+    [ContentType("text")]
+    [Name("NDjango classifier")]
+    internal class ClassifierProvider : IClassifierProvider
+    {
+        [Import]
+        internal IClassificationTypeRegistryService classificationTypeRegistry { get; set; }
+
+        [Import]
+        internal IParser parser { get; set; }
+
+        public IClassifier GetClassifier(ITextBuffer textBuffer, IEnvironment context)
+        {
+            return new Classifier(parser, classificationTypeRegistry, textBuffer);
+        }
+    }
+}
