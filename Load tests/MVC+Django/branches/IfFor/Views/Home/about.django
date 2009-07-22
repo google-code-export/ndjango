@@ -1,0 +1,14 @@
+﻿
+
+
+{% block Title %}
+    About Us
+{% endblock %}
+
+{% block MainContent %}
+    <h2>About:{{ RandomMessage }}</h2>
+    <p>
+        Put content here.
+    </p>
+{% endblock %}
+   
