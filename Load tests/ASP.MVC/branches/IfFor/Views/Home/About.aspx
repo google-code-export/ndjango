@@ -5,7 +5,7 @@
 </asp:Content>
 
 <asp:Content ID="aboutContent" ContentPlaceHolderID="MainContent" runat="server">
-    <h2>About</h2>
+    <h2>About:<%= Html.Encode(ViewData["RandomMessage"]) %></h2>
     <p>
         Put content here.
     </p>
