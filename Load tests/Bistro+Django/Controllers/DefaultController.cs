@@ -12,7 +12,7 @@ namespace MvcSamplePort.Controllers
     /// <summary>
     /// Default controller. This controller services all requests, and provides values to all of them.
     /// </summary>
-    [Bind("?")]
+    //[Bind("?")]
     public class DefaultController: AbstractController
     {
         /// <summary>
