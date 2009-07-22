@@ -27,6 +27,7 @@ open System.Text.RegularExpressions
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ASTNodes
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -180,12 +181,12 @@ module internal Now =
             member this.Perform token parser tokens =
                 match token.Args with
                     | f::[] ->
-                        {
+                        ({
                             new Node(Block token)
                             with
                                 override this.walk walker = 
                                     {walker with buffer = f |> format |> System.DateTime.Now.ToString }
-                        }, tokens
+                        } :> INode), tokens
                     | _ -> raise (TemplateSyntaxError ("malformed 'now' tag", Some (token:>obj)))
                         
 

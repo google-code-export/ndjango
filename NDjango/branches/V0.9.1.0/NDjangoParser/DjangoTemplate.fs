@@ -19,7 +19,6 @@
  *  
  ***************************************************************************)
 
-
 namespace NDjango
 
 open System.Text
@@ -208,6 +207,10 @@ module Template =
             member this.FindTag name = Map.tryFind name tags
             
             member this.FindFilter name = Map.tryFind name filters
+            
+            member this.GetTemplateVariables name = 
+                let t = this.GetTemplate name |> snd
+                Array.of_list t.GetVariables 
 
         /// Creates a new filter manager with the tempalte registered 
         member private this.RegisterTemplate name template =
@@ -247,6 +250,8 @@ module Template =
                 
             member this.Nodes = node_list
             
+            member this.GetVariables = node_list |> List.fold (fun result node -> result @ node.GetVariables) []
+            
     and
         private Context (manager: ITemplateManager, externalContext: obj, variables: Map<string, obj>, ?autoescape: bool) =
 
@@ -255,14 +260,13 @@ module Template =
         override this.ToString() =
             
             let autoescape = "autoescape = " + autoescape.ToString() + "\r\n"
-            // Map.fold works like Map.foldBack, and folds in reverse direction! Looks like an issue in F#
-            let vars = 
-                Microsoft.FSharp.Collections.Map.fold
-                    (fun (result:string) (name:string) (value:obj)  -> 
+            let vars =
+                variables |> Microsoft.FSharp.Collections.Map.fold
+                    (fun result name value -> 
                         result + name + 
                             if (value = null) then " = NULL\r\n"
                             else " = \"" + value.ToString() + "\"\r\n" 
-                        ) "" variables
+                        ) "" 
                         
             externalContext.ToString() + "\r\n---- NDjango Context ----\r\nSettings:\r\n" + autoescape + "Variables:\r\n" + vars
             

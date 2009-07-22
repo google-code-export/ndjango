@@ -13,9 +13,7 @@ namespace NDjango.UnitTests
         [Test, TestCaseSource("GetIfTagTests")]
         public void IfTag(TestDescriptor test)
         {
-            string received = null;
-            bool pass = test.Run(out received);
-            Assert.IsTrue(pass, String.Format("FAILED - expected \"{0}\", received \"{1}\"", test.Result[0], received));
+            test.Run(manager);
         }
 
         public IList<TestDescriptor> GetIfTagTests()

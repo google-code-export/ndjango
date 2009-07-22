@@ -184,6 +184,8 @@ module Expressions =
                 (result, context.Autoescape)
         
         member this.ExpressionText with get() = variable
+        
+        member this.IsLiteral with get() = lookups.IsNone
 
     // TODO: we still need to figure out the translation piece
     // python code
@@ -202,8 +204,6 @@ module Expressions =
     ///     >>> fe.var
     ///     <Variable: 'variable'>
     ///
-    /// This class should never be instantiated outside of the
-    /// get_filters_from_token helper function. *)
     type FilterExpression (manager: IParser, token:Lexer.Token, expression: string) =
         
         /// unescapes literal quotes. takes '\"value\"' and returns '"value"'
@@ -285,7 +285,10 @@ module Expressions =
                         do_resolve context (wrap (std.PerformWithParam (v, param)), snd input) t
                     | _ as simple -> do_resolve context (wrap (simple.Perform v), snd input) t
                 | [] -> input
-            
+
+        let get_variables filters = 
+            filters |> List.fold (fun list item -> (item |> snd) @ list) []
+        
         /// resolves the filter against the given context. if ignoreFailures is true, None is returned for failed expressions.
         member this.Resolve (context: IContext) ignoreFailures =
             let resolved_value = 
@@ -311,7 +314,7 @@ module Expressions =
             | None -> None  // this results in no output from the expression
             | Some o -> 
                 match o with 
-                | :? Node as node -> Some (node.walk walker) // take output from the node
+                | :? INode as node -> Some (node.walk walker) // take output from the node
                 | null -> None // this results in no output from the expression
                 | _ as v ->
                     match if needsEscape then escape v else string v with
@@ -323,3 +326,8 @@ module Expressions =
             //for filter, args in filters do
                 
         member this.Token with get() = expression
+        
+        member this.GetVariables: string list = 
+            let variables = variable :: (filters |> List.fold (fun list item -> (item |> snd) @ list) [])
+            variables |> List.filter (fun item -> item.IsLiteral |> not) |> List.map (fun item -> item.ExpressionText)
+            

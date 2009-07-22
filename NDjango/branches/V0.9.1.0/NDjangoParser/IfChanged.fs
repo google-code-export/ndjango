@@ -24,6 +24,7 @@ namespace NDjango.Tags
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ASTNodes
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -87,10 +88,11 @@ module internal IfChanged =
                             match walker.context.tryfind("$oldValue") with
                             | Some o when not <| matchValues o newValues -> {walker with nodes = List.append nodes_ifsame walker.nodes}
                             | _ -> {walker with nodes = List.append nodes_ifchanged walker.nodes; context=walker.context.add("$oldValue", (newValues :> obj))}
-                ({
+                (({
                     new Node(Block token)
                     with
                         override this.walk walker =
-                            createWalker walker        
+                            createWalker walker 
+                                   
                         override this.nodes with get() = nodes_ifchanged @ nodes_ifsame
-                    }, remaining)
+                    } :> INode), remaining)

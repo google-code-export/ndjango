@@ -51,6 +51,9 @@ module Interfaces =
         /// Retrieves global the name/value settings information
         abstract member Settings: Map<string, string>
 
+        /// Looks up the filter in the filter dictionary
+        abstract member GetTemplateVariables: string -> string []
+
     /// Template lifecycle manager. Implementers of this interface are responsible for
     /// providing copmiled templates by resource name. This interface is supposed to be internal
     /// unfrotunately as of 1.9.6.16 it is not allowed to have public types implement non-public 
@@ -76,7 +79,9 @@ module Interfaces =
         abstract Walk: IDictionary<string, obj> -> System.IO.TextReader
         
         /// A list of top level sibling nodes
-        abstract Nodes: Node list
+        abstract Nodes: INode list
+        
+        abstract GetVariables: string list
         
     /// An execution context container. This interface defines a set of methods necessary 
     /// for templates and external entities to exchange information.
@@ -109,7 +114,7 @@ module Interfaces =
     and Walker =
         {
             parent: Walker option
-            nodes: Node list
+            nodes: INode list
             buffer: string
             bufferIndex: int
             context: IContext
@@ -119,7 +124,7 @@ module Interfaces =
     and IParser =
         /// Produces a commited node list and uncommited token list as a result of parsing until
         /// a block from the string list is encotuntered
-        abstract member Parse: LazyList<Lexer.Token> -> string list -> (Node list * LazyList<Lexer.Token>)
+        abstract member Parse: LazyList<Lexer.Token> -> string list -> (INode list * LazyList<Lexer.Token>)
        
         /// Produces an uncommited token list as a result of parsing until
         /// a block from the string list is encotuntered
@@ -130,21 +135,23 @@ module Interfaces =
     /// A single tag implementation
     and ITag = 
         /// Transforms a {% %} tag into a list of nodes and uncommited token list
-        abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (Node * LazyList<Lexer.Token>)
+        abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
 
-    /// Base class of the Django AST 
-    and Node(token: Lexer.Token) =
+    and INode =
+
         /// Indicates whether this node must be the first non-text node in the template
         abstract member must_be_first: bool
-        default this.must_be_first = false
         
         /// The token that defined the node
-        member this.Token with get() = token
+        abstract member Token : Lexer.Token
 
         /// Processes this node and all child nodes
         abstract member walk: Walker -> Walker
-        default  this.walk(walker) = walker
         
         /// returns all child nodes contained within this node
-        abstract member nodes: Node list
-        default this.nodes with get() = []
+//        abstract member nodes: INode list
+
+        /// returns all child nodes contained within this node
+        abstract member GetVariables: string list
+        
+    

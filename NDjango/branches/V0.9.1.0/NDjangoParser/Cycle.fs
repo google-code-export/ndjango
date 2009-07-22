@@ -59,7 +59,7 @@ module internal Cycle =
         
     /// Cycles among the given strings each time this tag is encountered.
     type Node(token:BlockToken, name: string, values: Variable list) =
-        inherit NDjango.Interfaces.Node(Block token)
+        inherit NDjango.ASTNodes.Node(Block token)
         
         let createController (controller: CycleController option) =
             match controller with
@@ -125,5 +125,5 @@ module internal Cycle =
                         else ("$Anonymous$Cycle", values)
                         
                 let values = List.map (fun v -> new Variable(parser, Block token, v)) values
-                ((new Node(token, name, values) :> NDjango.Interfaces.Node), tokens)
+                ((new Node(token, name, values) :> NDjango.Interfaces.INode), tokens)
 

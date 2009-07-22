@@ -96,11 +96,11 @@ module internal If =
     type Node(
                 token: BlockToken,
                 bool_vars: (bool * FilterExpression) list, 
-                node_list_true: NDjango.Interfaces.Node list, 
-                node_list_false: NDjango.Interfaces.Node list, 
+                node_list_true: NDjango.Interfaces.INode list, 
+                node_list_false: NDjango.Interfaces.INode list, 
                 link_type: IfLinkType
                 ) =
-        inherit NDjango.Interfaces.Node(Block token)
+        inherit NDjango.ASTNodes.Node(Block token)
         
         /// Evaluates a single filter expression against the context. Results are intepreted as follows: 
         /// None: false (or invalid values, as FilterExpression.Resolve is called with ignoreFailure = true)
@@ -184,6 +184,6 @@ module internal If =
                             [], remaining
                     | _ -> [], remaining
 
-                ((new Node(token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.Node), remaining2)
+                ((new Node(token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INode), remaining2)
 
 

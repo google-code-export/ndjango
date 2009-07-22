@@ -26,6 +26,7 @@ open System.Text.RegularExpressions
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
 
@@ -44,7 +45,7 @@ module internal Misc =
                     | "off"::[] -> walker.context.WithAutoescape(false)
                     | _ -> raise (TemplateSyntaxError("invalid argumanents for 'Autoescape' tag", Some (token:>obj)))
                     
-                ({
+                (({
                     new Node(Block token) with
                         override this.walk walker = 
                             {walker with 
@@ -52,7 +53,7 @@ module internal Misc =
                                 context = createContext walker; 
                                 nodes=nodelist}
                         override this.nodes with get() = nodelist
-                   }, 
+                   } :> INode), 
                    remaining)
                         
     /// Ignores everything between ``{% comment %}`` and ``{% endcomment %}``.
@@ -60,7 +61,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token parser tokens =
                 let remaining = parser.Seek tokens ["endcomment"]
-                (Node(Block token), remaining)
+                ((Node(Block token) :> INode), remaining)
                 
     /// Outputs a whole load of debugging information, including the current
     /// context and imported modules.
@@ -72,7 +73,7 @@ module internal Misc =
     ///     </pre>
     type DebugTag() =
         interface ITag with
-            member this.Perform token parser tokens = (new NDjango.Tags.Debug.Node(Block token) :> Node), tokens
+            member this.Perform token parser tokens = (new NDjango.Tags.Debug.Node(Block token) :> INode), tokens
             
     /// Outputs the first variable passed that is not False.
     /// 
@@ -105,14 +106,14 @@ module internal Misc =
                     | [] -> raise (TemplateSyntaxError ("'firstof' tag requires at least one argument", Some (token:>obj)))
                     | _ -> 
                         let variables = token.Args |> List.map (fun (name) -> new FilterExpression(parser, Block token, name))
-                        {
+                        ({
                             new Node(Block token)
                             with 
                                 override this.walk walker =
                                     match variables |> List.tryPick (fun var -> var.ResolveForOutput walker ) with
                                     | None -> walker 
                                     | Some w -> w
-                        }, tokens
+                        } :> INode), tokens
                         
 /// regroup¶
 /// Regroup a list of alike objects by a common attribute.
@@ -234,14 +235,14 @@ module internal Misc =
                                 | Some grouper -> snd groupers @ [grouper]
                             | _ -> []
                         | None -> []
-                    {
+                    ({
                         new Node(Block token)
                         with 
                             override this.walk walker =
                                 match regroup walker.context with
                                 | [] -> walker
                                 | _ as list -> {walker with context=walker.context.add(result, (list :> obj))}
-                    }, tokens
+                    } :> INode), tokens
 
                 | _ -> raise (TemplateSyntaxError ("malformed 'regroup' tag", Some (token:>obj)))
 
@@ -273,7 +274,7 @@ module internal Misc =
                 match token.Args with
                 | [] ->
                     let node_list, remaining = parser.Parse tokens ["endspaceless"]
-                    {
+                    ({
                         new Node(Block token)
                         with 
                             override this.walk walker =
@@ -282,7 +283,7 @@ module internal Misc =
                                 let buf = spaces_re.Replace(reader.ReadToEnd(), "><")
                                 {walker with buffer = buf}
                             override this.nodes with get() = node_list
-                    }, remaining
+                    } :> INode), remaining
 
                 | _ -> raise (TemplateSyntaxError ("'spaceless' tag should not have any arguments", Some (token:>obj)))
                 
@@ -318,12 +319,12 @@ module internal Misc =
                         | "closecomment"::[] -> "#}"
                         | _ -> raise (TemplateSyntaxError ("invalid format for 'template' tag", Some (token:>obj)))
                 let variables = token.Args |> List.map (fun (name) -> new FilterExpression(parser, Block token, name))
-                {
+                ({
                     new Node(Block token)
                     with 
                         override this.walk walker =
                             {walker with buffer = buf}
-                }, tokens
+                } :> INode), tokens
 
 
     /// For creating bar charts and such, this tag calculates the ratio of a given
@@ -353,14 +354,14 @@ module internal Misc =
                     let value = new FilterExpression(parser, Block token, value)
                     let maxValue = new FilterExpression(parser, Block token, maxValue)
                     let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (TemplateSyntaxError ("'widthratio' 3rd argument must be integer", Some (token:>obj)))
-                    ({
+                    (({
                         new Node(Block token) with
                             override this.walk walker = 
                                 let ratio = toFloat (fst <| value.Resolve walker.context false)
                                             / toFloat (fst <| maxValue.Resolve walker.context false) 
                                             * width + 0.5
                                 {walker with buffer = ratio |> int |> string}
-                       }, 
+                       } :> INode), 
                        tokens)
                 | _ -> raise (TemplateSyntaxError ("'widthratio' takes three arguments", Some (token:>obj)))
 
@@ -379,7 +380,7 @@ module internal Misc =
                 | var::"as"::name::[] ->
                     let nodes, remaining = parser.Parse tokens ["endwith"]
                     let expression = new FilterExpression(parser, Block token, var)
-                    ({
+                    (({
                         new Node(Block token) with
                             override this.walk walker = 
                                 let context = 
@@ -391,7 +392,7 @@ module internal Misc =
                                     context = context; 
                                     nodes=nodes}
                             override this.nodes with get() = nodes
-                       }, 
+                       } :> INode), 
                        remaining)
                 | _ -> raise (TemplateSyntaxError ("'with' expected format is 'value as name'", Some (token:>obj)))
 
@@ -430,7 +431,7 @@ module Abstract =
                                                                                                     | "" -> state | _ as trimmed -> trimmed::state ) [] <| List.rev args)
                         new FilterExpression(parser, Block token, path), argList, var
                 
-                ({
+                (({
                     new Node(Block token) with
                         override x.walk walker =
                             let shortResolve (expr: FilterExpression) = 
@@ -442,5 +443,5 @@ module Abstract =
                             match var with 
                             | None -> { walker with buffer = url }
                             | Some v -> { walker with context = walker.context.add(v, (url :> obj)) }
-                            },
+                            } :> INode),
                     tokens)

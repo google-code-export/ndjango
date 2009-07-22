@@ -24,6 +24,7 @@ namespace NDjango.Tags
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ASTNodes
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -69,7 +70,7 @@ module internal IfEqual =
                 | var1::var2::[] ->
                     let var1 = new FilterExpression(parser, Block token, var1)
                     let var2 = new FilterExpression(parser, Block token, var2)
-                    {
+                    ({
                         new Node(Block token)
                         with 
                             override this.walk walker =
@@ -81,7 +82,7 @@ module internal IfEqual =
                                 }
                         
                             override this.nodes with get() = node_list_true @ node_list_false
-                    }, remaining
+                    } :> INode), remaining
                 | _ -> raise (TemplateSyntaxError (sprintf "'%s' takes two arguments" tag, Some (token:>obj)))
 
                 

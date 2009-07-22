@@ -29,7 +29,7 @@ module internal Debug =
         
     /// Produces debug information
     type Node(t:NDjango.Lexer.Token) =
-        inherit NDjango.Interfaces.Node(t)
+        inherit NDjango.ASTNodes.Node(t)
 
         override this.walk walker = 
             let output = new System.Text.StringBuilder()

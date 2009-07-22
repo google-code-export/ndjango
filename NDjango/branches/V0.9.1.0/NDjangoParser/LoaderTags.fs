@@ -26,6 +26,7 @@ open System.IO
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
 
@@ -38,7 +39,7 @@ module internal LoaderTags =
                 match token.Args with 
                 | name::[] -> 
                     let node_list, remaining = parser.Parse tokens ["endblock"; "endblock " + name]
-                    (new NDjango.ASTLoader.BlockNode(token, name, node_list) :> Node), remaining
+                    (new BlockNode(token, name, node_list) :> INode), remaining
                 | _ -> raise (TemplateSyntaxError ("block tag takes only one argument", Some (token:>obj)))
 
     /// Signal that this template extends a parent template.
@@ -58,7 +59,7 @@ module internal LoaderTags =
                     let parent_name_expr = 
                         new FilterExpression(parser, Block token, parent)
                         
-                    (new NDjango.ASTLoader.ExtendsNode(token, node_list, parent_name_expr) :> Node), LazyList.empty<Token>()
+                    (new ExtendsNode(token, node_list, parent_name_expr) :> INode), LazyList.empty<Token>()
                 | _ -> raise (TemplateSyntaxError ("extends tag takes only one argument", Some (token:>obj)))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
@@ -91,14 +92,14 @@ module internal LoaderTags =
                 | name::[] -> 
                     let template_name = 
                         new FilterExpression(parser, Block token, name)
-                    {
+                    ({
                         //todo: we're not producing a node list here. may have to revisit
                         new Node(Block token) 
                         with
                             override this.walk walker = 
-                                let manager, template = NDjango.ASTLoader.get_template template_name walker.context
+                                let manager, template = get_template template_name walker.context
                                 {walker with parent=Some walker; nodes=template.Nodes}
-                    }, tokens
+                    } :> INode), tokens
                 | _ -> raise (TemplateSyntaxError ("'include' tag takes only one argument", Some (token:>obj)))
 
 /// ssi¶
@@ -130,7 +131,7 @@ module internal LoaderTags =
             let nodes = 
                 if length = 0 
                 then templateReader.Close(); walker.nodes
-                else (new SsiNode(token, TextReader templateReader) :> Node) :: walker.nodes
+                else (new SsiNode(token, TextReader templateReader) :> INode) :: walker.nodes
             {walker with buffer = buffer; nodes=nodes}
 
     type SsiTag() =
@@ -138,16 +139,16 @@ module internal LoaderTags =
         interface ITag with
             member this.Perform token parser tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(token, Path path) :> Node), tokens
+                | path::[] -> (new SsiNode(token, Path path) :> INode), tokens
                 | path::"parsed"::[] ->
                     let templateRef = FilterExpression (parser, Block token, "\"" + path + "\"")
-                    {
+                    ({
                         new Node(Block token) 
                         with
                             override this.walk walker = 
-                                let manager, template = NDjango.ASTLoader.get_template templateRef walker.context
+                                let manager, template = get_template templateRef walker.context
                                 {walker with parent=Some walker; nodes=template.Nodes}
-                    }, tokens
+                    } :> INode), tokens
                 | _ ->
                     raise (TemplateSyntaxError ("malformed 'ssi' tag", Some (token:>obj)))
                 

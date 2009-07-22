@@ -13,9 +13,7 @@ namespace NDjango.UnitTests
         [Test, TestCaseSource("GetBasicTests")]
         public void BasicSyntax(TestDescriptor test)
         {
-            string received = null;
-            bool pass = test.Run(out received);
-            Assert.IsTrue(pass, String.Format("FAILED - expected \"{0}\", received \"{1}\"", test.Result[0], received));
+            test.Run(manager);
         }
 
         public IList<TestDescriptor> GetBasicTests()
@@ -27,10 +25,11 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("basic-syntax01", "something cool", null, ContextObjects.p("something cool")));
 
             // Variables should be replaced with their value in the current context
-            lst.Add(new TestDescriptor("basic-syntax02", "{{ headline }}", ContextObjects.p("headline", "Success"), ContextObjects.p("Success")));
+            lst.Add(new TestDescriptor("basic-syntax02", "{{ headline }}", ContextObjects.p("headline", "Success"), ContextObjects.p("Success"),"headline"));
 
             // More than one replacement variable is allowed in a template
-            lst.Add(new TestDescriptor("basic-syntax03", "{{ first }} --- {{ second }}", ContextObjects.p("first", 1, "second", 2), ContextObjects.p("1 --- 2")));
+            lst.Add(new TestDescriptor("basic-syntax03", "{{ first }} --- {{ second }}", ContextObjects.p("first", 1, "second", 2), 
+                ContextObjects.p("1 --- 2"), "first","second"));
             int? p2 = null;
             lst.Add(new TestDescriptor("basic-syntax03-1", "{{ first }} --- {{ second }}", ContextObjects.p("first", (int?) null, "second", p2), ContextObjects.p(" --- ")));
 
@@ -48,7 +47,8 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("basic-syntax09", "{{ var.method }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p("SomeClass.method")));
 
             // Multiple levels of attribute access are allowed
-            lst.Add(new TestDescriptor("basic-syntax10", "{{ var.otherclass.method }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p("OtherClass.method")));
+            lst.Add(new TestDescriptor("basic-syntax10", "{{ var.otherclass.method }}", ContextObjects.p("var", new ContextObjects.SomeClass()),
+                ContextObjects.p("OtherClass.method"), "var.otherclass.method"));
 
             // Fail silently when a variable's attribute isn't found
             lst.Add(new TestDescriptor("basic-syntax11", "{{ var.blech }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p("", "INVALID")));

@@ -104,11 +104,11 @@ module internal For =
                 token : BlockToken,
                 enumerator : FilterExpression, 
                 variables : string list, 
-                bodyNodes : NDjango.Interfaces.Node list, 
-                emptyNodes: NDjango.Interfaces.Node list,
+                bodyNodes : NDjango.Interfaces.INode list, 
+                emptyNodes: NDjango.Interfaces.INode list,
                 reversed: bool
                 ) =
-        inherit NDjango.Interfaces.Node(Block token)
+        inherit NDjango.ASTNodes.Node(Block token)
 
         /// Creates a new ForContext object to represent the current iteration
         /// for the loop. The third parameter (context) is a context for the 
@@ -196,7 +196,7 @@ module internal For =
                     let rec createWalker (first:bool) (walker:Walker) (enumerator: obj seq) =
                         {walker with 
                             parent = Some walker; 
-                            nodes = bodyNodes @ [(Repeater(token, Seq.skip 1 enumerator, createWalker false) :> NDjango.Interfaces.Node)];
+                            nodes = bodyNodes @ [(Repeater(token, Seq.skip 1 enumerator, createWalker false) :> NDjango.Interfaces.INode)];
                             context = enumerator |> Seq.hd |> createContext first walker
                             }
                     
@@ -213,7 +213,7 @@ module internal For =
     /// the endloop condition and if another iteration is necessary re-adds the list of nodes and itself to 
     /// the walker
     and Repeater(token:BlockToken, enumerator:obj seq, createWalker) =
-        inherit NDjango.Interfaces.Node(Block token)
+        inherit NDjango.ASTNodes.Node(Block token)
         
         override this.walk(walker) =
             if Seq.isEmpty enumerator then
@@ -248,5 +248,5 @@ module internal For =
                             [], remaining
                     | _ -> [], remaining
 
-                ((Node(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.Node), remaining2)
+                ((Node(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INode), remaining2)
 

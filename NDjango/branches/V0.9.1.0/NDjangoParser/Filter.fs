@@ -26,6 +26,7 @@ open System
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
 
@@ -33,7 +34,7 @@ module internal Filter =
 
     let FILTER_VARIABLE_NAME = "$filter"
 
-    type FilterNode(token:BlockToken, filter: FilterExpression, node_list: Node list) =
+    type FilterNode(token:BlockToken, filter: FilterExpression, node_list: INode list) =
         inherit Node(Block token)
 
         override this.walk walker = 
@@ -62,7 +63,7 @@ module internal Filter =
                 | filter::[] ->
                     let filter_expr = new FilterExpression(parser, Block token, FILTER_VARIABLE_NAME + "|" + filter)
                     let node_list, remaining = parser.Parse tokens ["endfilter"]
-                    (new FilterNode(token, filter_expr, node_list) :> Node), remaining
+                    (new FilterNode(token, filter_expr, node_list) :> INode), remaining
                 | _ -> raise (TemplateSyntaxError ("'filter' tag requires one argument", Some (token:>obj)))
                 
                
