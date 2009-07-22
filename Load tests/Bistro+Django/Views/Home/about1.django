@@ -1,0 +1,14 @@
+﻿{% extends "Views/Shared/base.django" %}
+
+{% block Title %}
+    About Us
+{% endblock %}
+ {% block NextLink %}
+    <li><a href="{{root}}/home/about2">About2</a></li>
+ {% endblock %}
+{% block MainContent %}
+    <h2>About</h2>
+    <p>
+        Put content here.
+    </p>
+{% endblock %}

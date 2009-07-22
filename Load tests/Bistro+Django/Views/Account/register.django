@@ -1,0 +1,55 @@
+﻿{% extends "Views/Shared/base.django" %}
+
+{% block Title %}
+    Register
+{% endblock %}
+
+{% block MainContent %}
+    <h2>Create a New Account</h2>
+    <p>
+        Use the form below to create a new account. 
+    </p>
+    <p>
+        Passwords are required to be a minimum of {{ PasswordLength }} characters in length.
+    </p>
+
+    {% if errors %}
+    <span class="validation-summary-errors">Account creation was unsuccessful. Please correct the errors and try again.</span>
+    <ul class="validation-summary-errors">
+        {% for message in errors.Values %}
+            <li>{{message}}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}    
+
+    <form action="{{root}}/auth/newuser" method="post">
+        <div>
+            <fieldset>
+                <legend>Account Information</legend>
+                <p>
+                    <label for="username">Username:</label>
+                    <input name="username" value="{{username}}" />
+                    {% if errors.username %}<span class="field-validation-error">{{errors.username}}</span>{% endif %}
+                </p>
+                <p>
+                    <label for="email">Email:</label>
+                    <input name="email" value="{{email}}" />
+                    {% if errors.email%}<span class="field-validation-error">{{errors.email}}</span>{% endif %}
+                </p>
+                <p>
+                    <label for="password">Password:</label>
+                    <input type="password" name="password" />
+                    {% if errors.password %}<span class="field-validation-error">{{errors.password}}</span>{% endif %}
+                </p>
+                <p>
+                    <label for="confirmPassword">Confirm Password:</label>
+                    <input type="password" name="confirmPassword" />
+                    {% if errors.confirmPassword %}<span class="field-validation-error">{{errors.confirmPassword}}</span>{% endif %}
+                </p>
+                <p>
+                    <input type="submit" value="Register" />
+                </p>
+            </fieldset>
+        </div>
+    </form>
+{% endblock %}

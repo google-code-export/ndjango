@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>
+    {% block Title %}
+    
+    {% endblock %}
+    </title>
+    <link href="{{root}}/Content/Site.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <div class="page">
+
+        <div id="header">
+            <div id="title">
+                <h1>My Bistro Application</h1>
+            </div>
+              
+            <div id="logindisplay">
+                {% if user.Identity.IsAuthenticated %}
+                    Welcome <b>{{ user.Identity.Name }}</b>
+                    [ <a href="{{root}}/auth/logoff">Log Off</a> ]
+                {% else %}
+                    [ <a href="{{root}}/auth/logon">Log On</a> ]
+                {% endif %}
+            </div> 
+            
+            <div id="menucontainer">
+                
+                <ul id="menu">              
+                    <li><a href="{{root}}/home/index">Home</a></li>
+                    {% block NextLink%}
+                    {% endblock %}
+                </ul>
+            
+            </div>
+        </div>
+
+        <div id="main">
+            {% block MainContent %}
+            
+            {% endblock %}
+
+            <div id="footer">
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,14 @@
+﻿{% extends "Views/Shared/base.django" %}
+
+{% block Title %}
+    Home Page
+{% endblock %}
+ {% block NextLink %}
+ <li><a href="{{root}}/home/about">About</a></li>
+ {% endblock %}
+{% block MainContent %}
+    <h2>{{ Message }}</h2>
+    <p>
+        To learn more about Bistro visit <a href="http://bistroframework.org" title="The Bistro Wiki">http://bistroframework.org</a>.
+    </p>
+{% endblock %}
