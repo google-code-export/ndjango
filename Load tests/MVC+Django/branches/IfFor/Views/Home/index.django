@@ -1,5 +1,5 @@
 ﻿
-
+{% extends "Views/Shared/base.django" %}
 
 
 {% block Title %}
@@ -7,8 +7,27 @@
 {% endblock %}
 
 {% block MainContent %}
-    <h2>{{ Message }}</h2>
-    <p>
-        To learn more about Bistro visit <a href="http://bistroframework.org" title="The Bistro Wiki">http://bistroframework.org</a>.
+    <h2>
+    {{ Message }}
+    {% for i in arrList %}
+        {% ifequal number 1 %}
+             EQUAL
+        {% endifequal %}
+    {% endfor %}
+    </h2>    
+
+    <p  align = "left"> 
+
+              To learn more about Bistro visit 
+          <a href="http://bistroframework.org" title="The Bistro Wiki">http://bistroframework.org</a>.
+                  {{Greeting}}
+                  
     </p>
+
+     <p>
+        <img  alt="description" id ="imgWhale" src = "/MvcApplication_Django/Content/Humpback Whale.jpg" />
+        <!--<input type="checkbox" id="chkBox" onclick="showHide('imgWhale');" /> -->
+        
+     </p>
 {% endblock %}
+

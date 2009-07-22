@@ -1,14 +1,15 @@
 ﻿
 
 
+
 {% block Title %}
-    About Us
+    About Us {{sel}}
 {% endblock %}
 
 {% block MainContent %}
     <h2>About:{{ RandomMessage }}</h2>
     <p>
         Put content here.
+        <textarea id="editBox"></textarea>
     </p>
 {% endblock %}
-   
