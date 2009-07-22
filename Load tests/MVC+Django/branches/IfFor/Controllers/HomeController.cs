@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -11,17 +12,28 @@ namespace MvcApplication_Django.Controllers
     [HandleError]
     public class HomeController : Controller
     {
-
+        public int number = 1;
+        private ArrayList arrList = new ArrayList(5);
+        private string greeting = "hello!!!";
         public ActionResult Index()
         {
-            ViewData["Message"] = String.Format("Welcome to ASP.NET MVC!", new Random().Next());
-
+            if (arrList.Count == 0)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    arrList.Add("smth");
+                }
+            }
+            ViewData["Message"] = "Welcome to Django!";
+            ViewData["Greeting"] = greeting;
+            ViewData["arrList"] = arrList;
+            ViewData["number"] = number;
             return View();
         }
 
         public ActionResult About()
         {
-            ViewData["RandomMessage"] = new Random().Next().ToString();
+            ViewData["RandomMessage"] = "";
             return View();
         }
     }
