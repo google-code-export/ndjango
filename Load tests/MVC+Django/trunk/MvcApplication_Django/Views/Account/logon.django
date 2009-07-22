@@ -1,0 +1,45 @@
+﻿{% extends "Views/Shared/base.django" %}
+
+{% block Title %}
+    Log On
+{% endblock %}
+
+{% block MainContent %}
+    <h2>Log On</h2>
+    <p>
+        Please enter your username and password. <a href="{{root}}/auth/newuser">Register</a> if you don't have an account.
+    </p>
+
+    {% if errors %}
+    <span class="validation-summary-errors">Login was unsuccessful. Please correct the errors and try again.</span>
+    <ul class="validation-summary-errors">
+        {% for message in errors.Values %}
+            <li>{{message}}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}    
+
+    <form action="{{root}}/auth/logon" method="post">
+        <div>
+            <fieldset>
+                <legend>Account Information</legend>
+                <p>
+                    <label for="username">Username:</label>
+                    <input name="username" value="{{username}}" />
+                    {% if errors.username %}<span class="field-validation-error">{{errors.username}}</span>{% endif %}
+                </p>
+                <p>
+                    <label for="password">Password:</label>
+                    <input type="password" name="password" />
+                    {% if errors.password %}<span class="field-validation-error">{{errors.password}}</span>{% endif %}
+                </p>
+                <p>
+                    <input name="rememberMe" type="checkbox" value="true" {% if rememberMe %}checked{%endif%}/><label class="inline" for="rememberMe">Remember me?</label>
+                </p>
+                <p>
+                    <input type="submit" value="Log On" />
+                </p>
+            </fieldset>
+        </div>
+    </form>
+{% endblock %}
