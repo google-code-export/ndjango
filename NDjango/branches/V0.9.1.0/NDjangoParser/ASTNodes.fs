@@ -24,7 +24,7 @@ namespace NDjango
 
 open OutputHandling
 open Lexer
-open Interfaces
+open NDjango.Interfaces
 open Expressions
 
 module internal ASTNodes =

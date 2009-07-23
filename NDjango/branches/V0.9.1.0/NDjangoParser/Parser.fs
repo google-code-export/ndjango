@@ -84,7 +84,7 @@ open OutputHandling
 module internal Parser =
 
     /// Default parser implementation
-    type public DefaultParser(manager:ITemplateContainer) =
+    type public DefaultParser(manager:IManagerProvider) =
 
         /// parses a single token, returning an AST Node list. this function may advance the token stream if an 
         /// element consuming multiple tokens is encountered. In this scenario, the Node list returned will

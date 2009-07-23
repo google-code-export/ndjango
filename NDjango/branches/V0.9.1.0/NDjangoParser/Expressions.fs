@@ -27,7 +27,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Reflection
 
-open Interfaces
+open NDjango.Interfaces
 open OutputHandling
 open Utilities
 

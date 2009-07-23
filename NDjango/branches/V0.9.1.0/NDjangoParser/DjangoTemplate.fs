@@ -26,7 +26,7 @@ open System.Collections
 open System.Collections.Generic
 open System.IO
 
-open Interfaces
+open NDjango.Interfaces
 open Filters
 open Constants
 open NDjango.Tags
@@ -100,146 +100,110 @@ module Template =
             ++ ("with", (new WithTag() :> ITag))
         
     let private defaultSettings = 
-        new Map<string, string>([])
-            ++ ("settings.DEFAULT_AUTOESCAPE","true")
-            ++ ("settings.TEMPLATE_STRING_IF_INVALID","")
+        new Map<string, obj>([])
+            ++ ("settings.DEFAULT_AUTOESCAPE", (true :> obj))
+            ++ ("settings.TEMPLATE_STRING_IF_INVALID", ("" :> obj))
 
-    type Manager 
-        private (
-                    filters: Map<string, ISimpleFilter>, 
-                    tags: Map<string, ITag>, 
-                    templates: Map<string, ITemplate * System.DateTime>, 
-                    loader: ITemplateLoader, 
-                    settings:Map<string,string>) =
-
+    type Provider (settings, tags, filters, loader) =
+        
         /// global lock
-        static let lockMgr = new obj()
+        let lockProvider = new obj()
 
         /// pointer to the most recent template manager. don't want to have an
         /// interface for the sake of an interface, so we'll make it obj to
         /// avoid dealing with circular references
-        static let active = 
-            ref (new Manager(
-                            standardFilters,
-                            standardTags,
-                            Map.empty,
-                            new DefaultLoader(),
-                            defaultSettings))
+        let active = ref None
+        let templates = ref Map.Empty
+
+        public new () =
+            new Provider(defaultSettings, standardTags, standardFilters, (new DefaultLoader() :> ITemplateLoader))
+            
+        member x.NewWithSettings new_settings = new Provider(new_settings, tags, filters, loader)
         
-        member private this.Templates = templates
-        member private this.Loader = loader
-        member private this.Settings = settings
-        member internal this.Filters = filters
-        member internal this.Tags = tags
+        member x.NewWithTags new_tags = new Provider(settings, new_tags, filters, loader)
 
-        /// Retrieves the current active template manager
-        static member internal  GetActiveManager = lock lockMgr (fun () -> !active)
-            
-        /// Creates a new filter manager with the filter registered 
-        static member RegisterFilter (name, filter) =
-            lock lockMgr
-                (fun () ->
-                    let mgr = Manager.GetActiveManager
-                    let new_filters = Map.add name filter mgr.Filters
-                    let m = new Manager(new_filters, mgr.Tags, mgr.Templates, mgr.Loader, mgr.Settings)
-                    active := m
-                    m
-                )
+        member x.NewWithFilters new_filters = new Provider(settings, tags, new_filters, loader)
         
-        /// Creates a new filter manager with the tag registered 
-        static member RegisterTag (name,tag) =
-            lock lockMgr
-                (fun() ->
-                    let mgr = Manager.GetActiveManager
-                    let new_tags = Map.add name tag mgr.Tags
-                    let m = new Manager(mgr.Filters, new_tags, mgr.Templates, mgr.Loader, mgr.Settings)
-                    active := m
-                    m
-                )
+        member x.NewWithLoader new_loader = new Provider(settings, tags, filters, new_loader)
         
-        /// Creates a new filter manager with the tempalte registered 
-        static member RegisterLoader (loader:ITemplateLoader) =
-            lock lockMgr 
-                (fun () -> 
-                    let mgr = Manager.GetActiveManager
-                    let m = new Manager(mgr.Filters, mgr.Tags, mgr.Templates, loader, mgr.Settings)
-                    active := m
-                    m
+        member public x.GetNewManager = new Manager(x, !templates, loader)
+        
+        member private x.GetTemplate name =
+            lock lockProvider 
+                (fun() -> 
+                    match !templates |> Map.tryFind name with
+                    | None ->
+                        x.LoadTemplate name
+                    | Some (template, ts) -> 
+                        if (loader.IsUpdated(name, ts)) then
+                            x.LoadTemplate name
+                        else
+                            (template, ts)
                 )
-
-        /// Retrieves the template, and verifies that if a template is currently available,
-        /// that it is still valid. if not valid, causes a reload to occur, and all outstanding
-        /// 
-        member private this.GetAndReloadIfNeeded full_name template ts = 
-            if loader.IsUpdated (full_name, ts) then
-                lock lockMgr 
-                    (fun () -> (!active).RegisterTemplate full_name (loader.GetTemplate full_name) )
-            else
-                ((this:>ITemplateManager), template)
-
-        /// Retrieves a template, along with the instance of the ITemplateManager that contains it.
-        /// While any GetTemplate request is guaranteed to retrieve the latest version of the
-        /// ITemplate, retaining the instance (the second in the returned tuple) will be more
-        /// efficient, as subsequent requests for that template from the returned instance are
-        /// guaranteed to be non-blocking
-        member this.GetTemplate full_name =
-            match Map.tryFind full_name templates with
-            | Some (template, ts) -> 
-                this.GetAndReloadIfNeeded full_name template ts
-            | None -> 
-                lock lockMgr 
-                    (fun () -> 
-                        let mgr = !active
-                        match Map.tryFind full_name mgr.Templates with
-                        | Some (template, ts) -> this.GetAndReloadIfNeeded full_name template ts
-                        | None -> mgr.RegisterTemplate full_name (loader.GetTemplate full_name)
-                    )
-
-        interface ITemplateContainer with
-            member this.RenderTemplate (full_name, context) = 
-                let manager, template = this.GetTemplate full_name
-                (manager, template.Walk context)
-
-            member this.GetTemplateReader full_name = loader.GetTemplate full_name
-                            
-            member this.Settings = settings
-            
-            member this.FindTag name = Map.tryFind name tags
-            
-            member this.FindFilter name = Map.tryFind name filters
-            
-            member this.GetTemplateVariables name = 
-                let t = this.GetTemplate name |> snd
-                Array.of_list t.GetVariables 
-
-        /// Creates a new filter manager with the tempalte registered 
-        member private this.RegisterTemplate name template =
-            // this is called internally, from within a lock statement
-            let t = new Impl(template, this) :> ITemplate
-            
-            // this may be an update call. if that's the case, then we should
-            // add the template into a map that has it already removed
-            let new_templates = 
-                Map.add name (t, System.DateTime.Now) <|
-                match Map.tryFind name this.Templates with
-                | Some (template, ts) -> Map.remove name this.Templates
-                | None -> this.Templates
                 
-            active := new Manager(this.Filters, this.Tags, new_templates, this.Loader, this.Settings)
-            (!active :> ITemplateManager), t
+        member internal x.LoadTemplate name =
+            lock lockProvider
+                (fun() ->
+                    let t = (new Impl(x, loader.GetTemplate(name)), System.DateTime.Now)
+                    templates := Map.add name t !templates  
+                    t 
+                )
+        
+        interface IManagerProvider with
+
+            member x.FindTag name =
+                Map.tryFind name tags
+    
+            member x.FindFilter name =
+                Map.tryFind name filters
+                
+            member x.Settings = settings
+
+
+    and private Manager(provider, templates, loader) =
+        let templates = ref(templates)
+        
+        member private x.GetTemplate name =
+            (
+                match Map.tryFind name !templates with
+                | Some (template, ts) -> 
+                    if loader.IsUpdated (name, ts) then
+                       x.LoadTemplate name
+                    else
+                       template
+                | None ->
+                       x.LoadTemplate name
+            ) :> ITemplate                   
+                   
+        member private x.LoadTemplate name =
+            let tr = provider.LoadTemplate name
+            templates := Map.add name tr !templates
+            fst tr
+            
+        member x.Provider = provider :> IManagerProvider
+        
+        interface ITemplateContainer with
+            member x.RenderTemplate (name, context) =
+                (x.GetTemplate name).Walk x context
+
+            member x.GetTemplateReader name = loader.GetTemplate name
+
+            member this.GetTemplateVariables name = 
+                Array.of_list (this.GetTemplate name).GetVariables 
+        
             
     /// Implements the template (ITemplate interface)
-    and private Impl(template, manager: Manager) =
+    and private Impl(provider, template) =
 
         let node_list =
 
-            let parser = new Parser.DefaultParser(manager) :> IParser
+            let parser = new Parser.DefaultParser(provider) :> IParser
             // this will cause the TextReader to be closed when the template goes out of scope
             use template = template
             fst <| parser.Parse (Lexer.tokenize template) []
         
         interface ITemplate with
-            member this.Walk context=
+            member this.Walk manager context=
                 new ASTWalker.Reader (
                     {parent=None; 
                      nodes=node_list; 
@@ -253,9 +217,11 @@ module Template =
             member this.GetVariables = node_list |> List.fold (fun result node -> result @ node.GetVariables) []
             
     and
-        private Context (manager: ITemplateManager, externalContext: obj, variables: Map<string, obj>, ?autoescape: bool) =
+        private Context (manager, externalContext, variables, ?autoescape: bool) =
 
-        let autoescape = match autoescape with | Some v -> v | None -> bool.Parse(manager.Settings.["settings.DEFAULT_AUTOESCAPE"])
+        let settings = (manager :?> Manager).Provider.Settings
+            
+        let autoescape = match autoescape with | Some v -> v | None -> settings.["settings.DEFAULT_AUTOESCAPE"] :?> bool
         
         override this.ToString() =
             
@@ -269,7 +235,7 @@ module Template =
                         ) "" 
                         
             externalContext.ToString() + "\r\n---- NDjango Context ----\r\nSettings:\r\n" + autoescape + "Variables:\r\n" + vars
-            
+
         interface IContext with
             member this.add(pair) =
                 new Context(manager, externalContext, Map.add (fst pair) (snd pair) variables, autoescape) :> IContext
@@ -282,7 +248,7 @@ module Template =
             member this.GetTemplate(template) = 
                 (manager :?> Manager).GetTemplate(template)
 
-            member this.TEMPLATE_STRING_IF_INVALID = manager.Settings.["settings.TEMPLATE_STRING_IF_INVALID"] :> obj
+            member this.TEMPLATE_STRING_IF_INVALID = settings.["settings.TEMPLATE_STRING_IF_INVALID"]
             
             member this.Autoescape = autoescape
 
@@ -294,4 +260,140 @@ module Template =
                 
             member this.Manager =
                 manager
+
+//            
+//            member this.FindTag name = Map.tryFind name tags
+//            
+//            member this.FindFilter name = Map.tryFind name filters
             
+        
+
+//        /// Retrieves the current active template manager
+//        member private x.GetActiveManager = 
+//                    lock lockMgr 
+//                        (fun () -> 
+//                            match !active with
+//                            | None -> 
+//                                let m = new Manager(x) 
+//                                active := Some m
+//                                m
+//                            | Some m -> m
+//                        )
+                        
+//    and private Manager(provider, filters, tags, templates, loader, settings) =
+        
+        
+//        new (provider) =
+//            new Manager(provider, standardFilters, standardTags, (new DefaultLoader() :> ITemplateLoader), defaultSettings)
+//            
+//        new (provider, filters, tags, loader, settings) =
+//            new Manager(provider, filters, tags, Map.Empty, loader, settings)
+                    
+//        [<OverloadID("filters")>]
+//        member x.Register(name, filter: ISimpleFilter) =
+//            new Manager(provider, filters ++ (name, filter), tags, !templates, loader, settings)
+//
+//        [<OverloadID("tags")>]
+//        member x.Register(name, tag: ITag) =
+//            new Manager(provider, filters, tags ++ (name, tag), !templates, loader, settings)
+//
+//        [<OverloadID("loader")>]
+//        member x.Register(new_loader: ITemplateLoader) =
+//            new Manager(provider, filters, tags, !templates, new_loader, settings)
+//            
+//        member x.GetSettingValue name = settings.TryFind(name)
+//            
+//        member x.SetSettingValue(name, value) =
+//            new Manager(provider, filters, tags, !templates, loader, settings ++ (name,value))
+//            
+//        member private x.RegisterTemplate name template =
+//            let t = new Impl(template, x)
+//            templates := Map.add name (t, System.DateTime.Now) !templates
+//            t
+
+//        member x.GetTemplateInternal name = 
+//            Map.tryFind name !templates
+                    
+        /// Retrieves a template, along with the instance of the ITemplateManager that contains it.
+        /// While any GetTemplate request is guaranteed to retrieve the latest version of the
+        /// ITemplate, retaining the instance (the second in the returned tuple) will be more
+        /// efficient, as subsequent requests for that template from the returned instance are
+        /// guaranteed to be non-blocking
+//        member x.GetTemplate name =
+//            match Map.tryFind name !templates with
+//            | Some (template, ts) -> 
+//                if loader.IsUpdated (name, ts) then
+//                   provider.GetTemplate(x, name)
+////                    loader.GetTemplate name |> x.RegisterTemplate name
+//                else
+//                   template
+//            | None ->
+//                provider.GetTemplate(x, name) 
+//                lock lockMgr 
+//                    (fun () -> 
+//                        let mgr = !active
+//                        match Map.tryFind full_name mgr.Templates with
+//                        | Some (template, ts) -> this.GetAndReloadIfNeeded full_name template ts
+//                        | None -> mgr.RegisterTemplate full_name (loader.GetTemplate full_name)
+//                    )
+//    and oldManager =
+//        /// Retrieves the template, and verifies that if a template is currently available,
+//        /// that it is still valid. if not valid, causes a reload to occur, and all outstanding
+//        /// 
+//        member private this.GetAndReloadIfNeeded full_name template ts = 
+//            if loader.IsUpdated (full_name, ts) then
+//                lock lockMgr 
+//                    (fun () -> (!active).RegisterTemplate full_name (loader.GetTemplate full_name) )
+//            else
+//                ((this:>ITemplateManager), template)
+
+        /// Retrieves a template, along with the instance of the ITemplateManager that contains it.
+        /// While any GetTemplate request is guaranteed to retrieve the latest version of the
+        /// ITemplate, retaining the instance (the second in the returned tuple) will be more
+        /// efficient, as subsequent requests for that template from the returned instance are
+        /// guaranteed to be non-blocking
+//        member this.GetTemplate full_name =
+//            match Map.tryFind full_name templates with
+//            | Some (template, ts) -> 
+//                this.GetAndReloadIfNeeded full_name template ts
+//            | None -> 
+//                lock lockMgr 
+//                    (fun () -> 
+//                        let mgr = !active
+//                        match Map.tryFind full_name mgr.Templates with
+//                        | Some (template, ts) -> this.GetAndReloadIfNeeded full_name template ts
+//                        | None -> mgr.RegisterTemplate full_name (loader.GetTemplate full_name)
+//                    )
+
+//        interface ITemplateContainer with
+//            member this.RenderTemplate (full_name, context) = 
+//                let manager, template = this.GetTemplate full_name
+//                (manager, template.Walk context)
+//
+//            member this.GetTemplateReader full_name = loader.GetTemplate full_name
+//                            
+//            member this.Settings = settings
+//            
+//            member this.FindTag name = Map.tryFind name tags
+//            
+//            member this.FindFilter name = Map.tryFind name filters
+//            
+//            member this.GetTemplateVariables name = 
+//                let t = this.GetTemplate name |> snd
+//                Array.of_list t.GetVariables 
+//
+//        /// Creates a new filter manager with the tempalte registered 
+//        member private this.RegisterTemplate name template =
+//            // this is called internally, from within a lock statement
+//            let t = new Impl(template, this) :> ITemplate
+//            
+//            // this may be an update call. if that's the case, then we should
+//            // add the template into a map that has it already removed
+//            let new_templates = 
+//                Map.add name (t, System.DateTime.Now) <|
+//                match Map.tryFind name this.Templates with
+//                | Some (template, ts) -> Map.remove name this.Templates
+//                | None -> this.Templates
+//                
+//            active := new Manager(this.Filters, this.Tags, new_templates, this.Loader, this.Settings)
+//            (!active :> ITemplateManager), t

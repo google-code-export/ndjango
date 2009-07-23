@@ -20,138 +20,138 @@
  ***************************************************************************)
 
 
-namespace NDjango
+namespace NDjango.Interfaces
 
 open System.Collections.Generic
 open System.IO
+open NDjango
 
-module Interfaces = 
-    /// A no-parameter filter
-    type ISimpleFilter = 
-        abstract member Perform: obj -> obj
-        
-    /// A filter that accepts a single parameter of type 'a
-    type IFilter =
-        inherit ISimpleFilter
-        abstract member DefaultValue: obj
-        
-        abstract member PerformWithParam: obj * obj -> obj    
+/// A no-parameter filter
+type ISimpleFilter = 
+    abstract member Perform: obj -> obj
     
-    type ITemplateLoader = 
-        abstract member GetTemplate: string -> TextReader
-        abstract member IsUpdated: string * System.DateTime -> bool
-        
-    /// Template lifecycle manager. Implementers of this interface are responsible for
-    /// providing copmiled templates by resource name
-    type ITemplateManager = 
-        /// given the template name and context returns the <see cref="System.IO.TextReader"/> 
-        /// that will stream out the results of the render.
-        abstract member RenderTemplate: string * IDictionary<string, obj> -> (ITemplateManager * TextReader)
-        
-        /// Retrieves global the name/value settings information
-        abstract member Settings: Map<string, string>
+/// A filter that accepts a single parameter of type 'a
+type IFilter =
+    inherit ISimpleFilter
+    abstract member DefaultValue: obj
+    
+    abstract member PerformWithParam: obj * obj -> obj    
 
-        /// Looks up the filter in the filter dictionary
-        abstract member GetTemplateVariables: string -> string []
+type ITemplateLoader = 
+    abstract member GetTemplate: string -> TextReader
+    abstract member IsUpdated: string * System.DateTime -> bool
+    
+/// Template lifecycle manager. Implementers of this interface are responsible for
+/// providing compiled templates by resource name
+type ITemplateManager = 
+    /// given the template name and context returns the <see cref="System.IO.TextReader"/> 
+    /// that will stream out the results of the render.
+    abstract member RenderTemplate: string * IDictionary<string, obj> -> TextReader
 
-    /// Template lifecycle manager. Implementers of this interface are responsible for
-    /// providing copmiled templates by resource name. This interface is supposed to be internal
-    /// unfrotunately as of 1.9.6.16 it is not allowed to have public types implement non-public 
-    /// interfaces
-    type ITemplateContainer =
-        inherit ITemplateManager 
-        
-        /// Retrieves a TextReader object for the specified file. It is a responsibility of the
-        /// caller to make sure it is properly closed and disposed of
-        abstract member GetTemplateReader: string -> TextReader
-        
-        /// Looks up the tag in the tag dictionary
-        abstract member FindTag: string -> ITag option
-        
-        /// Looks up the filter in the filter dictionary
-        abstract member FindFilter: string -> ISimpleFilter option
+    /// Looks up the filter in the filter dictionary
+    abstract member GetTemplateVariables: string -> string []
+    
+/// Template lifecycle manager. Implementers of this interface are responsible for
+/// providing compiled templates by resource name. This interface is supposed to be internal
+/// unfrotunately as of 1.9.6.16 it is not allowed to have public types implement non-public 
+/// interfaces
+type ITemplateContainer =
+    inherit ITemplateManager 
+    
+    /// Retrieves a TextReader object for the specified file. It is a responsibility of the
+    /// caller to make sure it is properly closed and disposed of
+    abstract member GetTemplateReader: string -> TextReader
 
-    /// Template imeplementation. This interface effectively represents the root-level node
-    /// in the Django AST.
-    and ITemplate =
-        /// Recursivly "walks" the AST, returning a text reader that will stream out the 
-        /// results of the render.
-        abstract Walk: IDictionary<string, obj> -> System.IO.TextReader
-        
-        /// A list of top level sibling nodes
-        abstract Nodes: INode list
-        
-        abstract GetVariables: string list
-        
-    /// An execution context container. This interface defines a set of methods necessary 
-    /// for templates and external entities to exchange information.
-    and IContext =
-        /// Adds an object to the context
-        abstract member add:(string*obj)->IContext
-        
-        /// Attempts to find an object in the context by the key
-        abstract member tryfind: string->obj option
-        
-        /// Retrieves the requested template along with the containing template manager
-        abstract member GetTemplate: string -> (ITemplateManager * ITemplate)
-        
-        // TODO: why is this on the interface definition?
-        abstract member TEMPLATE_STRING_IF_INVALID: obj
-        
-        /// Indicates that this Context is in Autoescape mode
-        abstract member Autoescape: bool
-        
-        /// Returns a new Context with the specified Autoescape mode
-        abstract member WithAutoescape: bool -> IContext
-        
-        /// Returns a new Context with the specified template manager
-        abstract member WithNewManager: ITemplateManager -> IContext
+/// Template imeplementation. This interface effectively represents the root-level node
+/// in the Django AST.
+and ITemplate =
+    /// Recursivly "walks" the AST, returning a text reader that will stream out the 
+    /// results of the render.
+    abstract Walk: ITemplateManager -> IDictionary<string, obj> -> System.IO.TextReader
+    
+    /// A list of top level sibling nodes
+    abstract Nodes: INode list
+    
+    abstract GetVariables: string list
+    
+/// An execution context container. This interface defines a set of methods necessary 
+/// for templates and external entities to exchange information.
+and IContext =
+    /// Adds an object to the context
+    abstract member add:(string*obj)->IContext
+    
+    /// Attempts to find an object in the context by the key
+    abstract member tryfind: string->obj option
+    
+    /// Retrieves the requested template along with the containing template manager
+    abstract member GetTemplate: string -> (ITemplateManager * ITemplate)
+    
+    // TODO: why is this on the interface definition?
+    abstract member TEMPLATE_STRING_IF_INVALID: obj
+    
+    /// Indicates that this Context is in Autoescape mode
+    abstract member Autoescape: bool
+    
+    /// Returns a new Context with the specified Autoescape mode
+    abstract member WithAutoescape: bool -> IContext
+    
+    /// Returns a new Context with the specified template manager
+    abstract member WithNewManager: ITemplateManager -> IContext
 
-        /// Returns the template manager associated with the context
-        abstract member Manager: ITemplateManager
+    /// Returns the template manager associated with the context
+    abstract member Manager: ITemplateManager
 
-    /// Rendering state 
-    and Walker =
-        {
-            parent: Walker option
-            nodes: INode list
-            buffer: string
-            bufferIndex: int
-            context: IContext
-        }
+/// Rendering state 
+and Walker =
+    {
+        parent: Walker option
+        nodes: INode list
+        buffer: string
+        bufferIndex: int
+        context: IContext
+    }
+    
+/// Parsing interface definition
+and IParser =
+    /// Produces a commited node list and uncommited token list as a result of parsing until
+    /// a block from the string list is encotuntered
+    abstract member Parse: LazyList<Lexer.Token> -> string list -> (INode list * LazyList<Lexer.Token>)
+   
+    /// Produces an uncommited token list as a result of parsing until
+    /// a block from the string list is encotuntered
+    abstract member Seek: LazyList<Lexer.Token> -> string list -> LazyList<Lexer.Token>
+
+    abstract member FindFilter: string -> ISimpleFilter option
         
-    /// Parsing interface definition
-    and IParser =
-        /// Produces a commited node list and uncommited token list as a result of parsing until
-        /// a block from the string list is encotuntered
-        abstract member Parse: LazyList<Lexer.Token> -> string list -> (INode list * LazyList<Lexer.Token>)
-       
-        /// Produces an uncommited token list as a result of parsing until
-        /// a block from the string list is encotuntered
-        abstract member Seek: LazyList<Lexer.Token> -> string list -> LazyList<Lexer.Token>
+/// A single tag implementation
+and ITag = 
+    /// Transforms a {% %} tag into a list of nodes and uncommited token list
+    abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
 
-        abstract member FindFilter: string -> ISimpleFilter option
-            
-    /// A single tag implementation
-    and ITag = 
-        /// Transforms a {% %} tag into a list of nodes and uncommited token list
-        abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
+and INode =
 
-    and INode =
+    /// Indicates whether this node must be the first non-text node in the template
+    abstract member must_be_first: bool
+    
+    /// The token that defined the node
+    abstract member Token : Lexer.Token
 
-        /// Indicates whether this node must be the first non-text node in the template
-        abstract member must_be_first: bool
-        
-        /// The token that defined the node
-        abstract member Token : Lexer.Token
-
-        /// Processes this node and all child nodes
-        abstract member walk: Walker -> Walker
-        
-        /// returns all child nodes contained within this node
+    /// Processes this node and all child nodes
+    abstract member walk: Walker -> Walker
+    
+    /// returns all child nodes contained within this node
 //        abstract member nodes: INode list
 
-        /// returns all child nodes contained within this node
-        abstract member GetVariables: string list
-        
+    /// returns all child nodes contained within this node
+    abstract member GetVariables: string list
+
+type IManagerProvider =
     
+    /// Looks up the tag in the tag dictionary
+    abstract member FindTag: string -> ITag option
+    
+    /// Looks up the filter in the filter dictionary
+    abstract member FindFilter: string -> ISimpleFilter option
+
+    /// Retrieves global the name/value settings information
+    abstract member Settings: Map<string, obj>
