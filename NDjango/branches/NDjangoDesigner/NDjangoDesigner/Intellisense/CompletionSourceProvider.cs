@@ -18,9 +18,7 @@ namespace NDjango.Designer.Intellisense
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            if (parser.IsNDjango(textBuffer))
-                return new CompletionSource();
-            return null;
+            return new CompletionSource();
         }
     }
 }
