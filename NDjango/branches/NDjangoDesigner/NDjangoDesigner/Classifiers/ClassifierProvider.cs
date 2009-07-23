@@ -14,7 +14,6 @@ namespace NDjango.Designer.Classifiers
     /// classifiers can generate tokenzers</remarks>
     [Export(typeof(IClassifierProvider))]
     [ContentType(Constants.NDJANGO)]
-    [ContentType("text")]
     [Name("NDjango classifier")]
     internal class ClassifierProvider : IClassifierProvider
     {
@@ -26,7 +25,10 @@ namespace NDjango.Designer.Classifiers
 
         public IClassifier GetClassifier(ITextBuffer textBuffer, IEnvironment context)
         {
-            return new Classifier(parser, classificationTypeRegistry, textBuffer);
+            if (parser.IsNDjango(textBuffer))
+                return new Classifier(parser, classificationTypeRegistry, textBuffer);
+            else
+                return null;
         }
     }
 }

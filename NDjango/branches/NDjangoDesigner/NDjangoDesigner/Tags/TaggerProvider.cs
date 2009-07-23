@@ -17,7 +17,10 @@ namespace NDjango.Designer.Tags
 
         public ITagger<T> CreateTagger<T>(ITextBuffer buffer, IEnvironment context) where T : ITag
         {
-            return (ITagger<T>)new Tagger(parser, buffer);
+            if (parser.IsNDjango(buffer))
+                return (ITagger<T>)new Tagger(parser, buffer);
+            else
+                return null;
         }
 
     }

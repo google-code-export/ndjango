@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.ApplicationModel.Environments;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
+using NDjango.Designer.Parsing;
 
 namespace NDjango.Designer.Intellisense
 {
@@ -12,9 +13,14 @@ namespace NDjango.Designer.Intellisense
     [ContentType(Constants.NDJANGO)]
     internal class CompletionSourceProvider : ICompletionSourceProvider
     {
+        [Import]
+        internal IParser parser { get; set; }
+
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            return new CompletionSource();
+            if (parser.IsNDjango(textBuffer))
+                return new CompletionSource();
+            return null;
         }
     }
 }

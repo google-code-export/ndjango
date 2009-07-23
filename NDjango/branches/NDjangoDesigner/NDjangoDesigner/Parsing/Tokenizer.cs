@@ -13,12 +13,12 @@ namespace NDjango.Designer.Parsing
         private List<TokenSnapshot> tokens = new List<TokenSnapshot>();
         
         private object token_lock = new object();
-        private IParser parser;
+        private Parser parser;
         private ITextBuffer buffer;
 
         public Tokenizer(IParser parser, ITextBuffer buffer)
         {
-            this.parser = parser;
+            this.parser = parser as Parser;
             this.buffer = buffer;
             rebuildTokens(buffer.CurrentSnapshot);
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);

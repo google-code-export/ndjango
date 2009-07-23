@@ -7,18 +7,21 @@ namespace NDjango.Designer
 {
     static class Constants
     {
-        internal const string NDJANGO = "ndjango";
-        [Export]
-        [Name(NDJANGO)]
-        [DisplayName("NDjango template")]
-        [BaseDefinition("text")]
-        //[BaseDefinition("HTML")]
-        internal static ContentTypeDefinition NDjangoContentType;
+        /// NDJANGO content type is defined to be just text - pretty much any text
+        /// the actual filtering of the content types is done in the IsNDjango method 
+        /// on the parser
+        internal const string NDJANGO = "text"; //"ndjango";
+        //[Export]
+        //[Name(NDJANGO)]
+        //[DisplayName("NDjango template")]
+        //[BaseDefinition("text")]
+        ////[BaseDefinition("HTML")]
+        //internal static ContentTypeDefinition NDjangoContentType;
 
-        [Export]
-        [FileExtension(".txt")]
-        [ContentTypeAttribute(NDJANGO)]
-        internal static FileExtensionToContentTypeDefinition NDjangoExtensionTxt;
+        //[Export]
+        //[FileExtension(".txt")]
+        //[ContentTypeAttribute(NDJANGO)]
+        //internal static FileExtensionToContentTypeDefinition NDjangoExtensionTxt;
 
         //[Export]
         //[FileExtension(".htm")]

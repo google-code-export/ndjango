@@ -7,14 +7,26 @@ namespace NDjango.Designer.Parsing
 {
     internal interface IParser
     {
-        List<Token> Parse(IEnumerable<string> template);
-
         Tokenizer GetTokenizer(ITextBuffer buffer);
+        bool IsNDjango(ITextBuffer buffer);
     }
 
     [Export(typeof(IParser))]
     internal class Parser : IParser
     {
+
+        public bool IsNDjango(ITextBuffer buffer)
+        {
+            switch (buffer.ContentType.TypeName)
+            {
+                case "text":
+                case "HTML":
+                    return true;
+                default: return false;
+            }
+            
+        }
+
         public Tokenizer GetTokenizer(ITextBuffer buffer)
         {
             Tokenizer tokenizer;

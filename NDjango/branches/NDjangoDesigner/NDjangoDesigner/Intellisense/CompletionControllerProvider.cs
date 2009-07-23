@@ -23,10 +23,12 @@ namespace NDjango.Designer.Intellisense
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers, IEnvironment context)
         {
+
             bool brokerCreated = false;
             foreach (ITextBuffer subjectBuffer in subjectBuffers)
             {
-                brokerCreated |= (CompletionBrokerMapService.GetBrokerForTextView(textView, subjectBuffer) != null);
+                if (parser.IsNDjango(subjectBuffer))
+                    brokerCreated |= (CompletionBrokerMapService.GetBrokerForTextView(textView, subjectBuffer) != null);
             }
 
             // There may not be a broker for any of the subject buffers for this text view.  This can happen if there are no providers available.
