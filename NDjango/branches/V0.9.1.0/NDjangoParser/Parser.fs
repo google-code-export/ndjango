@@ -84,7 +84,7 @@ open OutputHandling
 module internal Parser =
 
     /// Default parser implementation
-    type public DefaultParser(manager:IManagerProvider) =
+    type public DefaultParser(provider: ITemplateManagerProvider) =
 
         /// parses a single token, returning an AST Node list. this function may advance the token stream if an 
         /// element consuming multiple tokens is encountered. In this scenario, the Node list returned will
@@ -111,7 +111,7 @@ module internal Parser =
                 } :> INode), tokens
                 
             | Lexer.Block block -> 
-                match manager.FindTag block.Verb with 
+                match Map.tryFind block.Verb provider.Tags with 
                 | None -> raise (TemplateSyntaxError ("Invalid block tag:" + block.Verb, Some (block:>obj)))
                 | Some (tag: ITag) -> tag.Perform block (parser :> IParser) tokens
             
@@ -171,5 +171,5 @@ module internal Parser =
                 else
                     seek_internal parse_until tokens
             
-            member this.FindFilter name = manager.FindFilter name
+            member this.FindFilter name = Map.tryFind name provider.Filters
         

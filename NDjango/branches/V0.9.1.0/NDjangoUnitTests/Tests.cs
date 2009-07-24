@@ -66,18 +66,19 @@ this is inner2
         }
 
         NDjango.Interfaces.ITemplateManager manager;
-        NDjango.Template.Provider provider;
+        TemplateManagerProvider provider;
         
         [TestFixtureSetUp]
         public void Setup()
         {
-            provider = new NDjango.Template.Provider().NewWithLoader(new Loader());
-            manager = provider.GetNewManager;
-            //NDjango.Template.Manager.RegisterLoader(new Loader());
-            //NDjango.Template.Manager.RegisterTag("non-nested", new TestDescriptor.SimpleNonNestedTag());
-            //NDjango.Template.Manager.RegisterTag("nested", new TestDescriptor.SimpleNestedTag());
-            //manager = NDjango.Template.Manager.RegisterTag("url", new TestUrlTag());
-            FilterManager.Instance.Initialize();
+            provider = new TemplateManagerProvider()
+                .WithLoader(new Loader())
+                .WithTag("non-nested", new TestDescriptor.SimpleNonNestedTag())
+                .WithTag("nested", new TestDescriptor.SimpleNestedTag())
+                .WithTag("url", new TestUrlTag())
+                ;
+            provider = FilterManager.Initialize(provider);
+            manager = provider.GetNewManager();
         }
 
         public struct StringTest 

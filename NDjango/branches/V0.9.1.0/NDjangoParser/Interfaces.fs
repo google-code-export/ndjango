@@ -145,13 +145,22 @@ and INode =
     /// returns all child nodes contained within this node
     abstract member GetVariables: string list
 
-type IManagerProvider =
+type ITemplateManagerProvider =
     
-    /// Looks up the tag in the tag dictionary
-    abstract member FindTag: string -> ITag option
+    abstract member Tags: Map<string, ITag>
     
-    /// Looks up the filter in the filter dictionary
-    abstract member FindFilter: string -> ISimpleFilter option
+    abstract member Filters: Map<string, ISimpleFilter>
 
-    /// Retrieves global the name/value settings information
     abstract member Settings: Map<string, obj>
+
+    abstract member Loader: ITemplateLoader
+
+    /// Retrieves the requested template checking first the global
+    /// dictionary and validating the timestamp
+    abstract member GetTemplate: string -> (ITemplate* System.DateTime)
+
+    /// Retrieves the requested template without checking the 
+    /// local dictionary and/or timestamp
+    /// the retrieved template is placed in the dictionary replacing 
+    /// the existing template with the same name (if any)
+    abstract member LoadTemplate: string -> (ITemplate* System.DateTime)
