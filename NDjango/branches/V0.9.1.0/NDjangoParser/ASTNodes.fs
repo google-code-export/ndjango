@@ -170,7 +170,7 @@ module internal ASTNodes =
                 | Some v -> walker.context.add ("__blockmap", (join_replace (v:?> Map<_,_>) (Map.to_list blocks) :> obj))
                 | None -> walker.context.add ("__blockmap", (blocks :> obj))
        
-            {walker with nodes=(get_template parent context).Nodes}
+            {walker with nodes=(get_template parent context).Nodes; context = context}
             
 //            let mgr, template = get_template parent context
 //            
