@@ -129,9 +129,3 @@ module internal Template =
 
             member this.WithAutoescape(value) =
                 new Context(manager, externalContext, variables, value) :> IContext
-                
-//            member this.WithNewManager(manager) =
-//                new Context(manager, externalContext, variables, autoescape) :> IContext
-//                
-            member this.Manager =
-                manager

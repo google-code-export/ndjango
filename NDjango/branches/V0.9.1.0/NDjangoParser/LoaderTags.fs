@@ -119,13 +119,13 @@ module internal LoaderTags =
 
     type Reader = Path of string | TextReader of System.IO.TextReader
 
-    type SsiNode(token:BlockToken, reader: Reader) = 
+    type SsiNode(token:BlockToken, reader: Reader, loader: string->TextReader) = 
         inherit Node(Block token)
 
         override this.walk walker =
             let templateReader =  
                 match reader with 
-                | Path path -> (walker.context.Manager :?> ITemplateContainer).GetTemplateReader(path)
+                | Path path -> loader path
                 | TextReader reader -> reader
             let bufarray = Array.create 4096 ' '
             let length = templateReader.Read(bufarray, 0, bufarray.Length)
@@ -133,7 +133,7 @@ module internal LoaderTags =
             let nodes = 
                 if length = 0 
                 then templateReader.Close(); walker.nodes
-                else (new SsiNode(token, TextReader templateReader) :> INode) :: walker.nodes
+                else (new SsiNode(token, TextReader templateReader, loader) :> INode) :: walker.nodes
             {walker with buffer = buffer; nodes=nodes}
 
     type SsiTag() =
@@ -141,15 +141,13 @@ module internal LoaderTags =
         interface ITag with
             member this.Perform token parser tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(token, Path path) :> INode), tokens
+                | path::[] -> (new SsiNode(token, Path path, parser.Provider.Loader.GetTemplate) :> INode), tokens
                 | path::"parsed"::[] ->
                     let templateRef = FilterExpression (parser.Provider, Block token, "\"" + path + "\"")
                     ({
                         new Node(Block token) 
                         with
                             override this.walk walker = 
-//                                let manager, template = get_template templateRef walker.context
-//                                {walker with parent=Some walker; nodes=template.Nodes}
                                 {walker with parent=Some walker; nodes=(get_template templateRef walker.context).Nodes}
                     } :> INode), tokens
                 | _ ->

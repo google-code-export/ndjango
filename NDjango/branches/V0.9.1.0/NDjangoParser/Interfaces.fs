@@ -94,12 +94,6 @@ and IContext =
     
     /// Returns a new Context with the specified Autoescape mode
     abstract member WithAutoescape: bool -> IContext
-    
-//    /// Returns a new Context with the specified template manager
-//    abstract member WithNewManager: ITemplateManager -> IContext
-//
-    /// Returns the template manager associated with the context
-    abstract member Manager: ITemplateManager
 
 /// Rendering state 
 and Walker =
