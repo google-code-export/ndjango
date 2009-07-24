@@ -61,7 +61,7 @@ module internal Filter =
             member this.Perform token parser tokens =
                 match token.Args with
                 | filter::[] ->
-                    let filter_expr = new FilterExpression(parser, Block token, FILTER_VARIABLE_NAME + "|" + filter)
+                    let filter_expr = new FilterExpression(parser.Provider, Block token, FILTER_VARIABLE_NAME + "|" + filter)
                     let node_list, remaining = parser.Parse tokens ["endfilter"]
                     (new FilterNode(token, filter_expr, node_list) :> INode), remaining
                 | _ -> raise (TemplateSyntaxError ("'filter' tag requires one argument", Some (token:>obj)))

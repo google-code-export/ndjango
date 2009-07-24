@@ -57,7 +57,7 @@ module internal LoaderTags =
                     let node_list, remaining = parser.Parse tokens []
                     
                     let parent_name_expr = 
-                        new FilterExpression(parser, Block token, parent)
+                        new FilterExpression(parser.Provider, Block token, parent)
                         
                     (new ExtendsNode(token, node_list, parent_name_expr) :> INode), LazyList.empty<Token>()
                 | _ -> raise (TemplateSyntaxError ("extends tag takes only one argument", Some (token:>obj)))
@@ -91,7 +91,7 @@ module internal LoaderTags =
                 match token.Args with
                 | name::[] -> 
                     let template_name = 
-                        new FilterExpression(parser, Block token, name)
+                        new FilterExpression(parser.Provider, Block token, name)
                     ({
                         //todo: we're not producing a node list here. may have to revisit
                         new Node(Block token) 
@@ -143,7 +143,7 @@ module internal LoaderTags =
                 match token.Args with
                 | path::[] -> (new SsiNode(token, Path path) :> INode), tokens
                 | path::"parsed"::[] ->
-                    let templateRef = FilterExpression (parser, Block token, "\"" + path + "\"")
+                    let templateRef = FilterExpression (parser.Provider, Block token, "\"" + path + "\"")
                     ({
                         new Node(Block token) 
                         with

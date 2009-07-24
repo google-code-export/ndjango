@@ -124,6 +124,6 @@ module internal Cycle =
                         if values.Length = 1 then (values.[0], [])
                         else ("$Anonymous$Cycle", values)
                         
-                let values = List.map (fun v -> new Variable(parser, Block token, v)) values
+                let values = List.map (fun v -> new Variable(parser.Provider, Block token, v)) values
                 ((new Node(token, name, values) :> NDjango.Interfaces.INode), tokens)
 

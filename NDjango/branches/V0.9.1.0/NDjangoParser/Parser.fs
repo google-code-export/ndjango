@@ -100,7 +100,7 @@ module internal Parser =
                 } :> INode), tokens
                 
             | Lexer.Variable var -> 
-                let expression = new FilterExpression(parser, Lexer.Variable var, var.Expression)
+                let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
                 ({new Node(token)
                     with 
                         override this.walk walker = 
@@ -171,5 +171,6 @@ module internal Parser =
                 else
                     seek_internal parse_until tokens
             
-            member this.FindFilter name = Map.tryFind name provider.Filters
+//            member this.FindFilter name = Map.tryFind name provider.Filters
+            member x.Provider = provider
         

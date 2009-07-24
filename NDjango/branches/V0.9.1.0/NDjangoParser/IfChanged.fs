@@ -65,7 +65,7 @@ module internal IfChanged =
                     | _ -> [], remaining
 
                 let createWalker =
-                    match token.Args |> List.map (fun var -> new Variable(parser, Block token, var)) with
+                    match token.Args |> List.map (fun var -> new Variable(parser.Provider, Block token, var)) with
                     | [] ->
                         fun walker ->
                             let reader = 

@@ -95,9 +95,9 @@ and IContext =
     /// Returns a new Context with the specified Autoescape mode
     abstract member WithAutoescape: bool -> IContext
     
-    /// Returns a new Context with the specified template manager
-    abstract member WithNewManager: ITemplateManager -> IContext
-
+//    /// Returns a new Context with the specified template manager
+//    abstract member WithNewManager: ITemplateManager -> IContext
+//
     /// Returns the template manager associated with the context
     abstract member Manager: ITemplateManager
 
@@ -121,7 +121,8 @@ and IParser =
     /// a block from the string list is encotuntered
     abstract member Seek: LazyList<Lexer.Token> -> string list -> LazyList<Lexer.Token>
 
-    abstract member FindFilter: string -> ISimpleFilter option
+    abstract member Provider: ITemplateManagerProvider
+//    abstract member FindFilter: string -> ISimpleFilter option
         
 /// A single tag implementation
 and ITag = 
@@ -140,12 +141,9 @@ and INode =
     abstract member walk: Walker -> Walker
     
     /// returns all child nodes contained within this node
-//        abstract member nodes: INode list
-
-    /// returns all child nodes contained within this node
     abstract member GetVariables: string list
 
-type ITemplateManagerProvider =
+and ITemplateManagerProvider =
     
     abstract member Tags: Map<string, ITag>
     

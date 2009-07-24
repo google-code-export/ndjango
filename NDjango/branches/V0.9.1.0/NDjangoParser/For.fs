@@ -236,7 +236,7 @@ module internal For =
                             syntax,
                             true
                         | _ -> raise (TemplateSyntaxError ("malformed 'for' tag", Some (token:>obj)))
-                let enumExpr = FilterExpression(parser, Block token, enumerator)
+                let enumExpr = FilterExpression(parser.Provider, Block token, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
                 let node_list_body, remaining = parser.Parse tokens ["empty"; "endfor"]
                 let node_list_empty, remaining2 =

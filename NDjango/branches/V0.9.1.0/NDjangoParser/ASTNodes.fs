@@ -64,7 +64,6 @@ module internal ASTNodes =
             member this.must_be_first = this.must_be_first
             member this.Token = this.Token
             member this.walk(walker) = this.walk(walker)
-//            member this.nodes = this.nodes
             member this.GetVariables = this.GetVariables
 
     /// retrieves a template given the template name. The name is supplied as a FilterExpression
@@ -171,7 +170,3 @@ module internal ASTNodes =
                 | None -> walker.context.add ("__blockmap", (blocks :> obj))
        
             {walker with nodes=(get_template parent context).Nodes; context = context}
-            
-//            let mgr, template = get_template parent context
-//            
-//            {walker with nodes=template.Nodes; context=context.WithNewManager(mgr)}

@@ -65,7 +65,7 @@ module Compatibility =
             member x.Perform token parser tokens = 
                 let parms = 
                     token.Args |>
-                    List.map (fun elem -> new FilterExpression(parser, Block token, elem))
+                    List.map (fun elem -> new FilterExpression(parser.Provider, Block token, elem))
                 
                 if not (parms.Length = num_params) then
                     raise (TemplateSyntaxError(sprintf "%s expects %d parameters, but was given %d." name num_params (parms.Length), Some (token:>obj)))

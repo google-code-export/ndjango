@@ -105,7 +105,7 @@ module internal Misc =
                 match token.Args with
                     | [] -> raise (TemplateSyntaxError ("'firstof' tag requires at least one argument", Some (token:>obj)))
                     | _ -> 
-                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(parser, Block token, name))
+                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(parser.Provider, Block token, name))
                         ({
                             new Node(Block token)
                             with 
@@ -205,7 +205,7 @@ module internal Misc =
             member this.Perform token parser tokens =
                 match token.Args with
                 | source::"by"::grouper::"as"::result::[] ->
-                    let value = new FilterExpression(parser, Block token, source)
+                    let value = new FilterExpression(parser.Provider, Block token, source)
                     let regroup context =
                         match fst <| value.Resolve context false with
                         | Some o ->
@@ -318,7 +318,7 @@ module internal Misc =
                         | "opencomment"::[] -> "{#"
                         | "closecomment"::[] -> "#}"
                         | _ -> raise (TemplateSyntaxError ("invalid format for 'template' tag", Some (token:>obj)))
-                let variables = token.Args |> List.map (fun (name) -> new FilterExpression(parser, Block token, name))
+                let variables = token.Args |> List.map (fun (name) -> new FilterExpression(parser.Provider, Block token, name))
                 ({
                     new Node(Block token)
                     with 
@@ -351,8 +351,8 @@ module internal Misc =
         
                 match token.Args with
                 | value::maxValue::maxWidth::[] ->
-                    let value = new FilterExpression(parser, Block token, value)
-                    let maxValue = new FilterExpression(parser, Block token, maxValue)
+                    let value = new FilterExpression(parser.Provider, Block token, value)
+                    let maxValue = new FilterExpression(parser.Provider, Block token, maxValue)
                     let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (TemplateSyntaxError ("'widthratio' 3rd argument must be integer", Some (token:>obj)))
                     (({
                         new Node(Block token) with
@@ -379,7 +379,7 @@ module internal Misc =
                 match token.Args with
                 | var::"as"::name::[] ->
                     let nodes, remaining = parser.Parse tokens ["endwith"]
-                    let expression = new FilterExpression(parser, Block token, var)
+                    let expression = new FilterExpression(parser.Provider, Block token, var)
                     (({
                         new Node(Block token) with
                             override this.walk walker = 
@@ -426,10 +426,10 @@ module Abstract =
                     match token.Args with
                     | [] -> raise (TemplateSyntaxError ("'url' tag requires at least one parameter", Some (token:>obj)))
                     | path::args -> 
-                        let argList, var = parseArgs token parser (List.fold (fun state elem -> 
+                        let argList, var = parseArgs token parser.Provider (List.fold (fun state elem -> 
                                                                                                     match String.trim [','] elem with
                                                                                                     | "" -> state | _ as trimmed -> trimmed::state ) [] <| List.rev args)
-                        new FilterExpression(parser, Block token, path), argList, var
+                        new FilterExpression(parser.Provider, Block token, path), argList, var
                 
                 (({
                     new Node(Block token) with

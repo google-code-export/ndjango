@@ -172,7 +172,7 @@ module internal If =
         interface ITag with 
             member this.Perform token parser tokens =
 
-                let link_type, bool_vars = build_vars token false token.Args parser (None,[])
+                let link_type, bool_vars = build_vars token false token.Args parser.Provider (None,[])
                 
                 let node_list_true, remaining = parser.Parse tokens ["else"; "endif"]
                 let node_list_false, remaining2 =
