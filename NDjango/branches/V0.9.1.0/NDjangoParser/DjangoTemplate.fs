@@ -19,7 +19,7 @@
  *  
  ***************************************************************************)
 
-namespace NDjango
+namespace NDjango.Template
 
 open System.Text
 open System.Collections
@@ -27,28 +27,16 @@ open System.Collections.Generic
 open System.IO
 
 open NDjango.Interfaces
-open Filters
-open Constants
+open NDjango.Filters
+open NDjango.Constants
 open NDjango.Tags
 open NDjango.Tags.Misc
 
-module Template =
-    
-    type private DefaultLoader() =
-        interface ITemplateLoader with
-            member this.GetTemplate source = 
-                if not <| File.Exists(source) then
-                    raise (FileNotFoundException (sprintf "Could not locate template '%s'" source))
-                else
-                    (new StreamReader(source) :> TextReader)
-                    
-            member this.IsUpdated (source, timestamp) = File.GetLastWriteTime(source) > timestamp
-            
-    
+module internal Internals =    
     /// adds the key/value pair into the supplied map (usage: map ++ (key, value))
-    let private (++) map (key: 'a, value: 'b) = Map.add key value map
+    let internal (++) map (key: 'a, value: 'b) = Map.add key value map
 
-    let private standardFilters = 
+    let internal standardFilters = 
         new Map<string, ISimpleFilter>([])
             ++ ("date", (new Now.DateFilter() :> ISimpleFilter))
             ++ ("escape", (new EscapeFilter() :> ISimpleFilter))
@@ -75,7 +63,7 @@ module Template =
             ++ ("filesizeformat", (new FileSizeFormatFilter() :> ISimpleFilter))
             
         
-    let private standardTags =
+    let internal standardTags =
         new Map<string, ITag>([])
             ++ ("autoescape", (new AutoescapeTag() :> ITag))
             ++ ("block", (new LoaderTags.BlockTag() :> ITag))
@@ -99,167 +87,176 @@ module Template =
             ++ ("widthratio", (new WidthRatioTag() :> ITag))
             ++ ("with", (new WithTag() :> ITag))
         
-    let private defaultSettings = 
+    let internal defaultSettings = 
         new Map<string, obj>([])
             ++ ("settings.DEFAULT_AUTOESCAPE", (true :> obj))
             ++ ("settings.TEMPLATE_STRING_IF_INVALID", ("" :> obj))
 
-    type Provider (settings, tags, filters, loader) =
-        
-        /// global lock
-        let lockProvider = new obj()
-
-        /// pointer to the most recent template manager. don't want to have an
-        /// interface for the sake of an interface, so we'll make it obj to
-        /// avoid dealing with circular references
-        let active = ref None
-        let templates = ref Map.Empty
-
-        public new () =
-            new Provider(defaultSettings, standardTags, standardFilters, (new DefaultLoader() :> ITemplateLoader))
+    type internal DefaultLoader() =
+        interface ITemplateLoader with
+            member this.GetTemplate source = 
+                if not <| File.Exists(source) then
+                    raise (FileNotFoundException (sprintf "Could not locate template '%s'" source))
+                else
+                    (new StreamReader(source) :> TextReader)
+                    
+            member this.IsUpdated (source, timestamp) = File.GetLastWriteTime(source) > timestamp
             
-        member x.NewWithSettings new_settings = new Provider(new_settings, tags, filters, loader)
-        
-        member x.NewWithTags new_tags = new Provider(settings, new_tags, filters, loader)
-
-        member x.NewWithFilters new_filters = new Provider(settings, tags, new_filters, loader)
-        
-        member x.NewWithLoader new_loader = new Provider(settings, tags, filters, new_loader)
-        
-        member public x.GetNewManager = new Manager(x, !templates, loader)
-        
-        member private x.GetTemplate name =
-            lock lockProvider 
-                (fun() -> 
-                    match !templates |> Map.tryFind name with
-                    | None ->
-                        x.LoadTemplate name
-                    | Some (template, ts) -> 
-                        if (loader.IsUpdated(name, ts)) then
-                            x.LoadTemplate name
-                        else
-                            (template, ts)
-                )
-                
-        member internal x.LoadTemplate name =
-            lock lockProvider
-                (fun() ->
-                    let t = (new Impl(x, loader.GetTemplate(name)), System.DateTime.Now)
-                    templates := Map.add name t !templates  
-                    t 
-                )
-        
-        interface IManagerProvider with
-
-            member x.FindTag name =
-                Map.tryFind name tags
+type Provider (settings, tags, filters, loader) =
     
-            member x.FindFilter name =
-                Map.tryFind name filters
-                
-            member x.Settings = settings
+    /// global lock
+    let lockProvider = new obj()
 
+    /// pointer to the most recent template manager. don't want to have an
+    /// interface for the sake of an interface, so we'll make it obj to
+    /// avoid dealing with circular references
+    let active = ref None
+    let templates = ref Map.Empty
 
-    and private Manager(provider, templates, loader) =
-        let templates = ref(templates)
+    public new () =
+        new Provider(Internals.defaultSettings, Internals.standardTags, Internals.standardFilters, (new Internals.DefaultLoader() :> ITemplateLoader))
         
-        member private x.GetTemplate name =
-            (
-                match Map.tryFind name !templates with
-                | Some (template, ts) -> 
-                    if loader.IsUpdated (name, ts) then
-                       x.LoadTemplate name
-                    else
-                       template
+    member x.NewWithSettings new_settings = new Provider(new_settings, tags, filters, loader)
+    
+    member x.NewWithTags new_tags = new Provider(settings, new_tags, filters, loader)
+
+    member x.NewWithFilters new_filters = new Provider(settings, tags, new_filters, loader)
+    
+    member x.NewWithLoader new_loader = new Provider(settings, tags, filters, new_loader)
+    
+    member public x.GetNewManager = new Manager(x, !templates, loader) :> ITemplateManager
+    
+    member internal x.GetTemplate name =
+        lock lockProvider 
+            (fun() -> 
+                match !templates |> Map.tryFind name with
                 | None ->
-                       x.LoadTemplate name
-            ) :> ITemplate                   
-                   
-        member private x.LoadTemplate name =
-            let tr = provider.LoadTemplate name
-            templates := Map.add name tr !templates
-            fst tr
+                    x.LoadTemplate name
+                | Some (template, ts) -> 
+                    if (loader.IsUpdated(name, ts)) then
+                        x.LoadTemplate name
+                    else
+                        ((template :> ITemplate), ts)
+            )
             
-        member x.Provider = provider :> IManagerProvider
+    member internal x.LoadTemplate name =
+        lock lockProvider
+            (fun() ->
+                let t = ((new Impl(x, loader.GetTemplate(name)) :> ITemplate), System.DateTime.Now)
+                templates := Map.add name t !templates  
+                t
+            )
+    
+    interface IManagerProvider with
+
+        member x.FindTag name =
+            Map.tryFind name tags
+
+        member x.FindFilter name =
+            Map.tryFind name filters
+            
+        member x.Settings = settings
+
+and internal Manager(provider, templates, loader) =
+    let templates = ref(templates)
+    
+    let load_template name validated =
+        let tr = 
+            if validated then provider.LoadTemplate name
+            else provider.GetTemplate name
+        templates := Map.add name tr !templates
+        fst tr
+
+    member internal x.GetTemplate name =
+        match Map.tryFind name !templates with
+        | Some (template, ts) -> 
+            if loader.IsUpdated (name, ts) then
+               load_template name true
+            else
+               template
+        | None ->
+               load_template name false
+
+    member x.Provider = provider :> IManagerProvider
+    
+    interface ITemplateContainer with
+        member x.RenderTemplate (name, context) =
+            (x.GetTemplate name).Walk x context
+
+        member x.GetTemplateReader name = loader.GetTemplate name
+
+        member this.GetTemplateVariables name = 
+            Array.of_list (this.GetTemplate name).GetVariables 
+    
         
-        interface ITemplateContainer with
-            member x.RenderTemplate (name, context) =
-                (x.GetTemplate name).Walk x context
+/// Implements the template (ITemplate interface)
+and private Impl(provider, template) =
 
-            member x.GetTemplateReader name = loader.GetTemplate name
+    let node_list =
 
-            member this.GetTemplateVariables name = 
-                Array.of_list (this.GetTemplate name).GetVariables 
+        let parser = new NDjango.Parser.DefaultParser(provider) :> IParser
+        // this will cause the TextReader to be closed when the template goes out of scope
+        use template = template
+        fst <| parser.Parse (NDjango.Lexer.tokenize template) []
+    
+    interface ITemplate with
+        member this.Walk manager context=
+            new NDjango.ASTWalker.Reader (
+                {parent=None; 
+                 nodes=node_list; 
+                 buffer="";
+                 bufferIndex = 0; 
+                 context=new Context(manager, context, (new Map<string,obj>(context |> Seq.map (fun item-> (item.Key, item.Value)))))
+                }) :> System.IO.TextReader
+            
+        member this.Nodes = node_list
         
-            
-    /// Implements the template (ITemplate interface)
-    and private Impl(provider, template) =
-
-        let node_list =
-
-            let parser = new Parser.DefaultParser(provider) :> IParser
-            // this will cause the TextReader to be closed when the template goes out of scope
-            use template = template
-            fst <| parser.Parse (Lexer.tokenize template) []
+        member this.GetVariables = node_list |> List.fold (fun result node -> result @ node.GetVariables) []
         
-        interface ITemplate with
-            member this.Walk manager context=
-                new ASTWalker.Reader (
-                    {parent=None; 
-                     nodes=node_list; 
-                     buffer="";
-                     bufferIndex = 0; 
-                     context=new Context(manager, context, (new Map<string,obj>(context |> Seq.map (fun item-> (item.Key, item.Value)))))
-                    }) :> System.IO.TextReader
-                
-            member this.Nodes = node_list
-            
-            member this.GetVariables = node_list |> List.fold (fun result node -> result @ node.GetVariables) []
-            
-    and
-        private Context (manager, externalContext, variables, ?autoescape: bool) =
+and
+    private Context (manager, externalContext, variables, ?autoescape: bool) =
 
-        let settings = (manager :?> Manager).Provider.Settings
-            
-        let autoescape = match autoescape with | Some v -> v | None -> settings.["settings.DEFAULT_AUTOESCAPE"] :?> bool
+    let settings = (manager :?> Manager).Provider.Settings
         
-        override this.ToString() =
+    let autoescape = match autoescape with | Some v -> v | None -> settings.["settings.DEFAULT_AUTOESCAPE"] :?> bool
+    
+    override this.ToString() =
+        
+        let autoescape = "autoescape = " + autoescape.ToString() + "\r\n"
+        let vars =
+            variables |> Microsoft.FSharp.Collections.Map.fold
+                (fun result name value -> 
+                    result + name + 
+                        if (value = null) then " = NULL\r\n"
+                        else " = \"" + value.ToString() + "\"\r\n" 
+                    ) "" 
+                    
+        externalContext.ToString() + "\r\n---- NDjango Context ----\r\nSettings:\r\n" + autoescape + "Variables:\r\n" + vars
+
+    interface IContext with
+        member this.add(pair) =
+            new Context(manager, externalContext, Map.add (fst pair) (snd pair) variables, autoescape) :> IContext
             
-            let autoescape = "autoescape = " + autoescape.ToString() + "\r\n"
-            let vars =
-                variables |> Microsoft.FSharp.Collections.Map.fold
-                    (fun result name value -> 
-                        result + name + 
-                            if (value = null) then " = NULL\r\n"
-                            else " = \"" + value.ToString() + "\"\r\n" 
-                        ) "" 
-                        
-            externalContext.ToString() + "\r\n---- NDjango Context ----\r\nSettings:\r\n" + autoescape + "Variables:\r\n" + vars
-
-        interface IContext with
-            member this.add(pair) =
-                new Context(manager, externalContext, Map.add (fst pair) (snd pair) variables, autoescape) :> IContext
-                
-            member this.tryfind(name) =
-                match variables.TryFind(name) with
-                | Some v -> Some v
-                | None -> None 
-                
-            member this.GetTemplate(template) = 
-                (manager :?> Manager).GetTemplate(template)
-
-            member this.TEMPLATE_STRING_IF_INVALID = settings.["settings.TEMPLATE_STRING_IF_INVALID"]
+        member this.tryfind(name) =
+            match variables.TryFind(name) with
+            | Some v -> Some v
+            | None -> None 
             
-            member this.Autoescape = autoescape
+        member this.GetTemplate(template) = 
+            (manager :?> Manager).GetTemplate(template)
 
-            member this.WithAutoescape(value) =
-                new Context(manager, externalContext, variables, value) :> IContext
-                
-            member this.WithNewManager(manager) =
-                new Context(manager, externalContext, variables, autoescape) :> IContext
-                
-            member this.Manager =
-                manager
+        member this.TEMPLATE_STRING_IF_INVALID = settings.["settings.TEMPLATE_STRING_IF_INVALID"]
+        
+        member this.Autoescape = autoescape
+
+        member this.WithAutoescape(value) =
+            new Context(manager, externalContext, variables, value) :> IContext
+            
+        member this.WithNewManager(manager) =
+            new Context(manager, externalContext, variables, autoescape) :> IContext
+            
+        member this.Manager =
+            manager
 
 //            
 //            member this.FindTag name = Map.tryFind name tags

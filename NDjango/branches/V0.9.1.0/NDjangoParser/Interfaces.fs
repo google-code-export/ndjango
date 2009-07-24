@@ -84,7 +84,7 @@ and IContext =
     abstract member tryfind: string->obj option
     
     /// Retrieves the requested template along with the containing template manager
-    abstract member GetTemplate: string -> (ITemplateManager * ITemplate)
+    abstract member GetTemplate: string -> ITemplate
     
     // TODO: why is this on the interface definition?
     abstract member TEMPLATE_STRING_IF_INVALID: obj

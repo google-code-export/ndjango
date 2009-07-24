@@ -49,8 +49,7 @@ namespace NDjango.UnitTests
         public static string runTemplate(NDjango.Interfaces.ITemplateManager manager, string templateName, IDictionary<string,object> context)
         {
             var template = manager.RenderTemplate(templateName, context);
-            System.IO.TextReader reader = template.Item2;
-            string retStr = reader.ReadToEnd();
+            string retStr = template.ReadToEnd();
             return retStr;
         }
 

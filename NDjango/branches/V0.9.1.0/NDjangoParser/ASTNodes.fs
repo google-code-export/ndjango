@@ -74,7 +74,7 @@ module internal ASTNodes =
         match fst (templateRef.Resolve context false) with  // ignoreFailures is false because we have to have a name.
         | Some o -> 
             match o with
-            | :? ITemplate as template -> (context.Manager, template)
+            | :? ITemplate as template -> template
             | :? string as name -> context.GetTemplate name
             | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Can't construct template from %A" o, None))
         | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Variable %A is undefined" templateRef, None))
@@ -170,6 +170,8 @@ module internal ASTNodes =
                 | Some v -> walker.context.add ("__blockmap", (join_replace (v:?> Map<_,_>) (Map.to_list blocks) :> obj))
                 | None -> walker.context.add ("__blockmap", (blocks :> obj))
        
-            let mgr, template = get_template parent context
+            {walker with nodes=(get_template parent context).Nodes}
             
-            {walker with nodes=template.Nodes; context=context.WithNewManager(mgr)}
+//            let mgr, template = get_template parent context
+//            
+//            {walker with nodes=template.Nodes; context=context.WithNewManager(mgr)}

@@ -97,8 +97,10 @@ module internal LoaderTags =
                         new Node(Block token) 
                         with
                             override this.walk walker = 
-                                let manager, template = get_template template_name walker.context
-                                {walker with parent=Some walker; nodes=template.Nodes}
+//                                let manager, template = get_template template_name walker.context
+//                                {walker with parent=Some walker; nodes=template.Nodes}
+//                                let manager, template = get_template template_name walker.context
+                                {walker with parent=Some walker; nodes=(get_template template_name walker.context).Nodes}
                     } :> INode), tokens
                 | _ -> raise (TemplateSyntaxError ("'include' tag takes only one argument", Some (token:>obj)))
 
@@ -146,8 +148,9 @@ module internal LoaderTags =
                         new Node(Block token) 
                         with
                             override this.walk walker = 
-                                let manager, template = get_template templateRef walker.context
-                                {walker with parent=Some walker; nodes=template.Nodes}
+//                                let manager, template = get_template templateRef walker.context
+//                                {walker with parent=Some walker; nodes=template.Nodes}
+                                {walker with parent=Some walker; nodes=(get_template templateRef walker.context).Nodes}
                     } :> INode), tokens
                 | _ ->
                     raise (TemplateSyntaxError ("malformed 'ssi' tag", Some (token:>obj)))
