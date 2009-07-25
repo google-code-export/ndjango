@@ -62,6 +62,20 @@ namespace NDjango.Designer.Intellisense
                     }
                     e.Handled = true;
                 }
+
+                if (e.Key == Key.Tab)
+                {
+                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null)
+                    {
+                        selectedCompletionBeforeCommit = this.activeSession.SelectedCompletionSet.SelectionStatus.Completion as Completion;
+                        activeSession.Commit();
+                    }
+                    else
+                    {
+                        activeSession.Dismiss();
+                    }
+                    e.Handled = true;
+                }
             }
         }
 
@@ -104,7 +118,7 @@ namespace NDjango.Designer.Intellisense
                         ITrackingPoint triggerPoint = caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive);
 
                         // Create a completion session
-                        activeSession = broker.CreateCompletionSession(triggerPoint, true);
+                        activeSession = broker.CreateCompletionSession(triggerPoint, false);
 
                         // Set the completion provider that will be used by the completion source
                         activeSession.Properties.AddProperty(CompletionProvider.CompletionProviderSessionKey, new CompletionProvider(completions));
