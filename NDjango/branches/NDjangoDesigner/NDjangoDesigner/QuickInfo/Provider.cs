@@ -1,0 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.ApplicationModel.Environments;
+using System.ComponentModel.Composition;
+using Microsoft.VisualStudio.Utilities;
+
+namespace NDjango.Designer.QuickInfo
+{
+    [Export(typeof(IQuickInfoSourceProvider))]
+    [Name("NDjango QuickInfo Source")]
+    [Order(Before = "default")]
+    [ContentType(Constants.NDJANGO)]
+    class Provider : IQuickInfoSourceProvider
+    {
+        public IQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer, IEnvironment environment)
+        {
+            return new Source(textBuffer);
+        }
+    }
+}

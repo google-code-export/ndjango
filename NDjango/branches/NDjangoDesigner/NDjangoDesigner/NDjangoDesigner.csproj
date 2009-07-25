@@ -74,6 +74,10 @@
     <Compile Include="Intellisense\CompletionSource.cs" />
     <Compile Include="Parsing\Tokenizer.cs" />
     <Compile Include="Parsing\TokenSnapshot.cs" />
+    <Compile Include="QuickInfo\Controller.cs" />
+    <Compile Include="QuickInfo\ControllerProvider.cs" />
+    <Compile Include="QuickInfo\Provider.cs" />
+    <Compile Include="QuickInfo\Source.cs" />
     <Compile Include="Tags\ErrorTag.cs" />
     <Compile Include="Tags\Tagger.cs" />
     <Compile Include="Tags\TaggerProvider.cs" />
