@@ -50,17 +50,6 @@ type ITemplateManager =
 
     /// Looks up the filter in the filter dictionary
     abstract member GetTemplateVariables: string -> string []
-    
-/// Template lifecycle manager. Implementers of this interface are responsible for
-/// providing compiled templates by resource name. This interface is supposed to be internal
-/// unfrotunately as of 1.9.6.16 it is not allowed to have public types implement non-public 
-/// interfaces
-type ITemplateContainer =
-    inherit ITemplateManager 
-    
-    /// Retrieves a TextReader object for the specified file. It is a responsibility of the
-    /// caller to make sure it is properly closed and disposed of
-    abstract member GetTemplateReader: string -> TextReader
 
 /// Template imeplementation. This interface effectively represents the root-level node
 /// in the Django AST.
@@ -83,7 +72,7 @@ and IContext =
     /// Attempts to find an object in the context by the key
     abstract member tryfind: string->obj option
     
-    /// Retrieves the requested template along with the containing template manager
+    /// Retrieves the requested template through the template manager
     abstract member GetTemplate: string -> ITemplate
     
     // TODO: why is this on the interface definition?

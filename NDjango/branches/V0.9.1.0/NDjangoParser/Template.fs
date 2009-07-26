@@ -57,11 +57,9 @@ module internal Template =
 
         member x.Provider = provider
         
-        interface ITemplateContainer with
+        interface ITemplateManager with
             member x.RenderTemplate (name, context) =
                 (x.GetTemplate name).Walk x context
-
-            member x.GetTemplateReader name = provider.Loader.GetTemplate name
 
             member this.GetTemplateVariables name = 
                 Array.of_list (this.GetTemplate name).GetVariables 
