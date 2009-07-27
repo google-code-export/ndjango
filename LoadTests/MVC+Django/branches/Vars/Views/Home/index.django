@@ -1,5 +1,5 @@
 ﻿
-
+{% extends "Views/Shared/base.django" %}
 
 
 {% block Title %}
@@ -7,8 +7,28 @@
 {% endblock %}
 
 {% block MainContent %}
-    <h2>{{ Message }}</h2>
-    <p>
-        To learn more about Bistro visit <a href="http://bistroframework.org" title="The Bistro Wiki">http://bistroframework.org</a>.
+    <h2>
+    {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}}
+    {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}}
+    {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}}
+    {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}}
+    {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}} {{ Message }} {{Greet}}
+ 
+ 
+ 
+ 
+ 
+    
+    <p  align = "left" onload="showLbl();"> 
+
+              To learn more about Bistro visit 
+          <a href="http://bistroframework.org" title="The Bistro Wiki">http://bistroframework.org</a>.
     </p>
+    </h2>
+ 
+   
+  
+ 
+    
 {% endblock %}
+
