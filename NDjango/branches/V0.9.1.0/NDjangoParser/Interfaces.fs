@@ -48,12 +48,13 @@ type ITemplateManager =
     /// that will stream out the results of the render.
     abstract member RenderTemplate: string * IDictionary<string, obj> -> TextReader
 
-    /// Looks up the filter in the filter dictionary
     abstract member GetTemplateVariables: string -> string []
+
+    abstract member GetTemplate: string -> ITemplate
 
 /// Template imeplementation. This interface effectively represents the root-level node
 /// in the Django AST.
-type ITemplate =
+and ITemplate =
     /// Recursivly "walks" the AST, returning a text reader that will stream out the 
     /// results of the render.
     abstract Walk: ITemplateManager -> IDictionary<string, obj> -> System.IO.TextReader
@@ -71,9 +72,6 @@ and IContext =
     
     /// Attempts to find an object in the context by the key
     abstract member tryfind: string->obj option
-    
-    /// Retrieves the requested template through the template manager
-    abstract member GetTemplate: string -> ITemplate
     
     /// Indicates that this Context is in Autoescape mode
     abstract member Autoescape: bool
@@ -112,7 +110,7 @@ and INode =
     abstract member Token : Lexer.Token
 
     /// Processes this node and all child nodes
-    abstract member walk: Walker -> Walker
+    abstract member walk: ITemplateManager -> Walker -> Walker
     
     /// returns all child nodes contained within this node
     abstract member GetVariables: string list

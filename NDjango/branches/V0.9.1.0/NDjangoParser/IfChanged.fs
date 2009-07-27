@@ -64,12 +64,12 @@ module internal IfChanged =
                             [], remaining
                     | _ -> [], remaining
 
-                let createWalker =
+                let createWalker manager =
                     match token.Args |> List.map (fun var -> new Variable(parser.Provider, Block token, var)) with
                     | [] ->
                         fun walker ->
                             let reader = 
-                                new NDjango.ASTWalker.Reader ({walker with parent=None; nodes=nodes_ifchanged; context=walker.context})
+                                new NDjango.ASTWalker.Reader (manager, {walker with parent=None; nodes=nodes_ifchanged; context=walker.context})
                             let newValue = reader.ReadToEnd() :> obj
                             match walker.context.tryfind("$oldValue") with
                             | Some o when o = newValue -> {walker with nodes = List.append nodes_ifsame walker.nodes}
@@ -91,8 +91,8 @@ module internal IfChanged =
                 (({
                     new Node(Block token)
                     with
-                        override this.walk walker =
-                            createWalker walker 
+                        override this.walk manager walker =
+                            createWalker manager walker 
                                    
                         override this.nodes with get() = nodes_ifchanged @ nodes_ifsame
                     } :> INode), remaining)

@@ -37,11 +37,11 @@ module internal Filter =
     type FilterNode(token:BlockToken, filter: FilterExpression, node_list: INode list) =
         inherit Node(Block token)
 
-        override this.walk walker = 
+        override this.walk manager walker = 
             let reader = 
-                new NDjango.ASTWalker.Reader ({walker with parent=None; nodes=node_list; context=walker.context}) 
-            match filter.ResolveForOutput 
-                    {walker with context=walker.context.add(FILTER_VARIABLE_NAME, (reader.ReadToEnd():>obj))}
+                new NDjango.ASTWalker.Reader (manager, {walker with parent=None; nodes=node_list; context=walker.context}) 
+            match filter.ResolveForOutput manager
+                     {walker with context=walker.context.add(FILTER_VARIABLE_NAME, (reader.ReadToEnd():>obj))}
                 with
             | Some w -> w
             | None -> walker

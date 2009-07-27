@@ -311,13 +311,13 @@ module Expressions =
         /// converts it to string taking into account escaping. 
         /// This method never fails, if the expression fails to resolve, 
         /// the method returns None
-        member this.ResolveForOutput walker =
+        member this.ResolveForOutput manager walker =
             let result, needsEscape = this.Resolve walker.context false
             match result with 
             | None -> None  // this results in no output from the expression
             | Some o -> 
                 match o with 
-                | :? INode as node -> Some (node.walk walker) // take output from the node
+                | :? INode as node -> Some (node.walk manager walker) // take output from the node
                 | null -> None // this results in no output from the expression
                 | _ as v ->
                     match if needsEscape then escape v else string v with

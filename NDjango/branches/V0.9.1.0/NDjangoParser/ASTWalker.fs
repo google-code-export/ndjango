@@ -25,7 +25,7 @@ namespace NDjango
 open NDjango.Interfaces
 
 module internal ASTWalker =
-    type Reader(walker: Walker) =
+    type Reader(manager:ITemplateManager, walker: Walker) =
         inherit System.IO.TextReader()
         
         let mutable walker = walker
@@ -41,7 +41,7 @@ module internal ASTWalker =
                         getChar() 
                     | None -> -1 // we are done - nothing more to walk
                 | node :: nodes ->
-                    walker <- node.walk {walker with nodes = nodes; buffer=""; bufferIndex = 0}
+                    walker <- node.walk manager {walker with nodes = nodes; buffer=""; bufferIndex = 0}
                     getChar()
             else
                 int walker.buffer.[walker.bufferIndex]

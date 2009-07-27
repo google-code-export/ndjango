@@ -47,7 +47,7 @@ module internal Misc =
                     
                 (({
                     new Node(Block token) with
-                        override this.walk walker = 
+                        override this.walk manager walker = 
                             {walker with 
                                 parent=Some walker; 
                                 context = createContext walker; 
@@ -109,8 +109,8 @@ module internal Misc =
                         ({
                             new Node(Block token)
                             with 
-                                override this.walk walker =
-                                    match variables |> List.tryPick (fun var -> var.ResolveForOutput walker ) with
+                                override this.walk manager walker =
+                                    match variables |> List.tryPick (fun var -> var.ResolveForOutput manager walker ) with
                                     | None -> walker 
                                     | Some w -> w
                         } :> INode), tokens
@@ -238,7 +238,7 @@ module internal Misc =
                     ({
                         new Node(Block token)
                         with 
-                            override this.walk walker =
+                            override this.walk manager walker =
                                 match regroup walker.context with
                                 | [] -> walker
                                 | _ as list -> {walker with context=walker.context.add(result, (list :> obj))}
@@ -277,9 +277,9 @@ module internal Misc =
                     ({
                         new Node(Block token)
                         with 
-                            override this.walk walker =
+                            override this.walk manager walker =
                                 let reader = 
-                                    new NDjango.ASTWalker.Reader ({walker with parent=None; nodes=node_list; context=walker.context}) 
+                                    new NDjango.ASTWalker.Reader(manager,{walker with parent=None; nodes=node_list; context=walker.context})
                                 let buf = spaces_re.Replace(reader.ReadToEnd(), "><")
                                 {walker with buffer = buf}
                             override this.nodes with get() = node_list
@@ -322,7 +322,7 @@ module internal Misc =
                 ({
                     new Node(Block token)
                     with 
-                        override this.walk walker =
+                        override this.walk manager walker =
                             {walker with buffer = buf}
                 } :> INode), tokens
 
@@ -356,7 +356,7 @@ module internal Misc =
                     let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (TemplateSyntaxError ("'widthratio' 3rd argument must be integer", Some (token:>obj)))
                     (({
                         new Node(Block token) with
-                            override this.walk walker = 
+                            override this.walk manager walker = 
                                 let ratio = toFloat (fst <| value.Resolve walker.context false)
                                             / toFloat (fst <| maxValue.Resolve walker.context false) 
                                             * width + 0.5
@@ -382,7 +382,7 @@ module internal Misc =
                     let expression = new FilterExpression(parser.Provider, Block token, var)
                     (({
                         new Node(Block token) with
-                            override this.walk walker = 
+                            override this.walk manager walker = 
                                 let context = 
                                     match fst <| expression.Resolve walker.context false with
                                     | Some v -> walker.context.add(name, v)
@@ -433,7 +433,7 @@ module Abstract =
                 
                 (({
                     new Node(Block token) with
-                        override x.walk walker =
+                        override x.walk manager walker =
                             let shortResolve (expr: FilterExpression) = 
                                 match fst <| expr.Resolve walker.context false with
                                 | Some v -> Convert.ToString(v)

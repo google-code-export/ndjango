@@ -69,7 +69,7 @@ module internal Cycle =
                         | head::tail -> new CycleController(List.tl c.Values, c.OrigValues)
                         | [] -> new CycleController (c.OrigValues, c.OrigValues)
 
-        override this.walk walker = 
+        override this.walk manager walker = 
             let oldc = 
                 match walker.context.tryfind ("$cycle" + name) with 
                 | Some v -> Some (v :?> CycleController)

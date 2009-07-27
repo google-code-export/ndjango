@@ -40,8 +40,8 @@ module internal ASTNodes =
         member this.Token with get() = token
 
         /// Processes this node and all child nodes
-        abstract member walk: Walker -> Walker
-        default  this.walk(walker) = walker
+        abstract member walk: ITemplateManager -> Walker -> Walker
+        default  this.walk manager walker = walker
         
         /// returns all child nodes contained within this node
         abstract member nodes: INode list
@@ -63,18 +63,18 @@ module internal ASTNodes =
         interface INode with
             member this.must_be_first = this.must_be_first
             member this.Token = this.Token
-            member this.walk(walker) = this.walk(walker)
+            member this.walk manager walker = this.walk manager walker
             member this.GetVariables = this.GetVariables
 
     /// retrieves a template given the template name. The name is supplied as a FilterExpression
     /// which when resolved should eithter get a ready to use template, or a string (url)
     /// to the source code for the template
-    let get_template (templateRef:FilterExpression) context =
+    let get_template (manager:ITemplateManager) (templateRef:FilterExpression) context =
         match fst (templateRef.Resolve context false) with  // ignoreFailures is false because we have to have a name.
         | Some o -> 
             match o with
             | :? ITemplate as template -> template
-            | :? string as name -> context.GetTemplate name
+            | :? string as name -> manager.GetTemplate name
             | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Can't construct template from %A" o, None))
         | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Variable %A is undefined" templateRef, None))
 
@@ -89,7 +89,7 @@ module internal ASTNodes =
             | h::t -> h.Nodelist, Some <| new SuperBlock(token,t)
             | _ -> [], None
         
-        override this.walk walker = 
+        override this.walk manager walker = 
             {walker with parent=Some walker; nodes= nodelist}
             
         override this.nodes with get() = nodelist
@@ -116,7 +116,7 @@ module internal ASTNodes =
         member this.Parent = parent
         member internal this.Nodelist = nodelist
         
-        override this.walk walker =
+        override this.walk manager walker =
             let final_nodelist, parents, overriden =
                 match walker.context.tryfind "__blockmap" with
                 | None -> this.Nodelist, [], false
@@ -163,10 +163,10 @@ module internal ASTNodes =
                 add_if_missing key value
             | [] -> primary
             
-        override this.walk walker =
+        override this.walk manager walker =
             let context = 
                 match walker.context.tryfind "__blockmap" with
                 | Some v -> walker.context.add ("__blockmap", (join_replace (v:?> Map<_,_>) (Map.to_list blocks) :> obj))
                 | None -> walker.context.add ("__blockmap", (blocks :> obj))
        
-            {walker with nodes=(get_template parent context).Nodes; context = context}
+            {walker with nodes=(get_template manager parent context).Nodes; context = context}

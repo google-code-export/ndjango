@@ -139,7 +139,7 @@ module internal If =
                     | Or -> false
                     | And -> true
                 
-        override this.walk walker =
+        override this.walk manager walker =
             match eval_expression walker.context bool_vars with
             | true -> {walker with parent=Some walker; nodes=node_list_true}
             | false -> {walker with parent=Some walker; nodes=node_list_false}

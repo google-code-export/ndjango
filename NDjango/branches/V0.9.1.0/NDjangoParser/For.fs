@@ -157,7 +157,7 @@ module internal For =
                         parentloop = context.parentloop
                     }
                
-        override this.walk walker = 
+        override this.walk manager walker = 
                 
             match fst <| enumerator.Resolve walker.context false with
             |Some o ->
@@ -215,7 +215,7 @@ module internal For =
     and Repeater(token:BlockToken, enumerator:obj seq, createWalker) =
         inherit NDjango.ASTNodes.Node(Block token)
         
-        override this.walk(walker) =
+        override this.walk manager walker =
             if Seq.isEmpty enumerator then
                 walker
             else 

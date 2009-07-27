@@ -95,7 +95,7 @@ module internal Parser =
             | Lexer.Text textToken -> 
                 ({new Node(token)
                     with 
-                        override this.walk walker = 
+                        override this.walk manager walker = 
                             {walker with buffer = textToken.Text}
                 } :> INode), tokens
                 
@@ -103,8 +103,8 @@ module internal Parser =
                 let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
                 ({new Node(token)
                     with 
-                        override this.walk walker = 
-                            match expression.ResolveForOutput walker with
+                        override this.walk manager walker = 
+                            match expression.ResolveForOutput manager walker with
                             | Some w -> w
                             | None -> walker
                         override this.GetVariables = expression.GetVariables

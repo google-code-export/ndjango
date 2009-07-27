@@ -96,11 +96,8 @@ module internal LoaderTags =
                         //todo: we're not producing a node list here. may have to revisit
                         new Node(Block token) 
                         with
-                            override this.walk walker = 
-//                                let manager, template = get_template template_name walker.context
-//                                {walker with parent=Some walker; nodes=template.Nodes}
-//                                let manager, template = get_template template_name walker.context
-                                {walker with parent=Some walker; nodes=(get_template template_name walker.context).Nodes}
+                            override this.walk manager walker = 
+                                {walker with parent=Some walker; nodes=(get_template manager template_name walker.context).Nodes}
                     } :> INode), tokens
                 | _ -> raise (TemplateSyntaxError ("'include' tag takes only one argument", Some (token:>obj)))
 
@@ -122,7 +119,7 @@ module internal LoaderTags =
     type SsiNode(token:BlockToken, reader: Reader, loader: string->TextReader) = 
         inherit Node(Block token)
 
-        override this.walk walker =
+        override this.walk manager walker =
             let templateReader =  
                 match reader with 
                 | Path path -> loader path
@@ -147,8 +144,8 @@ module internal LoaderTags =
                     ({
                         new Node(Block token) 
                         with
-                            override this.walk walker = 
-                                {walker with parent=Some walker; nodes=(get_template templateRef walker.context).Nodes}
+                            override this.walk manager walker = 
+                                {walker with parent=Some walker; nodes=(get_template manager templateRef walker.context).Nodes}
                     } :> INode), tokens
                 | _ ->
                     raise (TemplateSyntaxError ("malformed 'ssi' tag", Some (token:>obj)))

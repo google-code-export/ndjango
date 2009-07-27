@@ -50,9 +50,9 @@ module Compatibility =
     
         /// Evaluates the contents of the nodelist against the given walker. This function
         /// effectively parses the nested tags within the simple tag.
-        let read_walker walker nodelist =
+        let read_walker manager walker nodelist =
             let reader = 
-                new NDjango.ASTWalker.Reader ({walker with parent=None; nodes=nodelist; context=walker.context})
+                new NDjango.ASTWalker.Reader (manager, {walker with parent=None; nodes=nodelist; context=walker.context})
             reader.ReadToEnd()
             
         /// Tag implementation. This method will receive the fully-evaluated nested contents for nested tag
@@ -76,10 +76,10 @@ module Compatibility =
                         
                     ({new ASTNodes.Node(Block token)
                             with
-                                override this.walk walker =
+                                override this.walk manager walker =
                                     let resolved_parms =  resolve_all parms walker.context
                                     if not nested then
                                         {walker with buffer = x.ProcessTag "" resolved_parms}
                                     else
-                                        {walker with buffer = x.ProcessTag (read_walker walker nodelist) resolved_parms}
+                                        {walker with buffer = x.ProcessTag (read_walker manager walker nodelist) resolved_parms}
                     } :> INode), tokens

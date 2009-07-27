@@ -73,7 +73,7 @@ module internal IfEqual =
                     ({
                         new Node(Block token)
                         with 
-                            override this.walk walker =
+                            override this.walk manager walker =
                                 {
                                     walker 
                                     with 

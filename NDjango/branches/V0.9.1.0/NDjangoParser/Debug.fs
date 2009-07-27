@@ -31,7 +31,7 @@ module internal Debug =
     type Node(t:NDjango.Lexer.Token) =
         inherit NDjango.ASTNodes.Node(t)
 
-        override this.walk walker = 
+        override this.walk manager walker = 
             let output = new System.Text.StringBuilder()
             
             {walker with buffer = walker.context.ToString()}
