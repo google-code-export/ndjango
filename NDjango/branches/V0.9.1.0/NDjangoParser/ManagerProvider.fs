@@ -91,6 +91,7 @@ module Defaults =
     let internal defaultSettings = 
         new Map<string, obj>([])
             ++ (Constants.DEFAULT_AUTOESCAPE, (true :> obj))
+            ++ (Constants.RELOAD_IF_UPDATED, (true :> obj))
             ++ (Constants.TEMPLATE_STRING_IF_INVALID, ("" :> obj))
 
 type private DefaultLoader() =
@@ -112,7 +113,7 @@ type private DefaultLoader() =
 /// Method GetManager on the provider can be used to create an instance of TemplateManager
 /// TemplateManagers can be used to render templates. 
 /// All methods and properties of the Manager Provider use locking as necessary and are thread safe.
-type TemplateManagerProvider (settings, tags, filters, loader) =
+type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:ITemplateLoader) =
     
     let (++) map (key: 'a, value: 'b) = Map.add key value map
 
@@ -121,8 +122,12 @@ type TemplateManagerProvider (settings, tags, filters, loader) =
 
     let templates = ref Map.Empty
 
+    let validate_template = 
+        if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
+        else (fun (name,ts) -> false) 
+    
     public new () =
-        new TemplateManagerProvider(Defaults.defaultSettings, Defaults.standardTags, Defaults.standardFilters, (new DefaultLoader() :> ITemplateLoader))
+        new TemplateManagerProvider(Defaults.defaultSettings, Defaults.standardTags, Defaults.standardFilters, new DefaultLoader())
         
     member x.WithSetting name value = new TemplateManagerProvider( settings++(name, value), tags, filters, loader)
     
@@ -158,7 +163,7 @@ type TemplateManagerProvider (settings, tags, filters, loader) =
                     | None ->
                         (x :> ITemplateManagerProvider).LoadTemplate name
                     | Some (template, ts) -> 
-                        if (loader.IsUpdated(name, ts)) then
+                        if (validate_template(name, ts)) then
                             (x :> ITemplateManagerProvider).LoadTemplate name
                         else
                             (template, ts)

@@ -34,6 +34,7 @@ open NDjango.Tags.Misc
 
 module internal Template =    
 
+
     type internal Manager(provider:ITemplateManagerProvider, templates) =
         
         let templates = ref(templates)
@@ -45,6 +46,10 @@ module internal Template =
             templates := Map.add name tr !templates
             fst tr
 
+        let validate_template = 
+            if (provider.Settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then provider.Loader.IsUpdated
+            else (fun (name,ts) -> false) 
+        
         member x.Provider = provider
         
         interface ITemplateManager with
@@ -54,7 +59,7 @@ module internal Template =
             member x.GetTemplate name =
                 match Map.tryFind name !templates with
                 | Some (template, ts) -> 
-                    if provider.Loader.IsUpdated (name, ts) then
+                    if validate_template (name, ts) then
                        load_template name true
                     else
                        template
