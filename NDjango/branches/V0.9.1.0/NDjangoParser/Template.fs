@@ -92,9 +92,10 @@ module internal Template =
     and
         private Context (manager, externalContext, variables, ?autoescape: bool) =
 
-        let settings = (manager :?> Manager).Provider.Settings
-            
-        let autoescape = match autoescape with | Some v -> v | None -> settings.["settings.DEFAULT_AUTOESCAPE"] :?> bool
+        let autoescape = 
+            match autoescape with 
+            | Some v -> v 
+            | None -> (manager :?> Manager).Provider.Settings.[Constants.DEFAULT_AUTOESCAPE] :?> bool
         
         override this.ToString() =
             
@@ -121,8 +122,6 @@ module internal Template =
             member this.GetTemplate(template) = 
                 (manager :?> Manager).GetTemplate(template)
 
-            member this.TEMPLATE_STRING_IF_INVALID = settings.["settings.TEMPLATE_STRING_IF_INVALID"]
-            
             member this.Autoescape = autoescape
 
             member this.WithAutoescape(value) =

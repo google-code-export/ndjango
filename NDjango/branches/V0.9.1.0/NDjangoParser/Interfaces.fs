@@ -53,7 +53,7 @@ type ITemplateManager =
 
 /// Template imeplementation. This interface effectively represents the root-level node
 /// in the Django AST.
-and ITemplate =
+type ITemplate =
     /// Recursivly "walks" the AST, returning a text reader that will stream out the 
     /// results of the render.
     abstract Walk: ITemplateManager -> IDictionary<string, obj> -> System.IO.TextReader
@@ -74,9 +74,6 @@ and IContext =
     
     /// Retrieves the requested template through the template manager
     abstract member GetTemplate: string -> ITemplate
-    
-    // TODO: why is this on the interface definition?
-    abstract member TEMPLATE_STRING_IF_INVALID: obj
     
     /// Indicates that this Context is in Autoescape mode
     abstract member Autoescape: bool
@@ -103,14 +100,8 @@ and IParser =
     /// Produces an uncommited token list as a result of parsing until
     /// a block from the string list is encotuntered
     abstract member Seek: LazyList<Lexer.Token> -> string list -> LazyList<Lexer.Token>
-
+    
     abstract member Provider: ITemplateManagerProvider
-//    abstract member FindFilter: string -> ISimpleFilter option
-        
-/// A single tag implementation
-and ITag = 
-    /// Transforms a {% %} tag into a list of nodes and uncommited token list
-    abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
 
 and INode =
 
@@ -145,3 +136,9 @@ and ITemplateManagerProvider =
     /// the retrieved template is placed in the dictionary replacing 
     /// the existing template with the same name (if any)
     abstract member LoadTemplate: string -> (ITemplate* System.DateTime)
+        
+/// A single tag implementation
+and ITag = 
+    /// Transforms a {% %} tag into a list of nodes and uncommited token list
+    abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
+

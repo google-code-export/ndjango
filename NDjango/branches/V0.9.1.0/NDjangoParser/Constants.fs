@@ -116,4 +116,7 @@ module internal Constants =
                 Replace("%(i18n_open)s", !!I18N_OPEN).
                 Replace("%(i18n_close)s", !!I18N_CLOSE), RegexOptions.Compiled)
 
-   
+    let DEFAULT_AUTOESCAPE = "settings.DEFAULT_AUTOESCAPE"
+    
+    let TEMPLATE_STRING_IF_INVALID = "settings.TEMPLATE_STRING_IF_INVALID"
+ 

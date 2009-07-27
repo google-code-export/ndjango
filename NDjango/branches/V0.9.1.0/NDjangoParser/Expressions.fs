@@ -122,7 +122,7 @@ module Expressions =
     ///     >>> Variable('article.section').resolve(c)
     ///     u'News'
     /// (The example assumes VARIABLE_ATTRIBUTE_SEPARATOR is '.')
-    type Variable(token:Lexer.Token, variable:string) =
+    type Variable(provider: ITemplateManagerProvider, token:Lexer.Token, variable:string) =
         let (|ComponentStartsWith|_|) chr (text: string) =
             if text.StartsWith(chr) || text.Contains(Constants.VARIABLE_ATTRIBUTE_SEPARATOR + chr) then
                 Some chr
@@ -179,8 +179,11 @@ module Expressions =
                         | None -> None
                         with
                         | Some v1 -> v1
-                        | None -> context.TEMPLATE_STRING_IF_INVALID
-//                        | None -> None :> obj
+                        | None -> 
+                            match provider.Settings.TryFind(Constants.TEMPLATE_STRING_IF_INVALID) with
+                            | Some o -> o
+                            | None -> "" :> obj
+
                 (result, context.Autoescape)
         
         member this.ExpressionText with get() = variable
@@ -228,7 +231,7 @@ module Expressions =
                 then raise (TemplateSyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression.[upto..] expression
                     , Lexer.get_textToken token))
                 else
-                    (upto, new Variable(token, var.Value), [])
+                    (upto, new Variable(provider, token, var.Value), [])
             else
                 // short-hand for the recursive call. the values for match and upto are always computed the same way
                 let fast_call = fun v -> parse_var (filter_match.NextMatch()) (filter_match.Index + filter_match.Length) v
@@ -249,7 +252,7 @@ module Expressions =
                         | _ -> raise (TemplateSyntaxError (sprintf "Could not find variable at start of %s" expression, Lexer.get_textToken token))
                     | Some s ->
                         let filter_name = filter_match.Groups.["filter_name"]
-                        let arg = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list |> List.map (fun c -> Variable(token, c.ToString())) 
+                        let arg = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list |> List.map (fun c -> Variable(provider, token, c.ToString())) 
                         let filter = Map.tryFind filter_name.Value provider.Filters 
                         
                         if filter.IsNone then raise (TemplateSyntaxError (sprintf "filter %A could not be found" filter_name.Value

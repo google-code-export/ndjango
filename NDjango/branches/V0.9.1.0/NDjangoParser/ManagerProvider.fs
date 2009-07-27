@@ -90,8 +90,8 @@ module Defaults =
         
     let internal defaultSettings = 
         new Map<string, obj>([])
-            ++ ("settings.DEFAULT_AUTOESCAPE", (true :> obj))
-            ++ ("settings.TEMPLATE_STRING_IF_INVALID", ("" :> obj))
+            ++ (Constants.DEFAULT_AUTOESCAPE, (true :> obj))
+            ++ (Constants.TEMPLATE_STRING_IF_INVALID, ("" :> obj))
 
 type private DefaultLoader() =
     interface ITemplateLoader with
@@ -115,10 +115,10 @@ type private DefaultLoader() =
 type TemplateManagerProvider (settings, tags, filters, loader) =
     
     let (++) map (key: 'a, value: 'b) = Map.add key value map
+
     /// global lock
     let lockProvider = new obj()
 
-    let active = ref None
     let templates = ref Map.Empty
 
     public new () =

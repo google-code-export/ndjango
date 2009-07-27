@@ -171,6 +171,5 @@ module internal Parser =
                 else
                     seek_internal parse_until tokens
             
-//            member this.FindFilter name = Map.tryFind name provider.Filters
             member x.Provider = provider
         
