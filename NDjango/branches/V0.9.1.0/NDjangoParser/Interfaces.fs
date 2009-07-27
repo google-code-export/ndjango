@@ -41,6 +41,22 @@ type ITemplateLoader =
     abstract member GetTemplate: string -> TextReader
     abstract member IsUpdated: string * System.DateTime -> bool
     
+    
+/// An execution context container. This interface defines a set of methods necessary 
+/// for templates and external entities to exchange information.
+type IContext =
+    /// Adds an object to the context
+    abstract member add:(string*obj)->IContext
+    
+    /// Attempts to find an object in the context by the key
+    abstract member tryfind: string->obj option
+    
+    /// Indicates that this Context is in Autoescape mode
+    abstract member Autoescape: bool
+    
+    /// Returns a new Context with the specified Autoescape mode
+    abstract member WithAutoescape: bool -> IContext
+
 /// Template lifecycle manager. Implementers of this interface are responsible for
 /// providing compiled templates by resource name
 type ITemplateManager = 
@@ -63,21 +79,6 @@ and ITemplate =
     abstract Nodes: INode list
     
     abstract GetVariables: string list
-    
-/// An execution context container. This interface defines a set of methods necessary 
-/// for templates and external entities to exchange information.
-and IContext =
-    /// Adds an object to the context
-    abstract member add:(string*obj)->IContext
-    
-    /// Attempts to find an object in the context by the key
-    abstract member tryfind: string->obj option
-    
-    /// Indicates that this Context is in Autoescape mode
-    abstract member Autoescape: bool
-    
-    /// Returns a new Context with the specified Autoescape mode
-    abstract member WithAutoescape: bool -> IContext
 
 /// Rendering state 
 and Walker =
@@ -89,18 +90,6 @@ and Walker =
         context: IContext
     }
     
-/// Parsing interface definition
-and IParser =
-    /// Produces a commited node list and uncommited token list as a result of parsing until
-    /// a block from the string list is encotuntered
-    abstract member Parse: LazyList<Lexer.Token> -> string list -> (INode list * LazyList<Lexer.Token>)
-   
-    /// Produces an uncommited token list as a result of parsing until
-    /// a block from the string list is encotuntered
-    abstract member Seek: LazyList<Lexer.Token> -> string list -> LazyList<Lexer.Token>
-    
-    abstract member Provider: ITemplateManagerProvider
-
 and INode =
 
     /// Indicates whether this node must be the first non-text node in the template
@@ -114,6 +103,18 @@ and INode =
     
     /// returns all child nodes contained within this node
     abstract member GetVariables: string list
+
+/// Parsing interface definition
+type IParser =
+    /// Produces a commited node list and uncommited token list as a result of parsing until
+    /// a block from the string list is encotuntered
+    abstract member Parse: LazyList<Lexer.Token> -> string list -> (INode list * LazyList<Lexer.Token>)
+   
+    /// Produces an uncommited token list as a result of parsing until
+    /// a block from the string list is encotuntered
+    abstract member Seek: LazyList<Lexer.Token> -> string list -> LazyList<Lexer.Token>
+    
+    abstract member Provider: ITemplateManagerProvider
 
 and ITemplateManagerProvider =
     
