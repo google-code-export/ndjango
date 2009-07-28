@@ -26,6 +26,9 @@ open NDjango.Interfaces
 open NDjango.Filters
 open NDjango.Tags
 open NDjango.Tags.Misc
+open NDjango.ASTNodes
+open NDjango.Expressions
+open NDjango.OutputHandling
 
 type Filter = {name:string; filter:ISimpleFilter}
 
@@ -126,6 +129,79 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
         else (fun (name,ts) -> false) 
     
+    /// parses a single token, returning an AST Node list. this function may advance the token stream if an 
+    /// element consuming multiple tokens is encountered. In this scenario, the Node list returned will
+    /// contain nodes for all of the advanced tokens.
+    let parse_token (provider: TemplateManagerProvider) tokens (token:NDjango.Lexer.Token) = 
+        match token with
+
+        | Lexer.Text textToken -> 
+            ({new Node(token)
+                with 
+                    override this.walk manager walker = 
+                        {walker with buffer = textToken.Text}
+            } :> INode), tokens
+            
+        | Lexer.Variable var -> 
+            let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
+            ({new Node(token)
+                with 
+                    override this.walk manager walker = 
+                        match expression.ResolveForOutput manager walker with
+                        | Some w -> w
+                        | None -> walker
+                    override this.GetVariables = expression.GetVariables
+            } :> INode), tokens
+            
+        | Lexer.Block block -> 
+            match Map.tryFind block.Verb tags with 
+            | None -> raise (TemplateSyntaxError ("Invalid block tag:" + block.Verb, Some (block:>obj)))
+            | Some (tag: ITag) -> tag.Perform block provider tokens
+        
+        | Lexer.Comment comment -> 
+            // include it in the output to cover all scenarios, but don't actually bring the comment across
+            // the default behavior of the walk override is to return the same walker
+            // Considering that when walk is called the buffer is empty, this will 
+            // work for the comment node, so overriding the walk method here is unnecessary
+            (new Node(token) :> INode), tokens 
+
+    /// determines whether the given element is included in the termination token list
+    let is_term_token elem (parse_until:string list) =
+        if parse_until = [] then false else
+            match elem with 
+            | Lexer.Block block -> parse_until |> List.exists block.Verb.Equals
+            | _ -> false
+            
+    let fail_unclosed_tags tag_list = raise (TemplateSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" tag_list), None))
+
+    /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
+    /// this function returns the node list and the unparsed remainder of the token stream
+    /// the list is returned in the reversed order
+    let rec parse_internal provider (nodes:INode list) (tokens : LazyList<Lexer.Token>) parse_until =
+       match tokens with
+       | LazyList.Nil ->  
+            if not <| List.isEmpty parse_until then
+                fail_unclosed_tags parse_until
+            (nodes, LazyList.empty<Lexer.Token>())
+       | LazyList.Cons(token, tokens) -> 
+            if is_term_token token parse_until then
+                ((new Node(token) :> INode) :: nodes, tokens)
+            else
+                if List.isEmpty parse_until || LazyList.nonempty tokens || is_term_token token parse_until then
+                    let node, tokens = parse_token provider tokens token
+                    parse_internal provider (node :: nodes) tokens parse_until
+                else 
+                    fail_unclosed_tags parse_until
+            
+    /// tries to return a list positioned just after one of the elements of parse_until. Returns None
+    /// if no such element was found.
+    let rec seek_internal parse_until tokens = 
+        match tokens with 
+        | LazyList.Nil -> fail_unclosed_tags parse_until
+        | LazyList.Cons(token, tokens) -> 
+            if is_term_token token parse_until then tokens
+            else seek_internal parse_until tokens
+    
     public new () =
         new TemplateManagerProvider(Defaults.defaultSettings, Defaults.standardTags, Defaults.standardFilters, new DefaultLoader())
         
@@ -184,4 +260,16 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         member x.Settings = settings
         
         member x.Loader = loader
+
+    interface IParser with
+        /// Parses the sequence of tokens until one of the given tokens is encountered
+        member x.Parse tokens parse_until =
+            let nodes, tokens = parse_internal x [] tokens parse_until
+            (nodes |> List.rev, tokens)
+        
+        /// Repositions the token stream after the first token found from the parse_until list
+        member x.Seek tokens parse_until = 
+            if List.length parse_until = 0 then failwith "Seek must have at least one termination tag"
+            else
+                seek_internal parse_until tokens
 

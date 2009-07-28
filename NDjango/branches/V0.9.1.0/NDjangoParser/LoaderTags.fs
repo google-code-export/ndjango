@@ -35,10 +35,10 @@ module internal LoaderTags =
     /// Define a block that can be overridden by child templates.
     type BlockTag() =
         interface ITag with
-            member this.Perform token parser tokens =
+            member this.Perform token provider tokens =
                 match token.Args with 
                 | name::[] -> 
-                    let node_list, remaining = parser.Parse tokens ["endblock"; "endblock " + name]
+                    let node_list, remaining = (provider :?> IParser).Parse tokens ["endblock"; "endblock " + name]
                     (new BlockNode(token, name, node_list) :> INode), remaining
                 | _ -> raise (TemplateSyntaxError ("block tag takes only one argument", Some (token:>obj)))
 
@@ -51,13 +51,13 @@ module internal LoaderTags =
     /// the parent tempate itelf (if it evaluates to a Template object).
     type ExtendsTag() =
         interface ITag with
-            member this.Perform token parser tokens = 
+            member this.Perform token provider tokens = 
                 match token.Args with
                 | parent::[] -> 
-                    let node_list, remaining = parser.Parse tokens []
+                    let node_list, remaining = (provider :?> IParser).Parse tokens []
                     
                     let parent_name_expr = 
-                        new FilterExpression(parser.Provider, Block token, parent)
+                        new FilterExpression(provider, Block token, parent)
                         
                     (new ExtendsNode(token, node_list, parent_name_expr) :> INode), LazyList.empty<Token>()
                 | _ -> raise (TemplateSyntaxError ("extends tag takes only one argument", Some (token:>obj)))
@@ -87,11 +87,11 @@ module internal LoaderTags =
     type IncludeTag() =
 
         interface ITag with
-            member this.Perform token parser tokens = 
+            member this.Perform token provider tokens = 
                 match token.Args with
                 | name::[] -> 
                     let template_name = 
-                        new FilterExpression(parser.Provider, Block token, name)
+                        new FilterExpression(provider, Block token, name)
                     ({
                         //todo: we're not producing a node list here. may have to revisit
                         new Node(Block token) 
@@ -136,11 +136,11 @@ module internal LoaderTags =
     type SsiTag() =
 
         interface ITag with
-            member this.Perform token parser tokens = 
+            member this.Perform token provider tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(token, Path path, parser.Provider.Loader.GetTemplate) :> INode), tokens
+                | path::[] -> (new SsiNode(token, Path path, provider.Loader.GetTemplate) :> INode), tokens
                 | path::"parsed"::[] ->
-                    let templateRef = FilterExpression (parser.Provider, Block token, "\"" + path + "\"")
+                    let templateRef = FilterExpression (provider, Block token, "\"" + path + "\"")
                     ({
                         new Node(Block token) 
                         with

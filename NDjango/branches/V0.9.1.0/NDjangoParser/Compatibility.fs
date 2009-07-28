@@ -62,16 +62,16 @@ module Compatibility =
         abstract member ProcessTag: string -> obj array -> string 
         
         interface ITag with
-            member x.Perform token parser tokens = 
+            member x.Perform token provider tokens = 
                 let parms = 
                     token.Args |>
-                    List.map (fun elem -> new FilterExpression(parser.Provider, Block token, elem))
+                    List.map (fun elem -> new FilterExpression(provider, Block token, elem))
                 
                 if not (parms.Length = num_params) then
                     raise (TemplateSyntaxError(sprintf "%s expects %d parameters, but was given %d." name num_params (parms.Length), Some (token:>obj)))
                 else
                     let nodelist, tokens =
-                        if nested then parser.Parse tokens ["end" + name]
+                        if nested then (provider :?> IParser).Parse tokens ["end" + name]
                         else [], tokens
                         
                     ({new ASTNodes.Node(Block token)

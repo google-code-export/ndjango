@@ -113,7 +113,7 @@ module internal Cycle =
                 values
                 
         interface NDjango.Interfaces.ITag with
-            member this.Perform token parser tokens =
+            member this.Perform token provider tokens =
                 let name, values =
                     match List.rev token.Args with
                     | [] -> raise (TemplateSyntaxError ("'cycle' tag requires at least one argument", Some (token:>obj)))
@@ -124,6 +124,6 @@ module internal Cycle =
                         if values.Length = 1 then (values.[0], [])
                         else ("$Anonymous$Cycle", values)
                         
-                let values = List.map (fun v -> new Variable(parser.Provider, Block token, v)) values
+                let values = List.map (fun v -> new Variable(provider, Block token, v)) values
                 ((new Node(token, name, values) :> NDjango.Interfaces.INode), tokens)
 

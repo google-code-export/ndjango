@@ -224,7 +224,7 @@ module internal For =
     type Tag() =
 
         interface NDjango.Interfaces.ITag with 
-            member this.Perform token parser tokens =
+            member this.Perform token provider tokens =
                 let enumerator, variables, reversed = 
                     match List.rev token.Args with
                         | var::"in"::syntax -> 
@@ -236,14 +236,14 @@ module internal For =
                             syntax,
                             true
                         | _ -> raise (TemplateSyntaxError ("malformed 'for' tag", Some (token:>obj)))
-                let enumExpr = FilterExpression(parser.Provider, Block token, enumerator)
+                let enumExpr = FilterExpression(provider, Block token, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
-                let node_list_body, remaining = parser.Parse tokens ["empty"; "endfor"]
+                let node_list_body, remaining = (provider :?> IParser).Parse tokens ["empty"; "endfor"]
                 let node_list_empty, remaining2 =
                     match node_list_body.[node_list_body.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "empty" then
-                            parser.Parse remaining ["endfor"]
+                            (provider :?> IParser).Parse remaining ["endfor"]
                         else
                             [], remaining
                     | _ -> [], remaining

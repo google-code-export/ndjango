@@ -53,19 +53,19 @@ module internal IfChanged =
 
     type Tag() =
         interface ITag with
-            member this.Perform token parser tokens =
-                let nodes_ifchanged, remaining = parser.Parse tokens ["else"; "endifchanged"]
+            member this.Perform token provider tokens =
+                let nodes_ifchanged, remaining = (provider :?> IParser).Parse tokens ["else"; "endifchanged"]
                 let nodes_ifsame, remaining =
                     match nodes_ifchanged.[nodes_ifchanged.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "else" then
-                            parser.Parse remaining ["endifchanged"]
+                            (provider :?> IParser).Parse remaining ["endifchanged"]
                         else
                             [], remaining
                     | _ -> [], remaining
 
                 let createWalker manager =
-                    match token.Args |> List.map (fun var -> new Variable(parser.Provider, Block token, var)) with
+                    match token.Args |> List.map (fun var -> new Variable(provider, Block token, var)) with
                     | [] ->
                         fun walker ->
                             let reader = 

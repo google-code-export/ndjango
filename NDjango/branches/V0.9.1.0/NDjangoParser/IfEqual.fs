@@ -46,14 +46,14 @@ module internal IfEqual =
 
     type Tag(not:bool) =
         interface ITag with
-            member this.Perform token parser tokens =
+            member this.Perform token provider tokens =
                 let tag = token.Verb
-                let node_list_true, remaining = parser.Parse tokens ["else"; "end" + tag]
+                let node_list_true, remaining = (provider :?> IParser).Parse tokens ["else"; "end" + tag]
                 let node_list_false, remaining =
                     match node_list_true.[node_list_true.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "else" then
-                            parser.Parse remaining ["end" + tag]
+                            (provider :?> IParser).Parse remaining ["end" + tag]
                         else
                             [], remaining
                     | _ -> [], remaining
@@ -68,8 +68,8 @@ module internal IfEqual =
 
                 match token.Args with
                 | var1::var2::[] ->
-                    let var1 = new FilterExpression(parser.Provider, Block token, var1)
-                    let var2 = new FilterExpression(parser.Provider, Block token, var2)
+                    let var1 = new FilterExpression(provider, Block token, var1)
+                    let var2 = new FilterExpression(provider, Block token, var2)
                     ({
                         new Node(Block token)
                         with 

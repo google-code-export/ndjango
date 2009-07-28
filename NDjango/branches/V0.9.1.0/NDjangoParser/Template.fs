@@ -75,10 +75,9 @@ module internal Template =
 
         let node_list =
 
-            let parser = new NDjango.Parser.DefaultParser(provider) :> IParser
             // this will cause the TextReader to be closed when the template goes out of scope
             use template = template
-            fst <| parser.Parse (NDjango.Lexer.tokenize template) []
+            fst <| (provider :?> IParser).Parse (NDjango.Lexer.tokenize template) []
         
         interface ITemplate with
             member this.Walk manager context=

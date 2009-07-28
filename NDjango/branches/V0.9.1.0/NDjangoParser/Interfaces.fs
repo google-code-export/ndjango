@@ -131,7 +131,7 @@ type IParser =
     abstract member Seek: tokens:LazyList<Lexer.Token> -> parse_until:string list -> LazyList<Lexer.Token>
     
     /// returns the provider used to create the parser
-    abstract member Provider: ITemplateManagerProvider
+//    abstract member Provider: ITemplateManagerProvider
 
 /// Top level object managing multi threaded access to configuration settings and template cache.
 and ITemplateManagerProvider =
@@ -161,5 +161,5 @@ and ITemplateManagerProvider =
 /// A tag implementation
 and ITag = 
     /// Transforms a {% %} tag into a list of nodes and uncommited token list
-    abstract member Perform: Lexer.BlockToken -> IParser -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
+    abstract member Perform: Lexer.BlockToken -> ITemplateManagerProvider -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
 

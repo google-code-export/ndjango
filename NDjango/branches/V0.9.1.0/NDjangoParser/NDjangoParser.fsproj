@@ -76,7 +76,6 @@
     <Compile Include="IfEqual.fs" />
     <Compile Include="Now.fs" />
     <Compile Include="LoaderTags.fs" />
-    <Compile Include="Parser.fs" />
     <Compile Include="Template.fs" />
     <Compile Include="ManagerProvider.fs" />
     <Compile Include="AssemblyInfo.fs" />

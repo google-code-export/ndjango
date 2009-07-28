@@ -171,5 +171,3 @@ module internal Parser =
                 else
                     seek_internal parse_until tokens
             
-            member x.Provider = provider
-        
