@@ -6,6 +6,9 @@ using System.Threading;
 
 namespace NDjango.Designer.Parsing
 {
+    /// <summary>
+    /// Provides ability to retrive tokens out of snapshot objects.
+    /// </summary>
     class Tokenizer
     {
         // it can take some time for the parser to build the token list.
@@ -38,6 +41,9 @@ namespace NDjango.Designer.Parsing
 
         public event TokenEvent TagsChanged;
 
+        /// <summary>
+        /// Retrieves sequence of tokens out of snapshot object. 
+        /// </summary>
         private void rebuildTokensAsynch(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
@@ -68,7 +74,12 @@ namespace NDjango.Designer.Parsing
 
             return tokens;
         }
-
+        
+        /// <summary>
+        /// Gets a list of intellisence values of selected token.
+        /// </summary>
+        /// <param name="point">Mouse cursor destination</param>
+        /// <returns></returns>
         internal List<string> GetCompletions(SnapshotPoint point)
         {
             TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
@@ -76,7 +87,6 @@ namespace NDjango.Designer.Parsing
             if (result == null)
                 return new List<string>();
             return result.Token.Values;
-
         }
     }
 }

@@ -31,7 +31,7 @@ namespace NDjango.Designer.Tags
                     tokens = tokenizer.GetTokens(span);
                 foreach (TokenSnapshot token in tokens)
                 {
-                    if (token.SnapshotSpan.OverlapsWith(span))
+                    if (token.Token.TagName.Trim() == String.Empty)
                         yield return new TagSpan<ErrorTag>(token.SnapshotSpan, new ErrorTag());
                 }
             }

@@ -52,15 +52,40 @@ namespace NDjango.Designer.Parsing
                     int end = line.IndexOf("%}", pos);
                     if (end < 0)
                         break;
-                    result.Add(new Token(token_start, 2, Token.TokenType.Marker));
-                    result.Add(new Token(line_start + end, 2, Token.TokenType.Marker));
-                    result.Add(new Token(token_start, end + 2 - start, Token.TokenType.Tag));
+                    result.Add(new Token(token_start, 2, Token.TokenType.Marker, string.Empty));
+                    result.Add(new Token(line_start + end, 2, Token.TokenType.Marker, string.Empty));
+                    Token tagToken = new Token(token_start, end + 2 - start, Token.TokenType.Tag,
+                        line.Substring(start, end + 2 - start).Replace("{%", string.Empty).Replace("%}", string.Empty));
+                    result.Add(tagToken);
+                    CreateChildTokens(tagToken);
                     pos = end;
                 }
                 line_start += line.Length;
             }
             return result;
         }
+
+        private void CreateChildTokens(Token token)
+        {
+            if (token.Type != Token.TokenType.Tag)
+                return;
+
+            string[] lexemes = token.TagName.Split(' ');
+            foreach (string lexeme in lexemes)
+            {
+                if (lexeme != string.Empty)
+                {
+                    token.AddChild(new Token(0, 0, IdentifyTokenType(token, lexeme), lexeme));
+                }
+            }
+        }
+
+        private Token.TokenType IdentifyTokenType(Token parentToken, string lexeme)
+        {
+            //not implemented
+            return Token.TokenType.Keyword;
+        }
+
         static Regex r = new Regex("{{.*}}", RegexOptions.Compiled);
     }
 }
