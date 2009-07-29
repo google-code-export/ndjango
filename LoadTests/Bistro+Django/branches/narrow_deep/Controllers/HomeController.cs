@@ -11,7 +11,7 @@ namespace MvcSamplePort.Controllers
     /// <summary>
     /// Home controller. This controller services the 'get /home/index' method.
     /// </summary>
-    [Bind("get /home/index")]
+    [Bind("get /home/index/{param1}",Priority=-2)]
     [Bind("get /")]
     [Bind("get /default")]
     [RenderWith("Views/Home/index.django")]
@@ -24,20 +24,47 @@ namespace MvcSamplePort.Controllers
         /// onto the context, and does not depend on other controllers to provide it. This 
         /// means that other controllers can depend on it.
         /// </summary>
+        [Request,DependsOn]
+        protected string Message ;
         [Request]
-        protected string Message = "Welcome to Bistro!";
-
+        protected int nDigit = 2;
         /// <summary>
         /// Controller implementation. Since the sole purpose of this controller is to expose
         /// the value of the Message field, no logic is present here. 
         /// </summary>
         /// <param name="context">The context.</param>
-        public override void DoProcessRequest(IExecutionContext context) { }
+        public override void DoProcessRequest(IExecutionContext context) 
+        { 
+            Message += " Welcome to Bistro!";
+        }
     }
 
     /// <summary>
     /// About controller. This controller services the 'get /home/about' method.
     /// </summary>
+    [Bind("get /home/index/{param1}",Priority=5)]
+    [RenderWith("Views/Home/index.django")]
+    public class IndexController : AbstractController
+    {
+        /// <summary>
+        /// Controller implementation. This controller merely displays the view, so there is no
+        /// need for an implementation.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        [Request]
+        protected string param1 = "";
+        [Request]
+        protected string Message;
+        public override void DoProcessRequest(IExecutionContext context)
+        {
+            if (param1 != null)
+            {
+                Message = param1.Contains('h') ? "hello" : "bye";
+            }
+        }
+    }
+
+
     [Bind("get /home/about")]
     [RenderWith("Views/Home/about.django")]
     public class AboutController : AbstractController
@@ -49,27 +76,29 @@ namespace MvcSamplePort.Controllers
         /// <param name="context">The context.</param>
         public override void DoProcessRequest(IExecutionContext context) { }
     }
-    [Bind("get /home/about1")]
-    [RenderWith("Views/Home/about1.django")]
-    public class About1Controller : AbstractController
+
+    
+    [Bind("get /home/index/{param1}",Priority=-3)]
+    public class Index1Controller : AbstractController
     {
         /// <summary>
         /// Controller implementation. This controller merely displays the view, so there is no
         /// need for an implementation.
         /// </summary>
         /// <param name="context">The context.</param>
-        public override void DoProcessRequest(IExecutionContext context) { }
+        [Request,DependsOn]
+        protected string Message;
+        [Request,DependsOn]
+        protected int nDigit;
+        public override void DoProcessRequest(IExecutionContext context) 
+        {
+            if (nDigit > 1)
+            {
+                Message += "large enough";
+            }
+
+        }
     }
-    [Bind("get /home/about2")]
-    [RenderWith("Views/Home/about2.django")]
-    public class About2Controller : AbstractController
-    {
-        /// <summary>
-        /// Controller implementation. This controller merely displays the view, so there is no
-        /// need for an implementation.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        public override void DoProcessRequest(IExecutionContext context) { }
-    }
+ 
 
 }
