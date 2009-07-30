@@ -72,6 +72,7 @@
     <Compile Include="Intellisense\CompletionController.cs" />
     <Compile Include="Intellisense\CompletionControllerProvider.cs" />
     <Compile Include="Intellisense\CompletionSource.cs" />
+    <Compile Include="Parsing\ParserProvider.cs" />
     <Compile Include="Parsing\Tokenizer.cs" />
     <Compile Include="Parsing\TokenSnapshot.cs" />
     <Compile Include="QuickInfo\Controller.cs" />
@@ -83,10 +84,6 @@
     <Compile Include="Tags\TaggerProvider.cs" />
     <Compile Include="Intellisense\CompletionProvider.cs" />
     <Compile Include="Intellisense\CompletionSourceProvider.cs" />
-    <Compile Include="Parsing\Parser.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Parsing\Token.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -98,7 +95,12 @@
     <Content Include="VSIXProject_large.png" />
     <Content Include="VSIXProject_small.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\NDjangoParser\NDjangoParser.csproj">
+      <Project>{CFB29A30-C735-4279-A8EE-659D1B0D3092}</Project>
+      <Name>NDjangoParser</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v10.0\VSSDK\Microsoft.VsSDK.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

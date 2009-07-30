@@ -26,7 +26,7 @@ namespace NDjango.Designer.Classifiers
         /// <param name="parser"></param>
         /// <param name="classificationTypeRegistry"></param>
         /// <param name="buffer"></param>
-        public Classifier(IParser parser, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
+        public Classifier(IParserController parser, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
         {
             this.classificationTypeRegistry = classificationTypeRegistry;
             tokenizer = parser.GetTokenizer(buffer);
