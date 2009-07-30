@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NDjango;
+using NDjango.Interfaces;
 
 namespace NDjango.Interfaces
 {
@@ -53,7 +54,7 @@ namespace NDjango.Designer.Parsing
     /// <summary>
     /// Provides basic information which is necessary for all kinds of designer features.
     /// </summary>
-    public struct Token
+    public class Token : INode
     {
         public enum TokenType { Tag, Marker, TagName, Keyword, Variable, Expression, Reference, Filter, FilterName, FilterParam };
 
@@ -121,6 +122,41 @@ namespace NDjango.Designer.Parsing
         public void AddChildNode(Token token, PurposeType purpose)
         {
             ChildNodesByPurpose[purpose].Add(token);
+        }
+
+        NodeType INode.NodeType
+        {
+            get { throw new System.NotImplementedException(); }
+        }
+
+        int INode.Position
+        {
+            get { throw new System.NotImplementedException(); }
+        }
+
+        int INode.Length
+        {
+            get { throw new System.NotImplementedException(); }
+        }
+
+        string INode.Text
+        {
+            get { throw new System.NotImplementedException(); }
+        }
+
+        IEnumerable<string> INode.Values
+        {
+            get { throw new System.NotImplementedException(); }
+        }
+
+        Error INode.ErrorMessage
+        {
+            get { throw new System.NotImplementedException(); }
+        }
+
+        Dictionary<string, IEnumerable<INode>> INode.Nodes
+        {
+            get { throw new System.NotImplementedException(); }
         }
     }
 }
