@@ -86,6 +86,7 @@ namespace NDjango.Designer.Parsing
                 .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return new List<string>();
+            result.Token.GenerateCompletionValues(new List<string>());
             return result.Token.Values;
         }
     }
