@@ -1,29 +1,30 @@
 ﻿using Microsoft.VisualStudio.Text;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
     class TokenSnapshot
     {
         private SnapshotSpan snapshotSpan;
-        private Token token;
+        private INode node;
 
-        public TokenSnapshot(ITextSnapshot snapshot, Token token)
+        public TokenSnapshot(ITextSnapshot snapshot, INode node)
         {
-            this.snapshotSpan = new SnapshotSpan(snapshot, token.Position, token.Length);
-            this.token = token;
+            this.snapshotSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
+            this.node = node;
         }
 
         public SnapshotSpan SnapshotSpan { get { return snapshotSpan; } }
 
-        public Token Token { get { return token; } }
+        public INode Token { get { return node; } }
 
         public string Type
         {
             get
             {
-                switch (token.Type)
+                switch (node.NodeType)
                 {
-                    case Token.TokenType.Marker:
+                    case NodeType.Marker:
                         return Constants.MARKER_CLASSIFIER;
                     default:
                         return Constants.DJNAGO_CONSTRUCT;

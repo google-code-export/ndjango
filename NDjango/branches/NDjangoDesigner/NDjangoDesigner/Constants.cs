@@ -19,13 +19,11 @@ namespace NDjango.Designer
         internal const string DJNAGO_CONSTRUCT = "ndjango.tag";
         [Export]
         [Name(DJNAGO_CONSTRUCT)]
-//        [BaseDefinition("text")]
-        private static ClassificationTypeDefinition NDjangoConstruct;
+        private static ClassificationTypeDefinition DjangoConstruct;
 
         internal const string MARKER_CLASSIFIER = "ndjango.marker";
         [Export]
         [Name(MARKER_CLASSIFIER)]
-        [BaseDefinition("text")]
         internal static ClassificationTypeDefinition NDjangoMarker;
 
         [Export(typeof(EditorFormatDefinition))]

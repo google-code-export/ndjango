@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Text;
 using System.ComponentModel.Composition;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
@@ -11,7 +12,7 @@ namespace NDjango.Designer.Parsing
     {
         NodeProvider GetTokenizer(ITextBuffer buffer);
         bool IsNDjango(ITextBuffer buffer);
-        List<Token> Parse(IEnumerable<string> template);
+        IEnumerable<INode> Parse(IEnumerable<string> template);
     }
 
     [Export(typeof(IParserController))]
@@ -41,7 +42,7 @@ namespace NDjango.Designer.Parsing
             return tokenizer;
         }
 
-        public List<Token> Parse(IEnumerable<string> template)
+        public IEnumerable<INode> Parse(IEnumerable<string> template)
         {
             return parser.Parse(template);
         }

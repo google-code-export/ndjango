@@ -1,20 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Text.RegularExpressions;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
     public interface IParser
     {
-        List<Token> Parse(IEnumerable<string> template);
+        IEnumerable<INode> Parse(IEnumerable<string> template);
     }
 
     [Export(typeof(IParser))]
     public class Parser : IParser
     {
-        public List<Token> Parse(IEnumerable<string> template)
+        public IEnumerable<INode> Parse(IEnumerable<string> template)
         {
-            var result = new List<Token>();
+            var result = new List<INode>();
             int line_start = 0;
             foreach (string line in template)
             {

@@ -47,8 +47,10 @@ namespace NDjango.Designer.Parsing
         private void rebuildTokensAsynch(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
-            List<TokenSnapshot> tokens = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak())).ConvertAll<TokenSnapshot>
-                (token => new TokenSnapshot(snapshot, token));
+            List<TokenSnapshot> tokens = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
+                .ToList()
+                    .ConvertAll<TokenSnapshot>
+                        (token => new TokenSnapshot(snapshot, token));
             lock (token_lock)
             {
                 this.tokens = tokens;
@@ -80,14 +82,14 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="point">Mouse cursor destination</param>
         /// <returns></returns>
-        internal List<string> GetCompletions(SnapshotPoint point)
-        {
-            TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
-                .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
-            if (result == null)
-                return new List<string>();
-            result.Token.GenerateCompletionValues(new List<string>());
-            return result.Token.Values;
-        }
+        //internal List<string> GetCompletions(SnapshotPoint point)
+        //{
+        //    TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+        //        .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
+        //    if (result == null)
+        //        return new List<string>();
+        //    result.Token.GenerateCompletionValues(new List<string>());
+        //    return result.Token.Values;
+        //}
     }
 }
