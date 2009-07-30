@@ -29,14 +29,11 @@ namespace NDjango.Designer.Tags
         /// <returns></returns>
         public IEnumerable<ITagSpan<ErrorTag>> GetTags(Microsoft.VisualStudio.Text.NormalizedSnapshotSpanCollection spans)
         {
-            List<TokenSnapshot> tokens = null;
             foreach (SnapshotSpan span in spans)
             {
-                if (tokens == null)
-                    tokens = tokenizer.GetTokens(span);
-                foreach (TokenSnapshot token in tokens)
+                foreach (TokenSnapshot token in tokenizer.GetTokens(span))
                 {
-                    if (token.Token.TagName.Trim() == String.Empty)
+                    if (token.SnapshotSpan.OverlapsWith(span) && token.Token.Errors.Count > 0)
                         yield return new TagSpan<ErrorTag>(token.SnapshotSpan, new ErrorTag());
                 }
             }
