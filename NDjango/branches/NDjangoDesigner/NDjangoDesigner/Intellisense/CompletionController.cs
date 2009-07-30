@@ -16,7 +16,7 @@ namespace NDjango.Designer.Intellisense
         private ICompletionBrokerMapService completionBrokerMap;
         private ICompletionSession activeSession;
         private Completion selectedCompletionBeforeCommit;
-        private Dictionary<ITextBuffer, Tokenizer> tokenizers = new Dictionary<ITextBuffer,Tokenizer>();
+        private Dictionary<ITextBuffer, NodeProvider> tokenizers = new Dictionary<ITextBuffer,NodeProvider>();
 
         public CompletionController(IParserController parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
         {

@@ -8,12 +8,12 @@ namespace NDjango.Designer.Tags
 {
     class Tagger : ITagger<ErrorTag>
     {
-        private Tokenizer tokenizer;
+        private NodeProvider tokenizer;
 
         public Tagger(IParserController parser, ITextBuffer buffer)
         {
             tokenizer = parser.GetTokenizer(buffer);
-            tokenizer.TagsChanged += new Tokenizer.TokenEvent(tokenizer_TagsChanged);
+            tokenizer.TagsChanged += new NodeProvider.TokenEvent(tokenizer_TagsChanged);
         }
 
         void tokenizer_TagsChanged(SnapshotSpan snapshotSpan)

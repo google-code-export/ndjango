@@ -11,14 +11,14 @@ namespace NDjango.Designer.Classifiers
     /// </summary>
     /// <remarks>
     /// When an instance of the <see cref="Classifier"/> is created for a buffer it requests from the 
-    /// <see cref="Parser"/> an instance of the <see cref="Tokenizer"/> for the specified buffer and subscribes
+    /// <see cref="Parser"/> an instance of the <see cref="NodeProvider"/> for the specified buffer and subscribes
     /// to the TagsChanged event of the tokenizer. From this moment on work of the <see cref="Classifier"/> is 
-    /// controlled by the recieved instance of the <see cref="Tokenizer"/>.
+    /// controlled by the recieved instance of the <see cref="NodeProvider"/>.
     /// </remarks>
     internal class Classifier : IClassifier
     {
         private IClassificationTypeRegistryService classificationTypeRegistry;
-        private Tokenizer tokenizer;
+        private NodeProvider tokenizer;
 
         /// <summary>
         /// Creates a new instance of the <see cref="Classifier"/>
@@ -30,7 +30,7 @@ namespace NDjango.Designer.Classifiers
         {
             this.classificationTypeRegistry = classificationTypeRegistry;
             tokenizer = parser.GetTokenizer(buffer);
-            tokenizer.TagsChanged += new Tokenizer.TokenEvent(tokenizer_TagsChanged);
+            tokenizer.TagsChanged += new NodeProvider.TokenEvent(tokenizer_TagsChanged);
         }
 
         private void tokenizer_TagsChanged(SnapshotSpan snapshotSpan)
