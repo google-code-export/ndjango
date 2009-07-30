@@ -17,7 +17,7 @@ namespace NDjango.Designer.QuickInfo
         private ITextView textView;
         private IQuickInfoBrokerMapService brokerMapService;
         private IQuickInfoSession activeSession;
-        private Dictionary<ITextBuffer, Tokenizer> tokenizers = new Dictionary<ITextBuffer,Tokenizer>();
+        private Dictionary<ITextBuffer, NodeProvider> tokenizers = new Dictionary<ITextBuffer,NodeProvider>();
 
         public Controller(IParserController parser, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
         {

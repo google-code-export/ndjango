@@ -10,24 +10,12 @@ namespace NDjango.Designer
         /// NDJANGO content type is defined to be just text - pretty much any text
         /// the actual filtering of the content types is done in the IsNDjango method 
         /// on the parser
+
         internal const string NDJANGO = "text"; //"ndjango";
-        //[Export]
-        //[Name(NDJANGO)]
-        //[DisplayName("NDjango template")]
-        //[BaseDefinition("text")]
-        ////[BaseDefinition("HTML")]
-        //internal static ContentTypeDefinition NDjangoContentType;
 
-        //[Export]
-        //[FileExtension(".txt")]
-        //[ContentTypeAttribute(NDJANGO)]
-        //internal static FileExtensionToContentTypeDefinition NDjangoExtensionTxt;
-
-        //[Export]
-        //[FileExtension(".htm")]
-        //[ContentTypeAttribute(NDJANGO)]
-        //internal static FileExtensionToContentTypeDefinition NDjangoExtensionHtm;
-
+        /// <summary>
+        /// Classifier definition for django tags 
+        /// </summary>
         internal const string TAG_CLASSIFIER = "ndjango.tag";
         [Export]
         [Name(TAG_CLASSIFIER)]

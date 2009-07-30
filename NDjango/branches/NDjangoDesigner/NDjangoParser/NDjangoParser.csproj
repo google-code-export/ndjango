@@ -8,8 +8,8 @@
     <ProjectGuid>{CFB29A30-C735-4279-A8EE-659D1B0D3092}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>NDjangoParser</RootNamespace>
-    <AssemblyName>NDjangoParser</AssemblyName>
+    <RootNamespace>NDjango.Parser</RootNamespace>
+    <AssemblyName>NDjango.Parser</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PlatformTarget>x86</PlatformTarget>
