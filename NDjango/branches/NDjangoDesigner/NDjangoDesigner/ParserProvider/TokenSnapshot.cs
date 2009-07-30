@@ -24,9 +24,9 @@ namespace NDjango.Designer.Parsing
                 switch (token.Type)
                 {
                     case Token.TokenType.Marker:
-                        return "ndjango.marker";
+                        return Constants.MARKER_CLASSIFIER;
                     default:
-                        return "ndjango.tag";
+                        return Constants.DJNAGO_CONSTRUCT;
                 }
             }
         }

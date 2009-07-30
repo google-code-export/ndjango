@@ -16,11 +16,11 @@ namespace NDjango.Designer
         /// <summary>
         /// Classifier definition for django tags 
         /// </summary>
-        internal const string TAG_CLASSIFIER = "ndjango.tag";
+        internal const string DJNAGO_CONSTRUCT = "ndjango.tag";
         [Export]
-        [Name(TAG_CLASSIFIER)]
-        [BaseDefinition("text")]
-        internal static ClassificationTypeDefinition NDjangoTag;
+        [Name(DJNAGO_CONSTRUCT)]
+//        [BaseDefinition("text")]
+        private static ClassificationTypeDefinition NDjangoConstruct;
 
         internal const string MARKER_CLASSIFIER = "ndjango.marker";
         [Export]
@@ -30,9 +30,9 @@ namespace NDjango.Designer
 
         [Export(typeof(EditorFormatDefinition))]
         [Name("ndjango.tag.format")]
-        [DisplayName("ndjango tag format")]
-        [UserVisible(false)]
-        [ClassificationType(ClassificationTypeNames = "ndjango.tag")]
+        [DisplayName("NDjango Tag Format")]
+        [UserVisible(true)]
+        [ClassificationType(ClassificationTypeNames = DJNAGO_CONSTRUCT)]
         [Order(Before = Priority.High)]
         internal sealed class NDjangoTagFormat : ClassificationFormatDefinition
         {
