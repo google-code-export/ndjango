@@ -1,40 +1,17 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Text.RegularExpressions;
-using Microsoft.VisualStudio.Text;
 
 namespace NDjango.Designer.Parsing
 {
-    internal interface IParser
+    public interface IParser
     {
-        Tokenizer GetTokenizer(ITextBuffer buffer);
-        bool IsNDjango(ITextBuffer buffer);
+        List<Token> Parse(IEnumerable<string> template);
     }
 
     [Export(typeof(IParser))]
     internal class Parser : IParser
     {
-
-        public bool IsNDjango(ITextBuffer buffer)
-        {
-            switch (buffer.ContentType.TypeName)
-            {
-                case "text":
-                case "HTML":
-                    return true;
-                default: return false;
-            }
-            
-        }
-
-        public Tokenizer GetTokenizer(ITextBuffer buffer)
-        {
-            Tokenizer tokenizer;
-            if (!buffer.Properties.TryGetProperty(typeof(Tokenizer), out tokenizer))
-                buffer.Properties.AddProperty(typeof(Tokenizer), tokenizer = new Tokenizer(this, buffer));
-            return tokenizer;
-        }
-
         public List<Token> Parse(IEnumerable<string> template)
         {
             var result = new List<Token>();

@@ -12,14 +12,14 @@ namespace NDjango.Designer.QuickInfo
 {
     class Controller : IIntellisenseController
     {
-        private IParser parser;
+        private IParserController parser;
         private IList<ITextBuffer> subjectBuffers;
         private ITextView textView;
         private IQuickInfoBrokerMapService brokerMapService;
         private IQuickInfoSession activeSession;
         private Dictionary<ITextBuffer, Tokenizer> tokenizers = new Dictionary<ITextBuffer,Tokenizer>();
 
-        public Controller(IParser parser, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
+        public Controller(IParserController parser, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
         {
             // TODO: Complete member initialization
             this.parser = parser;

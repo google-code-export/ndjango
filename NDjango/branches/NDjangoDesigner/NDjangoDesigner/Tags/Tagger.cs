@@ -10,7 +10,7 @@ namespace NDjango.Designer.Tags
     {
         private Tokenizer tokenizer;
 
-        public Tagger(IParser parser, ITextBuffer buffer)
+        public Tagger(IParserController parser, ITextBuffer buffer)
         {
             tokenizer = parser.GetTokenizer(buffer);
             tokenizer.TagsChanged += new Tokenizer.TokenEvent(tokenizer_TagsChanged);

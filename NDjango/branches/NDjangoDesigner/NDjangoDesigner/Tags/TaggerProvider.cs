@@ -17,7 +17,7 @@ namespace NDjango.Designer.Tags
     class TaggerProvider : ITaggerProvider
     {
         [Import]
-        internal IParser parser { get; set; }
+        internal IParserController parser { get; set; }
 
         public ITagger<T> CreateTagger<T>(ITextBuffer buffer, IEnvironment context) where T : ITag
         {
