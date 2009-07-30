@@ -50,18 +50,14 @@ namespace NDjango.Designer.Classifiers
         {
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
-            List<TokenSnapshot> tokens = tokenizer.GetTokens(span);
-            if (tokens.Count > 0)
+            foreach (TokenSnapshot token in tokenizer.GetTokens(span))
             {
-                foreach (TokenSnapshot token in tokens)
-                {
-                    if (token.SnapshotSpan.OverlapsWith(span))
-                        classifications.Add(
-                            new ClassificationSpan(
-                                token.SnapshotSpan,
-                                classificationTypeRegistry.GetClassificationType(token.Type)
-                                ));
-                }
+                if (token.SnapshotSpan.OverlapsWith(span))
+                    classifications.Add(
+                        new ClassificationSpan(
+                            token.SnapshotSpan,
+                            classificationTypeRegistry.GetClassificationType(token.Type)
+                            ));
             }
             return classifications;
         }
