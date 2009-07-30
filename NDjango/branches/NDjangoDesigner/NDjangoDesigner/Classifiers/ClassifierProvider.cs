@@ -14,7 +14,7 @@ namespace NDjango.Designer.Classifiers
     /// classifiers can generate tokenzers</remarks>
     [Export(typeof(IClassifierProvider))]
     [ContentType(Constants.NDJANGO)]
-    [Name("NDjango classifier")]
+    [Name("NDjango Classifier")]
     internal class ClassifierProvider : IClassifierProvider
     {
         [Import]
