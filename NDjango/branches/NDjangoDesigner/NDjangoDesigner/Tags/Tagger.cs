@@ -22,6 +22,11 @@ namespace NDjango.Designer.Tags
                 TagsChanged(this, new SnapshotSpanEventArgs(snapshotSpan));
         }
 
+        /// <summary>
+        /// Gets a list of tags related to a span
+        /// </summary>
+        /// <param name="spans"></param>
+        /// <returns></returns>
         public IEnumerable<ITagSpan<ErrorTag>> GetTags(Microsoft.VisualStudio.Text.NormalizedSnapshotSpanCollection spans)
         {
             List<TokenSnapshot> tokens = null;

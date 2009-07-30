@@ -7,6 +7,10 @@ using NDjango.Designer.Parsing;
 
 namespace NDjango.Designer.Tags
 {
+    /// <summary>
+    /// Provides tags for text buffrers
+    /// </summary>
+    /// <remarks> Imports parser object in order to generate tokenizer for tagger</remarks>
     [Export(typeof(ITaggerProvider))]
     [ContentType(Constants.NDJANGO)]
     [TagType(typeof(SquiggleTag))]

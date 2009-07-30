@@ -52,12 +52,13 @@ namespace NDjango.Designer.Parsing
                     int end = line.IndexOf("%}", pos);
                     if (end < 0)
                         break;
-                    result.Add(new Token(token_start, 2, Token.TokenType.Marker, string.Empty));
-                    result.Add(new Token(line_start + end, 2, Token.TokenType.Marker, string.Empty));
+                    result.Add(new Token(token_start, 2, Token.TokenType.Marker, string.Empty, new List<Token>(), new List<Token>()));
+                    result.Add(new Token(line_start + end, 2, Token.TokenType.Marker, string.Empty, new List<Token>(), new List<Token>()));
                     Token tagToken = new Token(token_start, end + 2 - start, Token.TokenType.Tag,
-                        line.Substring(start, end + 2 - start).Replace("{%", string.Empty).Replace("%}", string.Empty));
+                        line.Substring(start, end + 2 - start).Replace("{%", string.Empty).Replace("%}", string.Empty), new List<Token>(), new List<Token>());
                     result.Add(tagToken);
-                    CreateChildTokens(tagToken);
+                    CreateInnerChildNodes(tagToken);
+                    
                     pos = end;
                 }
                 line_start += line.Length;
@@ -65,17 +66,17 @@ namespace NDjango.Designer.Parsing
             return result;
         }
 
-        private void CreateChildTokens(Token token)
+        private void CreateInnerChildNodes(Token tagToken)
         {
-            if (token.Type != Token.TokenType.Tag)
+            if (tagToken.Type != Token.TokenType.Tag)
                 return;
 
-            string[] lexemes = token.TagName.Split(' ');
+            string[] lexemes = tagToken.TagName.Split(' ');
             foreach (string lexeme in lexemes)
             {
                 if (lexeme != string.Empty)
                 {
-                    token.AddChild(new Token(0, 0, IdentifyTokenType(token, lexeme), lexeme));
+                    tagToken.AddChildNode(new Token(0, 0, IdentifyTokenType(tagToken, lexeme), lexeme, new List<Token>(), new List<Token>()), Token.PurposeType.InnerNodes);
                 }
             }
         }
