@@ -10,7 +10,7 @@ namespace NDjango.Designer.Parsing
 {
     internal interface IParserController
     {
-        NodeProvider GetTokenizer(ITextBuffer buffer);
+        NodeProvider GetNodeProvider(ITextBuffer buffer);
         bool IsNDjango(ITextBuffer buffer);
         List<INode> Parse(IEnumerable<string> template);
     }
@@ -20,7 +20,7 @@ namespace NDjango.Designer.Parsing
     {
 
         //[Import]
-        Parser parser = new Parser();
+        IParser parser = new Parser();// {get; set;}
 
         public bool IsNDjango(ITextBuffer buffer)
         {
@@ -33,7 +33,7 @@ namespace NDjango.Designer.Parsing
             }
         }
 
-        public NodeProvider GetTokenizer(ITextBuffer buffer)
+        public NodeProvider GetNodeProvider(ITextBuffer buffer)
         {
             NodeProvider tokenizer;
             if (!buffer.Properties.TryGetProperty(typeof(NodeProvider), out tokenizer))

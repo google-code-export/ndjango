@@ -14,7 +14,7 @@ namespace NDjango.Designer.Parsing
     {
         // it can take some time for the parser to build the token list.
         // for now let us initialize it to an empty list
-        private List<TokenSnapshot> tokens = new List<TokenSnapshot>();
+        private List<NodeSnapshot> tokens = new List<NodeSnapshot>();
         
         private object token_lock = new object();
         private IParserController parser;
@@ -28,7 +28,7 @@ namespace NDjango.Designer.Parsing
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
         }
 
-        public delegate void TokenEvent (SnapshotSpan snapshotSpan);
+        public delegate void SnapshotEvent (SnapshotSpan snapshotSpan);
 
         void buffer_Changed(object sender, TextContentChangedEventArgs e)
         {
@@ -40,7 +40,7 @@ namespace NDjango.Designer.Parsing
             ThreadPool.QueueUserWorkItem(rebuildTokensAsynch, snapshot);
         }
 
-        public event TokenEvent TagsChanged;
+        public event SnapshotEvent NodesChanged;
 
         /// <summary>
         /// Retrieves sequence of tokens out of snapshot object. 
@@ -48,21 +48,21 @@ namespace NDjango.Designer.Parsing
         private void rebuildTokensAsynch(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
-            List<TokenSnapshot> tokens = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
+            List<NodeSnapshot> tokens = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
                 .ToList()
-                    .ConvertAll<TokenSnapshot>
-                        (token => new TokenSnapshot(snapshot, token));
+                    .ConvertAll<NodeSnapshot>
+                        (token => new NodeSnapshot(snapshot, token));
             lock (token_lock)
             {
                 this.tokens = tokens;
             }
-            if (TagsChanged != null)
-                TagsChanged(new SnapshotSpan(snapshot, 0, snapshot.Length));
+            if (NodesChanged != null)
+                NodesChanged(new SnapshotSpan(snapshot, 0, snapshot.Length));
         }
 
-        internal List<TokenSnapshot> GetTokens(SnapshotSpan snapshotSpan)
+        internal List<NodeSnapshot> GetTokens(SnapshotSpan snapshotSpan)
         {
-            List<TokenSnapshot> tokens;
+            List<NodeSnapshot> tokens;
             lock (token_lock)
             {
                 tokens = this.tokens;
@@ -85,7 +85,7 @@ namespace NDjango.Designer.Parsing
         /// <returns></returns>
         internal List<string> GetCompletions(SnapshotPoint point)
         {
-            TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+            NodeSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
                 .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return new List<string>();
@@ -94,7 +94,7 @@ namespace NDjango.Designer.Parsing
 
         internal INode GetQuickInfo(SnapshotPoint point)
         {
-            TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+            NodeSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
                             .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return null;
