@@ -23,7 +23,7 @@ namespace NDjango.Designer.Intellisense
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;
             this.completionBrokerMap = completionBrokerMap;
-            subjectBuffers.ToList().ForEach(buffer => tokenizers.Add(buffer, parser.GetTokenizer(buffer)));
+            subjectBuffers.ToList().ForEach(buffer => tokenizers.Add(buffer, parser.GetNodeProvider(buffer)));
 
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)

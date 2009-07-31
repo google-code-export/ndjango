@@ -100,9 +100,6 @@
     <Compile Include="QuickInfo\Source.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Tags\ErrorTag.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Tags\Tagger.cs">
       <SubType>Code</SubType>
     </Compile>

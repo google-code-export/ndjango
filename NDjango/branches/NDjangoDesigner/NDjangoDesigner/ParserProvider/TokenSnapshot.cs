@@ -3,12 +3,12 @@ using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
-    class TokenSnapshot
+    class NodeSnapshot
     {
         private SnapshotSpan snapshotSpan;
         private INode node;
 
-        public TokenSnapshot(ITextSnapshot snapshot, INode node)
+        public NodeSnapshot(ITextSnapshot snapshot, INode node)
         {
             this.snapshotSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
             this.node = node;

@@ -5,7 +5,7 @@ using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
-    //[Export(typeof(IParser))]
+    [Export(typeof(IParser))]
     public class Parser : IParser
     {
         public List<INode> Parse(IEnumerable<string> template)

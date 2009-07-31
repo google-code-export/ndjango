@@ -27,7 +27,7 @@ namespace NDjango.Designer.QuickInfo
             this.subjectBuffers = subjectBuffers;
             this.textView = textView;
             this.brokerMapService = brokerMapService;
-            subjectBuffers.ToList().ForEach(buffer => tokenizers.Add(buffer, parser.GetTokenizer(buffer)));
+            subjectBuffers.ToList().ForEach(buffer => tokenizers.Add(buffer, parser.GetNodeProvider(buffer)));
 
             textView.MouseHover += new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
 

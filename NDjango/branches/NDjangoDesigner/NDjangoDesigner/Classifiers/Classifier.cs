@@ -18,7 +18,7 @@ namespace NDjango.Designer.Classifiers
     internal class Classifier : IClassifier
     {
         private IClassificationTypeRegistryService classificationTypeRegistry;
-        private NodeProvider tokenizer;
+        private NodeProvider nodeProvider;
 
         /// <summary>
         /// Creates a new instance of the <see cref="Classifier"/>
@@ -29,8 +29,8 @@ namespace NDjango.Designer.Classifiers
         public Classifier(IParserController parser, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
         {
             this.classificationTypeRegistry = classificationTypeRegistry;
-            tokenizer = parser.GetTokenizer(buffer);
-            tokenizer.TagsChanged += new NodeProvider.TokenEvent(tokenizer_TagsChanged);
+            nodeProvider = parser.GetNodeProvider(buffer);
+            nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(tokenizer_TagsChanged);
         }
 
         private void tokenizer_TagsChanged(SnapshotSpan snapshotSpan)
@@ -50,13 +50,13 @@ namespace NDjango.Designer.Classifiers
         {
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
-            foreach (TokenSnapshot token in tokenizer.GetTokens(span))
+            foreach (NodeSnapshot node in nodeProvider.GetTokens(span))
             {
-                if (token.SnapshotSpan.OverlapsWith(span))
+                if (node.SnapshotSpan.OverlapsWith(span))
                     classifications.Add(
                         new ClassificationSpan(
-                            token.SnapshotSpan,
-                            classificationTypeRegistry.GetClassificationType(token.Type)
+                            node.SnapshotSpan,
+                            classificationTypeRegistry.GetClassificationType(node.Type)
                             ));
             }
             return classifications;

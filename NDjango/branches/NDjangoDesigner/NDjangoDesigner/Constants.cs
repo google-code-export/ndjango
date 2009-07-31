@@ -2,6 +2,7 @@
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Text.Classification;
+using Microsoft.VisualStudio.Text.Tagging;
 
 namespace NDjango.Designer
 {
@@ -52,6 +53,12 @@ namespace NDjango.Designer
             {
                 ForegroundColor = Colors.Red;
             }
+        }
+
+        internal class ErrorTag : SquiggleTag
+        {
+            public ErrorTag()
+                : base("error") { }
         }
     }
 }
