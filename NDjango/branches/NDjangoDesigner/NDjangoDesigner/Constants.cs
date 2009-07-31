@@ -21,17 +21,12 @@ namespace NDjango.Designer
         [Name(DJANGO_CONSTRUCT)]
         private static ClassificationTypeDefinition DjangoConstruct;
 
-        internal const string MARKER_CLASSIFIER = "ndjango.marker";
-        [Export]
-        [Name(MARKER_CLASSIFIER)]
-        internal static ClassificationTypeDefinition NDjangoMarker;
-
         [Export(typeof(EditorFormatDefinition))]
         [Name("ndjango.tag.format")]
         [DisplayName("NDjango Tag Format")]
         [UserVisible(true)]
         [ClassificationType(ClassificationTypeNames = DJANGO_CONSTRUCT)]
-        [Order(Before = Priority.High)]
+        [Order]
         internal sealed class NDjangoTagFormat : ClassificationFormatDefinition
         {
             public NDjangoTagFormat()
@@ -40,11 +35,16 @@ namespace NDjango.Designer
             }
         }
 
+        internal const string MARKER_CLASSIFIER = "ndjango.marker";
+        [Export]
+        [Name(MARKER_CLASSIFIER)]
+        internal static ClassificationTypeDefinition NDjangoMarker;
+
         [Export(typeof(EditorFormatDefinition))]
         [Name("ndjango.marker.format")]
         [DisplayName("ndjango marker format")]
         [UserVisible(false)]
-        [ClassificationType(ClassificationTypeNames = "ndjango.marker")]
+        [ClassificationType(ClassificationTypeNames = MARKER_CLASSIFIER)]
         [Order]
         internal sealed class NDjangoMarkerFormat : ClassificationFormatDefinition
         {
