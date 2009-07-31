@@ -16,6 +16,8 @@ namespace NDjango.Designer.QuickInfo
     [ContentType(Constants.NDJANGO)]
     class Provider : IQuickInfoSourceProvider
     {
+        internal static string QuickInfoProviderSessionKey = "ndjango.quickInfoProvider";
+
         public IQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer, IEnvironment environment)
         {
             return new Source(textBuffer);

@@ -13,8 +13,7 @@ namespace NDjango.Designer.Parsing
 
         public enum PurposeType { TagList, InnerNodes, Filters, Fields };
         /// <summary>
-        /// Type of the token. Depending of type, tokens may provide different functionality,
-        /// may have or not have child tokens.
+        /// Type of the node. Depending of type, nodes may provide different functionality
         /// </summary>
         public NodeType Type;
         public int Position;
@@ -30,7 +29,7 @@ namespace NDjango.Designer.Parsing
         public Dictionary<string, IEnumerable<INode>> ChildNodesByPurpose;
         
         /// <summary>
-        /// Creates a new token.
+        /// Creates a new node.
         /// </summary>
         /// <param name="position"></param>
         /// <param name="length"></param>
