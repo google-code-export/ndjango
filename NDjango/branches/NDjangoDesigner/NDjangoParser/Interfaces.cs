@@ -54,6 +54,7 @@ namespace NDjango.Interfaces
         string Text { get; }
         IEnumerable<string> Values { get; }
         Error ErrorMessage { get; }
+        string Info { get; }
         Dictionary<string, IEnumerable<INode>> Nodes { get; }
     }
 }

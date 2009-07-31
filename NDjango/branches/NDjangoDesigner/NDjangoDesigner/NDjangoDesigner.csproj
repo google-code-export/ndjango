@@ -88,6 +88,27 @@
     <Compile Include="ParserProvider\NodeProvider.cs" />
     <Compile Include="ParserProvider\TokenSnapshot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QuickInfo\Controller.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QuickInfo\ControllerProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QuickInfo\Provider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="QuickInfo\Source.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tags\ErrorTag.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tags\Tagger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tags\TaggerProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="extension.vsixmanifest">
