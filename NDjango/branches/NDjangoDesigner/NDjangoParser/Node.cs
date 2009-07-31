@@ -99,7 +99,11 @@ namespace NDjango.Designer.Parsing
 
         IEnumerable<string> INode.Values
         {
-            get { return Values; }
+            get 
+            {
+                GenerateCompletionValues(new List<string>());
+                return Values; 
+            }
         }
 
         Error INode.ErrorMessage
