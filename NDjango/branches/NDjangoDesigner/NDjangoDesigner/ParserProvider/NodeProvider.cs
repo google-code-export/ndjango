@@ -82,14 +82,13 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="point">Mouse cursor destination</param>
         /// <returns></returns>
-        //internal IEnumerable<string> GetCompletions(SnapshotPoint point)
-        //{
-        //    TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
-        //        .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
-        //    if (result == null)
-        //        return new List<string>();
-        //    result.Node.GenerateCompletionValues(new List<string>());
-        //    return result.Node.Values;
-        //}
+        internal List<string> GetCompletions(SnapshotPoint point)
+        {
+            TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+                .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
+            if (result == null)
+                return new List<string>();
+            return new List<string>(result.Node.Values);
+        }
     }
 }
