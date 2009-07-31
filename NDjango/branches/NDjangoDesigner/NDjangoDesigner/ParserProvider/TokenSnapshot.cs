@@ -16,7 +16,7 @@ namespace NDjango.Designer.Parsing
 
         public SnapshotSpan SnapshotSpan { get { return snapshotSpan; } }
 
-        public INode Token { get { return node; } }
+        public INode Node { get { return node; } }
 
         public string Type
         {
@@ -27,7 +27,7 @@ namespace NDjango.Designer.Parsing
                     case NodeType.Marker:
                         return Constants.MARKER_CLASSIFIER;
                     default:
-                        return Constants.DJNAGO_CONSTRUCT;
+                        return Constants.DJANGO_CONSTRUCT;
                 }
             }
         }

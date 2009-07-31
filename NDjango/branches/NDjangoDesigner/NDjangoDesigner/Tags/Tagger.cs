@@ -33,7 +33,7 @@ namespace NDjango.Designer.Tags
             {
                 foreach (TokenSnapshot token in tokenizer.GetTokens(span))
                 {
-                    if (token.SnapshotSpan.OverlapsWith(span) && token.Token.Errors.Count > 0)
+                    if (token.SnapshotSpan.OverlapsWith(span) && token.Node.ErrorMessage.Severity > 0)
                         yield return new TagSpan<ErrorTag>(token.SnapshotSpan, new ErrorTag());
                 }
             }

@@ -16,9 +16,9 @@ namespace NDjango.Designer
         /// <summary>
         /// Classifier definition for django tags 
         /// </summary>
-        internal const string DJNAGO_CONSTRUCT = "ndjango.tag";
+        internal const string DJANGO_CONSTRUCT = "ndjango.tag";
         [Export]
-        [Name(DJNAGO_CONSTRUCT)]
+        [Name(DJANGO_CONSTRUCT)]
         private static ClassificationTypeDefinition DjangoConstruct;
 
         internal const string MARKER_CLASSIFIER = "ndjango.marker";
@@ -30,7 +30,7 @@ namespace NDjango.Designer
         [Name("ndjango.tag.format")]
         [DisplayName("NDjango Tag Format")]
         [UserVisible(true)]
-        [ClassificationType(ClassificationTypeNames = DJNAGO_CONSTRUCT)]
+        [ClassificationType(ClassificationTypeNames = DJANGO_CONSTRUCT)]
         [Order(Before = Priority.High)]
         internal sealed class NDjangoTagFormat : ClassificationFormatDefinition
         {
