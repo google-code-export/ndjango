@@ -12,15 +12,15 @@ namespace NDjango.Designer.Parsing
     {
         NodeProvider GetTokenizer(ITextBuffer buffer);
         bool IsNDjango(ITextBuffer buffer);
-        IEnumerable<INode> Parse(IEnumerable<string> template);
+        List<INode> Parse(IEnumerable<string> template);
     }
 
     [Export(typeof(IParserController))]
     internal class ParserController : IParserController
     {
 
-        [Import]
-        internal IParser parser { get; set; }
+        //[Import]
+        Parser parser = new Parser();
 
         public bool IsNDjango(ITextBuffer buffer)
         {
@@ -31,7 +31,6 @@ namespace NDjango.Designer.Parsing
                     return true;
                 default: return false;
             }
-
         }
 
         public NodeProvider GetTokenizer(ITextBuffer buffer)
@@ -42,7 +41,7 @@ namespace NDjango.Designer.Parsing
             return tokenizer;
         }
 
-        public IEnumerable<INode> Parse(IEnumerable<string> template)
+        public List<INode> Parse(IEnumerable<string> template)
         {
             return parser.Parse(template);
         }

@@ -1,20 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Text.RegularExpressions;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
-    public interface IParser
-    {
-        List<Token> Parse(IEnumerable<string> template);
-    }
-
-    [Export(typeof(IParser))]
+    //[Export(typeof(IParser))]
     public class Parser : IParser
     {
-        public List<Token> Parse(IEnumerable<string> template)
+        public List<INode> Parse(IEnumerable<string> template)
         {
-            var result = new List<Token>();
+            var result = new List<INode>();
             int line_start = 0;
             foreach (string line in template)
             {
@@ -29,10 +25,10 @@ namespace NDjango.Designer.Parsing
                     int end = line.IndexOf("%}", pos);
                     if (end < 0)
                         break;
-                    result.Add(new Token(token_start, 2, Token.TokenType.Marker, string.Empty, new List<Token>(), new List<Token>()));
-                    result.Add(new Token(line_start + end, 2, Token.TokenType.Marker, string.Empty, new List<Token>(), new List<Token>()));
-                    Token tagToken = new Token(token_start, end + 2 - start, Token.TokenType.Tag,
-                        line.Substring(start, end + 2 - start).Replace("{%", string.Empty).Replace("%}", string.Empty), new List<Token>(), new List<Token>());
+                    result.Add(new Node(token_start, 2, NodeType.Marker, string.Empty));
+                    result.Add(new Node(line_start + end, 2, NodeType.Marker, string.Empty));
+                    Node tagToken = new Node(token_start, end + 2 - start, NodeType.Tag,
+                        line.Substring(start, end + 2 - start).Replace("{%", string.Empty).Replace("%}", string.Empty));
                     result.Add(tagToken);
                     CreateInnerChildNodes(tagToken);
                     
@@ -43,9 +39,9 @@ namespace NDjango.Designer.Parsing
             return result;
         }
 
-        private void CreateInnerChildNodes(Token tagToken)
+        private void CreateInnerChildNodes(Node tagToken)
         {
-            if (tagToken.Type != Token.TokenType.Tag)
+            if (tagToken.Type != NodeType.Tag)
                 return;
 
             string[] lexemes = tagToken.TagName.Split(' ');
@@ -53,15 +49,15 @@ namespace NDjango.Designer.Parsing
             {
                 if (lexeme != string.Empty)
                 {
-                    tagToken.AddChildNode(new Token(0, 0, IdentifyTokenType(tagToken, lexeme), lexeme, new List<Token>(), new List<Token>()), Token.PurposeType.InnerNodes);
+                    tagToken.AddChildNode(new Node(0, 0, IdentifyTokenType(tagToken, lexeme), lexeme), Node.PurposeType.InnerNodes);
                 }
             }
         }
 
-        private Token.TokenType IdentifyTokenType(Token parentToken, string lexeme)
+        private NodeType IdentifyTokenType(Node parentToken, string lexeme)
         {
             //not implemented
-            return Token.TokenType.Keyword;
+            return NodeType.Keyword;
         }
 
         static Regex r = new Regex("{{.*}}", RegexOptions.Compiled);
