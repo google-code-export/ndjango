@@ -21,6 +21,7 @@ namespace NDjango.Designer.Parsing
         public int Length;
         public string TagName;
         public List<string> Values;
+        public string Info;
         public Error Error;
         /// <summary>
         /// defines the child nodes, distributed by their type (purpose).
@@ -42,6 +43,7 @@ namespace NDjango.Designer.Parsing
             this.Position = position;
             this.Length = length;
             this.Type = tokenType;
+            this.Info = "Quick info about " + Text + " tag";
 
             Values = new List<string>();
             Error = new Error();
@@ -109,6 +111,14 @@ namespace NDjango.Designer.Parsing
         Error INode.ErrorMessage
         {
             get { return this.Error; }
+        }
+
+        string INode.Info
+        {
+            get
+            {
+                return this.Info;
+            }
         }
 
         Dictionary<string, IEnumerable<INode>> INode.Nodes
