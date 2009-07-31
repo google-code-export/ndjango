@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
 using System.Threading;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
@@ -89,6 +90,15 @@ namespace NDjango.Designer.Parsing
             if (result == null)
                 return new List<string>();
             return new List<string>(result.Node.Values);
+        }
+
+        internal INode GetQuickInfo(SnapshotPoint point)
+        {
+            TokenSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+                            .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
+            if (result == null)
+                return null;
+            return result.Node;
         }
     }
 }

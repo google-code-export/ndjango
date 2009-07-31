@@ -7,6 +7,7 @@ using NDjango.Designer.Parsing;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
 using System.Windows.Input;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.QuickInfo
 {
@@ -43,8 +44,8 @@ namespace NDjango.Designer.QuickInfo
                                                  PositionAffinity.Predecessor);
             if (point.HasValue)
             {
-                List<string> completions = tokenizers[point.Value.Snapshot.TextBuffer].GetCompletions(point.Value);
-                if (completions.Count > 0)
+                INode quickInfoNode = tokenizers[point.Value.Snapshot.TextBuffer].GetQuickInfo(point.Value);
+                if (quickInfoNode != null)
                 {
                     // the invocation occurred in a subject buffer of interest to us
                     IQuickInfoBroker broker = brokerMapService.GetBrokerForTextView(textView, point.Value.Snapshot.TextBuffer);
@@ -52,6 +53,7 @@ namespace NDjango.Designer.QuickInfo
 
                     // Create a quickInfo session
                     activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
+                    activeSession.Properties.AddProperty(Provider.QuickInfoProviderSessionKey, quickInfoNode);
                     activeSession.Start();
                 }
             }

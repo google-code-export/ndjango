@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.QuickInfo
 {
@@ -19,8 +20,15 @@ namespace NDjango.Designer.QuickInfo
         public object GetToolTipContent(IQuickInfoSession session, out Microsoft.VisualStudio.Text.ITrackingSpan applicableToSpan)
         {
             applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(0, 10, Microsoft.VisualStudio.Text.SpanTrackingMode.EdgeExclusive);
-            //Somehow we have to get nodes here(?)
-            return "ToolTip";
+
+            object node;
+            if (session.Properties.TryGetProperty<object>(Provider.QuickInfoProviderSessionKey, out node))
+            {
+                INode quickInfoNode = (INode)session.Properties.GetProperty(Provider.QuickInfoProviderSessionKey);
+                return quickInfoNode.Info;
+            }
+
+            return null;
         }
     }
 }
