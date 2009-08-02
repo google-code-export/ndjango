@@ -17,14 +17,14 @@ namespace NDjango.Designer.Parsing
         private List<NodeSnapshot> tokens = new List<NodeSnapshot>();
         
         private object token_lock = new object();
-        private IParserController parser;
+        private IParser parser;
         private ITextBuffer buffer;
 
-        public NodeProvider(IParserController parser, ITextBuffer buffer)
+        public NodeProvider(IParser parser, ITextBuffer buffer)
         {
             this.parser = parser;
             this.buffer = buffer;
-            rebuildTokens(buffer.CurrentSnapshot);
+            rebuildNodes(buffer.CurrentSnapshot);
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
         }
 
@@ -32,12 +32,12 @@ namespace NDjango.Designer.Parsing
 
         void buffer_Changed(object sender, TextContentChangedEventArgs e)
         {
-            rebuildTokens(e.After);
+            rebuildNodes(e.After);
         }
 
-        private void rebuildTokens(ITextSnapshot snapshot)
+        private void rebuildNodes(ITextSnapshot snapshot)
         {
-            ThreadPool.QueueUserWorkItem(rebuildTokensAsynch, snapshot);
+            ThreadPool.QueueUserWorkItem(rebuildNodesAsynch, snapshot);
         }
 
         public event SnapshotEvent NodesChanged;
@@ -45,7 +45,7 @@ namespace NDjango.Designer.Parsing
         /// <summary>
         /// Retrieves sequence of tokens out of snapshot object. 
         /// </summary>
-        private void rebuildTokensAsynch(object snapshotObject)
+        private void rebuildNodesAsynch(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
             List<NodeSnapshot> tokens = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
@@ -60,7 +60,7 @@ namespace NDjango.Designer.Parsing
                 NodesChanged(new SnapshotSpan(snapshot, 0, snapshot.Length));
         }
 
-        internal List<NodeSnapshot> GetTokens(SnapshotSpan snapshotSpan)
+        internal List<NodeSnapshot> GetNodes(SnapshotSpan snapshotSpan)
         {
             List<NodeSnapshot> tokens;
             lock (token_lock)
@@ -79,22 +79,27 @@ namespace NDjango.Designer.Parsing
         }
         
         /// <summary>
-        /// Gets a list of intellisence values of selected token.
+        /// Gets a list of intellisense values of selected token.
         /// </summary>
         /// <param name="point">Mouse cursor destination</param>
         /// <returns></returns>
         internal List<string> GetCompletions(SnapshotPoint point)
         {
-            NodeSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+            NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
                 .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return new List<string>();
             return new List<string>(result.Node.Values);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="point"></param>
+        /// <returns></returns>
         internal INode GetQuickInfo(SnapshotPoint point)
         {
-            NodeSnapshot result = GetTokens(new SnapshotSpan(point.Snapshot, point.Position, 0))
+            NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
                             .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return null;

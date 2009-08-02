@@ -33,9 +33,9 @@ namespace NDjango.Designer.Intellisense
 
         void completionSet_SelectionStatusChanged(object sender, ValueChangedEventArgs<CompletionSelectionStatus> e)
         {
-            if (e.NewValue.IsSelected)
-                return;
-            ((CompletionSet)sender).SelectionStatus = new CompletionSelectionStatus(e.NewValue.Completion, true, false);
+//            if (e.NewValue.IsSelected)
+//                return;
+//            ((CompletionSet)sender).SelectionStatus = new CompletionSelectionStatus(e.NewValue.Completion, true, false);
         }
     }
 }

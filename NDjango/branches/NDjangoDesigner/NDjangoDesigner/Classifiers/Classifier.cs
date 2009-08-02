@@ -26,7 +26,7 @@ namespace NDjango.Designer.Classifiers
         /// <param name="parser"></param>
         /// <param name="classificationTypeRegistry"></param>
         /// <param name="buffer"></param>
-        public Classifier(IParserController parser, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
+        public Classifier(IParserProviderBorker parser, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
         {
             this.classificationTypeRegistry = classificationTypeRegistry;
             nodeProvider = parser.GetNodeProvider(buffer);
@@ -50,7 +50,7 @@ namespace NDjango.Designer.Classifiers
         {
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
-            foreach (NodeSnapshot node in nodeProvider.GetTokens(span))
+            foreach (NodeSnapshot node in nodeProvider.GetNodes(span))
             {
                 if (node.SnapshotSpan.OverlapsWith(span))
                     classifications.Add(

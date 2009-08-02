@@ -21,7 +21,7 @@ namespace NDjango.Designer.Classifiers
         internal IClassificationTypeRegistryService classificationTypeRegistry { get; set; }
 
         [Import]
-        internal IParserController parser { get; set; }
+        internal IParserProviderBorker parser { get; set; }
 
         public IClassifier GetClassifier(ITextBuffer textBuffer, IEnvironment context)
         {

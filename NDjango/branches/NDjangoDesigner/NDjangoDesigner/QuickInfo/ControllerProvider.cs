@@ -23,7 +23,7 @@ namespace NDjango.Designer.QuickInfo
         private IQuickInfoBrokerMapService brokerMapService { get; set; }
 
         [Import]
-        internal IParserController parser { get; set; }
+        internal IParserProviderBorker parser { get; set; }
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers, IEnvironment context)
         {

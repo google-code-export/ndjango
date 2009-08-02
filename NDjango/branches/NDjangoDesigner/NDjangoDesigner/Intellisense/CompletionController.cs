@@ -18,7 +18,7 @@ namespace NDjango.Designer.Intellisense
         private Completion selectedCompletionBeforeCommit;
         private Dictionary<ITextBuffer, NodeProvider> tokenizers = new Dictionary<ITextBuffer,NodeProvider>();
 
-        public CompletionController(IParserController parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
+        public CompletionController(IParserProviderBorker parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
         {
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;
@@ -28,8 +28,10 @@ namespace NDjango.Designer.Intellisense
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
             {
-                WpfTextView.VisualElement.KeyDown += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
-                WpfTextView.VisualElement.KeyUp += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                KeyProcessor.KeyDownEvent += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
+                KeyProcessor.KeyUpEvent += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                //WpfTextView.VisualElement.KeyDown += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
+                //WpfTextView.VisualElement.KeyUp += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
             }
         }
 
@@ -51,7 +53,7 @@ namespace NDjango.Designer.Intellisense
 
                 if (e.Key == Key.Enter)
                 {
-                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null && this.activeSession.SelectedCompletionSet.SelectionStatus.IsSelected)
+                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null /*&& this.activeSession.SelectedCompletionSet.SelectionStatus.IsSelected*/ )
                     {
                         selectedCompletionBeforeCommit = this.activeSession.SelectedCompletionSet.SelectionStatus.Completion as Completion;
                         activeSession.Commit();
@@ -93,10 +95,13 @@ namespace NDjango.Designer.Intellisense
                 return;
             }
 
+            if (!(e.Key >= Key.A && e.Key <= Key.Z))
+                return;
+
             if (activeSession != null)
             {
-                activeSession.SelectedCompletionSet.Filter(CompletionMatchType.MatchDisplayText, true);
-                activeSession.SelectedCompletionSet.SelectBestMatch();
+//                activeSession.SelectedCompletionSet.Filter(CompletionMatchType.MatchDisplayText, true);
+//                activeSession.SelectedCompletionSet.SelectBestMatch();
             }
             else
             {
@@ -140,10 +145,10 @@ namespace NDjango.Designer.Intellisense
 
         void OnActiveSessionCommitted(object sender, System.EventArgs e)
         {
-            if (selectedCompletionBeforeCommit != null)
-            {
-                activeSession.TextView.Caret.MoveTo(new VirtualSnapshotPoint(activeSession.TextView.Caret.Position.BufferPosition));
-            }
+            //if (selectedCompletionBeforeCommit != null)
+            //{
+            //    activeSession.TextView.Caret.MoveTo(new VirtualSnapshotPoint(activeSession.TextView.Caret.Position.BufferPosition));
+            //}
         }
 
         private CompletionSet GetCompletionSet()
@@ -162,8 +167,10 @@ namespace NDjango.Designer.Intellisense
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
             {
-                WpfTextView.VisualElement.KeyDown -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
-                WpfTextView.VisualElement.KeyUp -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                KeyProcessor.KeyDownEvent -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
+                KeyProcessor.KeyUpEvent -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                //WpfTextView.VisualElement.KeyDown -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
+                //WpfTextView.VisualElement.KeyUp -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
             }
         }
     }
