@@ -10,7 +10,7 @@ namespace NDjango.Designer.Tags
     {
         private NodeProvider tokenizer;
 
-        public Tagger(IParserController parser, ITextBuffer buffer)
+        public Tagger(IParserProviderBorker parser, ITextBuffer buffer)
         {
             tokenizer = parser.GetNodeProvider(buffer);
             tokenizer.NodesChanged += new NodeProvider.SnapshotEvent(tokenizer_TagsChanged);
@@ -31,7 +31,7 @@ namespace NDjango.Designer.Tags
         {
             foreach (SnapshotSpan span in spans)
             {
-                foreach (NodeSnapshot token in tokenizer.GetTokens(span))
+                foreach (NodeSnapshot token in tokenizer.GetNodes(span))
                 {
                     if (token.SnapshotSpan.OverlapsWith(span) && token.Node.ErrorMessage.Severity > 0)
                         yield return new TagSpan<Constants.ErrorTag>(token.SnapshotSpan, new Constants.ErrorTag());

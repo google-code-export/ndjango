@@ -60,7 +60,7 @@ namespace NDjango.Designer.Parsing
                     Values.AddRange(new string[] { "for", "if", "block", "endif" });
                     break;
                 case NodeType.Tag:
-                    Values.AddRange(new string[] { "aaa", "bbb", "ccc", "hhh"});
+                    Values.AddRange(new string[] { "aaa", "aba", "aca", "bbb", "ccc", "hhh" });
                     break;
                 case NodeType.Variable:
                     Values.AddRange(variables);

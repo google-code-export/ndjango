@@ -8,15 +8,14 @@ using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
-    internal interface IParserController
+    internal interface IParserProviderBorker
     {
         NodeProvider GetNodeProvider(ITextBuffer buffer);
         bool IsNDjango(ITextBuffer buffer);
-        List<INode> Parse(IEnumerable<string> template);
     }
 
-    [Export(typeof(IParserController))]
-    internal class ParserController : IParserController
+    [Export(typeof(IParserProviderBorker))]
+    internal class ParserProviderBroker : IParserProviderBorker
     {
 
         //[Import]
@@ -35,15 +34,11 @@ namespace NDjango.Designer.Parsing
 
         public NodeProvider GetNodeProvider(ITextBuffer buffer)
         {
-            NodeProvider tokenizer;
-            if (!buffer.Properties.TryGetProperty(typeof(NodeProvider), out tokenizer))
-                buffer.Properties.AddProperty(typeof(NodeProvider), tokenizer = new NodeProvider(this, buffer));
-            return tokenizer;
+            NodeProvider provider;
+            if (!buffer.Properties.TryGetProperty(typeof(NodeProvider), out provider))
+                buffer.Properties.AddProperty(typeof(NodeProvider), provider = new NodeProvider(parser, buffer));
+            return provider;
         }
 
-        public List<INode> Parse(IEnumerable<string> template)
-        {
-            return parser.Parse(template);
-        }
     }
 }
