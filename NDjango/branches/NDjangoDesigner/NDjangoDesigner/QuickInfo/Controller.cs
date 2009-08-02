@@ -44,7 +44,7 @@ namespace NDjango.Designer.QuickInfo
                                                  PositionAffinity.Predecessor);
             if (point.HasValue)
             {
-                INode quickInfoNode = tokenizers[point.Value.Snapshot.TextBuffer].GetQuickInfo(point.Value);
+                INode quickInfoNode = tokenizers[point.Value.Snapshot.TextBuffer].GetNode(point.Value);
                 if (quickInfoNode != null)
                 {
                     // the invocation occurred in a subject buffer of interest to us

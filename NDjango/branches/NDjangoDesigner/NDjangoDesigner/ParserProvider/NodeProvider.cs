@@ -79,25 +79,11 @@ namespace NDjango.Designer.Parsing
         }
         
         /// <summary>
-        /// Gets a list of intellisense values of selected token.
+        /// Returns the django syntax node based on the point in the text buffer
         /// </summary>
-        /// <param name="point">Mouse cursor destination</param>
+        /// <param name="point">point identifiying the desired node</param>
         /// <returns></returns>
-        internal List<string> GetCompletions(SnapshotPoint point)
-        {
-            NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
-                .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
-            if (result == null)
-                return new List<string>();
-            return new List<string>(result.Node.Values);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="point"></param>
-        /// <returns></returns>
-        internal INode GetQuickInfo(SnapshotPoint point)
+        internal INode GetNode(SnapshotPoint point)
         {
             NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
                             .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
