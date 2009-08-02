@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
 using NDjango.Designer.Parsing;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Intellisense
 {
@@ -16,14 +17,14 @@ namespace NDjango.Designer.Intellisense
         private ICompletionBrokerMapService completionBrokerMap;
         private ICompletionSession activeSession;
         private Completion selectedCompletionBeforeCommit;
-        private Dictionary<ITextBuffer, NodeProvider> tokenizers = new Dictionary<ITextBuffer,NodeProvider>();
+        private Dictionary<ITextBuffer, NodeProvider> nodeProviders = new Dictionary<ITextBuffer,NodeProvider>();
 
         public CompletionController(IParserProviderBorker parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
         {
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;
             this.completionBrokerMap = completionBrokerMap;
-            subjectBuffers.ToList().ForEach(buffer => tokenizers.Add(buffer, parser.GetNodeProvider(buffer)));
+            subjectBuffers.ToList().ForEach(buffer => nodeProviders.Add(buffer, parser.GetNodeProvider(buffer)));
 
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
@@ -114,9 +115,9 @@ namespace NDjango.Designer.Intellisense
 
                 if (caretPoint.HasValue)
                 {
-                    List<string> completions = tokenizers[caretPoint.Value.Snapshot.TextBuffer]
-                        .GetCompletions(caretPoint.Value);
-                    if (completions.Count > 0)
+                    INode completionNode = 
+                        nodeProviders[caretPoint.Value.Snapshot.TextBuffer].GetNode(caretPoint.Value);
+                    if (completionNode != null && completionNode.Values.Count() > 0)
                     {
                         // the invocation occurred in a subject buffer of interest to us
                         ICompletionBroker broker = completionBrokerMap.GetBrokerForTextView(textView, caretPoint.Value.Snapshot.TextBuffer);
@@ -126,7 +127,8 @@ namespace NDjango.Designer.Intellisense
                         activeSession = broker.CreateCompletionSession(triggerPoint, false);
 
                         // Set the completion provider that will be used by the completion source
-                        activeSession.Properties.AddProperty(CompletionProvider.CompletionProviderSessionKey, new CompletionProvider(completions));
+                        activeSession.Properties.AddProperty(CompletionProvider.CompletionProviderSessionKey, 
+                            new CompletionProvider(completionNode));
                         // Attach to the session events
                         activeSession.Dismissed += new System.EventHandler(OnActiveSessionDismissed);
                         activeSession.Committed += new System.EventHandler(OnActiveSessionCommitted);

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.VisualStudio.Language.Intellisense;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Intellisense
 {
@@ -8,9 +9,9 @@ namespace NDjango.Designer.Intellisense
         internal static string CompletionProviderSessionKey = "ndjango.completionProvider";
         private List<string> completions;
 
-        public CompletionProvider(List<string> completions)
+        public CompletionProvider(INode completionNode)
         {
-            this.completions = completions;
+            this.completions = new List<string>(completionNode.Values);
         }
 
         internal IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> GetCompletions(Microsoft.VisualStudio.Language.Intellisense.ICompletionSession session)

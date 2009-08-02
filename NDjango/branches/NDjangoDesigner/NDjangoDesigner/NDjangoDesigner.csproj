@@ -85,7 +85,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Intellisense\KeyProcessor.cs" />
-    <Compile Include="ParserProvider\ParserController.cs" />
+    <Compile Include="ParserProvider\ParserProviderBroker.cs" />
     <Compile Include="ParserProvider\NodeProvider.cs" />
     <Compile Include="ParserProvider\TokenSnapshot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
