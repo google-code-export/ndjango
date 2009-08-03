@@ -19,7 +19,7 @@ namespace NDjango.Designer.Intellisense
         private ICompletionBrokerMapService CompletionBrokerMapService { get; set; }
 
         [Import]
-        internal IParserProviderBorker parser { get; set; }
+        internal INodeProviderBroker parser { get; set; }
 
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers, IEnvironment context)
         {

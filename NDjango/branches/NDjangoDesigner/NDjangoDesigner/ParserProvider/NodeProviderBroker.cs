@@ -8,14 +8,14 @@ using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
-    internal interface IParserProviderBorker
+    internal interface INodeProviderBroker
     {
         NodeProvider GetNodeProvider(ITextBuffer buffer);
         bool IsNDjango(ITextBuffer buffer);
     }
 
-    [Export(typeof(IParserProviderBorker))]
-    internal class ParserProviderBroker : IParserProviderBorker
+    [Export(typeof(INodeProviderBroker))]
+    internal class NodeProviderBroker : INodeProviderBroker
     {
 
         //[Import]
