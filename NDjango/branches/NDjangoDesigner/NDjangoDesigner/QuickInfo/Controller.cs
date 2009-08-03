@@ -53,7 +53,7 @@ namespace NDjango.Designer.QuickInfo
 
                     // Create a quickInfo session
                     activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
-                    activeSession.Properties.AddProperty(Provider.QuickInfoProviderSessionKey, quickInfoNode);
+                    activeSession.Properties.AddProperty(SourceProvider.QuickInfoProviderSessionKey, quickInfoNode);
                     activeSession.Start();
                 }
             }

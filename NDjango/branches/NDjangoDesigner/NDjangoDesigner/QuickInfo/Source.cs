@@ -22,9 +22,9 @@ namespace NDjango.Designer.QuickInfo
             applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(0, 10, Microsoft.VisualStudio.Text.SpanTrackingMode.EdgeExclusive);
 
             object node;
-            if (session.Properties.TryGetProperty<object>(Provider.QuickInfoProviderSessionKey, out node))
+            if (session.Properties.TryGetProperty<object>(SourceProvider.QuickInfoProviderSessionKey, out node))
             {
-                INode quickInfoNode = (INode)session.Properties.GetProperty(Provider.QuickInfoProviderSessionKey);
+                INode quickInfoNode = (INode)session.Properties.GetProperty(SourceProvider.QuickInfoProviderSessionKey);
                 return quickInfoNode.Info;
             }
 

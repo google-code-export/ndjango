@@ -8,15 +8,15 @@ namespace NDjango.Designer.Tags
 {
     class Tagger : ITagger<Constants.ErrorTag>
     {
-        private NodeProvider tokenizer;
+        private NodeProvider nodeProvider;
 
         public Tagger(IParserProviderBorker parser, ITextBuffer buffer)
         {
-            tokenizer = parser.GetNodeProvider(buffer);
-            tokenizer.NodesChanged += new NodeProvider.SnapshotEvent(tokenizer_TagsChanged);
+            nodeProvider = parser.GetNodeProvider(buffer);
+            nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(provider_TagsChanged);
         }
 
-        void tokenizer_TagsChanged(SnapshotSpan snapshotSpan)
+        void provider_TagsChanged(SnapshotSpan snapshotSpan)
         {
             if (TagsChanged != null)
                 TagsChanged(this, new SnapshotSpanEventArgs(snapshotSpan));
@@ -31,10 +31,10 @@ namespace NDjango.Designer.Tags
         {
             foreach (SnapshotSpan span in spans)
             {
-                foreach (NodeSnapshot token in tokenizer.GetNodes(span))
+                foreach (NodeSnapshot node in nodeProvider.GetNodes(span))
                 {
-                    if (token.SnapshotSpan.OverlapsWith(span) && token.Node.ErrorMessage.Severity > 0)
-                        yield return new TagSpan<Constants.ErrorTag>(token.SnapshotSpan, new Constants.ErrorTag());
+                    if (node.SnapshotSpan.OverlapsWith(span) && node.Node.ErrorMessage.Severity > 0)
+                        yield return new TagSpan<Constants.ErrorTag>(node.SnapshotSpan, new Constants.ErrorTag());
                 }
             }
         }

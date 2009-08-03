@@ -95,7 +95,7 @@
     <Compile Include="QuickInfo\ControllerProvider.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="QuickInfo\Provider.cs">
+    <Compile Include="QuickInfo\SourceProvider.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="QuickInfo\Source.cs">
