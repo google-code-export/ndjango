@@ -23,13 +23,13 @@ namespace NDjango.Designer.Classifiers
         /// <summary>
         /// Creates a new instance of the <see cref="Classifier"/>
         /// </summary>
-        /// <param name="parser"></param>
+        /// <param name="nodeProviderBroker"></param>
         /// <param name="classificationTypeRegistry"></param>
         /// <param name="buffer"></param>
-        public Classifier(IParserProviderBorker parser, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
+        public Classifier(INodeProviderBroker nodeProviderBroker, IClassificationTypeRegistryService classificationTypeRegistry, ITextBuffer buffer)
         {
             this.classificationTypeRegistry = classificationTypeRegistry;
-            nodeProvider = parser.GetNodeProvider(buffer);
+            nodeProvider = nodeProviderBroker.GetNodeProvider(buffer);
             nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(nodeProvider_TagsChanged);
         }
 

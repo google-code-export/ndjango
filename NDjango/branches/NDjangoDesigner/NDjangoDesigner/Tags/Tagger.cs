@@ -10,9 +10,9 @@ namespace NDjango.Designer.Tags
     {
         private NodeProvider nodeProvider;
 
-        public Tagger(IParserProviderBorker parser, ITextBuffer buffer)
+        public Tagger(INodeProviderBroker nodeProviderBroker, ITextBuffer buffer)
         {
-            nodeProvider = parser.GetNodeProvider(buffer);
+            nodeProvider = nodeProviderBroker.GetNodeProvider(buffer);
             nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(provider_TagsChanged);
         }
 

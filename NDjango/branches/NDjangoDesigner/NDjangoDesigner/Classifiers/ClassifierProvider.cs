@@ -21,12 +21,12 @@ namespace NDjango.Designer.Classifiers
         internal IClassificationTypeRegistryService classificationTypeRegistry { get; set; }
 
         [Import]
-        internal IParserProviderBorker parser { get; set; }
+        internal INodeProviderBroker nodeProviderBroker { get; set; }
 
         public IClassifier GetClassifier(ITextBuffer textBuffer, IEnvironment context)
         {
-            if (parser.IsNDjango(textBuffer))
-                return new Classifier(parser, classificationTypeRegistry, textBuffer);
+            if (nodeProviderBroker.IsNDjango(textBuffer))
+                return new Classifier(nodeProviderBroker, classificationTypeRegistry, textBuffer);
             else
                 return null;
         }

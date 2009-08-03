@@ -68,24 +68,18 @@
     <Compile Include="Classifiers\ClassifierProvider.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CodeCompletion\CompletionProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CodeCompletion\Controller.cs" />
+    <Compile Include="CodeCompletion\ControllerProvider.cs" />
+    <Compile Include="CodeCompletion\KeyProcessor.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="CodeCompletion\Source.cs" />
+    <Compile Include="CodeCompletion\SourceProvider.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="Intellisense\CompletionController.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Intellisense\CompletionControllerProvider.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Intellisense\CompletionProvider.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Intellisense\CompletionSource.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Intellisense\CompletionSourceProvider.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Intellisense\KeyProcessor.cs" />
-    <Compile Include="ParserProvider\ParserProviderBroker.cs" />
+    <Compile Include="ParserProvider\NodeProviderBroker.cs" />
     <Compile Include="ParserProvider\NodeProvider.cs" />
     <Compile Include="ParserProvider\NodeSnapshot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

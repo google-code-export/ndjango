@@ -19,7 +19,7 @@ namespace NDjango.Designer.Intellisense
         private Completion selectedCompletionBeforeCommit;
         private Dictionary<ITextBuffer, NodeProvider> nodeProviders = new Dictionary<ITextBuffer,NodeProvider>();
 
-        public CompletionController(IParserProviderBorker parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
+        public CompletionController(INodeProviderBroker parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
         {
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;

@@ -17,12 +17,12 @@ namespace NDjango.Designer.Tags
     class TaggerProvider : ITaggerProvider
     {
         [Import]
-        internal IParserProviderBorker parser { get; set; }
+        internal INodeProviderBroker nodeProviderBroker { get; set; }
 
         public ITagger<T> CreateTagger<T>(ITextBuffer buffer, IEnvironment context) where T : ITag
         {
-            if (parser.IsNDjango(buffer))
-                return (ITagger<T>)new Tagger(parser, buffer);
+            if (nodeProviderBroker.IsNDjango(buffer))
+                return (ITagger<T>)new Tagger(nodeProviderBroker, buffer);
             else
                 return null;
         }

@@ -14,7 +14,7 @@ namespace NDjango.Designer.Intellisense
     internal class CompletionSourceProvider : ICompletionSourceProvider
     {
         [Import]
-        internal IParserProviderBorker parser { get; set; }
+        internal INodeProviderBroker parser { get; set; }
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer, IEnvironment environment)
         {
