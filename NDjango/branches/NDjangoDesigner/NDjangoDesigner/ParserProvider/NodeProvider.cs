@@ -8,11 +8,11 @@ using NDjango.Interfaces;
 namespace NDjango.Designer.Parsing
 {
     /// <summary>
-    /// Provides ability to retrive nodes out of snapshot objects.
+    /// Provides ability to retrive tokens out of snapshot objects.
     /// </summary>
     class NodeProvider
     {
-        // it can take some time for the parser to build the node list.
+        // it can take some time for the parser to build the token list.
         // for now let us initialize it to an empty list
         private List<NodeSnapshot> nodes = new List<NodeSnapshot>();
         
@@ -43,7 +43,7 @@ namespace NDjango.Designer.Parsing
         public event SnapshotEvent NodesChanged;
 
         /// <summary>
-        /// Retrieves sequence of nodes out of snapshot object. 
+        /// Retrieves sequence of tokens out of snapshot object. 
         /// </summary>
         private void rebuildNodesAsynch(object snapshotObject)
         {
@@ -51,7 +51,7 @@ namespace NDjango.Designer.Parsing
             List<NodeSnapshot> nodes = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
                 .ToList()
                     .ConvertAll<NodeSnapshot>
-                        (node => new NodeSnapshot(snapshot, node));
+                        (token => new NodeSnapshot(snapshot, token));
             lock (node_lock)
             {
                 this.nodes = nodes;
@@ -70,10 +70,10 @@ namespace NDjango.Designer.Parsing
             if (nodes.Count == 0)
                 return nodes;
             
-            // just in case if while the node list was being rebuilt
+            // just in case if while the tokens list was being rebuilt
             // another modification was made
             if (this.nodes[0].SnapshotSpan.Snapshot != snapshotSpan.Snapshot)
-                this.nodes.ForEach(node => node.TranslateTo(snapshotSpan.Snapshot));
+                this.nodes.ForEach(token => token.TranslateTo(snapshotSpan.Snapshot));
 
             return nodes;
         }
@@ -86,7 +86,7 @@ namespace NDjango.Designer.Parsing
         internal INode GetNode(SnapshotPoint point)
         {
             NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
-                            .FirstOrDefault(node => node.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
+                            .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return null;
             return result.Node;
