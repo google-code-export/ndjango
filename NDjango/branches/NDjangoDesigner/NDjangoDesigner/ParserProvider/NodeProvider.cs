@@ -8,15 +8,15 @@ using NDjango.Interfaces;
 namespace NDjango.Designer.Parsing
 {
     /// <summary>
-    /// Provides ability to retrive tokens out of snapshot objects.
+    /// Provides ability to retrive nodes out of snapshot objects.
     /// </summary>
     class NodeProvider
     {
-        // it can take some time for the parser to build the token list.
+        // it can take some time for the parser to build the node list.
         // for now let us initialize it to an empty list
-        private List<NodeSnapshot> tokens = new List<NodeSnapshot>();
+        private List<NodeSnapshot> nodes = new List<NodeSnapshot>();
         
-        private object token_lock = new object();
+        private object node_lock = new object();
         private IParser parser;
         private ITextBuffer buffer;
 
@@ -43,18 +43,18 @@ namespace NDjango.Designer.Parsing
         public event SnapshotEvent NodesChanged;
 
         /// <summary>
-        /// Retrieves sequence of tokens out of snapshot object. 
+        /// Retrieves sequence of nodes out of snapshot object. 
         /// </summary>
         private void rebuildNodesAsynch(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
-            List<NodeSnapshot> tokens = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
+            List<NodeSnapshot> nodes = parser.Parse(snapshot.Lines.ToList().ConvertAll(line => line.GetTextIncludingLineBreak()))
                 .ToList()
                     .ConvertAll<NodeSnapshot>
-                        (token => new NodeSnapshot(snapshot, token));
-            lock (token_lock)
+                        (node => new NodeSnapshot(snapshot, node));
+            lock (node_lock)
             {
-                this.tokens = tokens;
+                this.nodes = nodes;
             }
             if (NodesChanged != null)
                 NodesChanged(new SnapshotSpan(snapshot, 0, snapshot.Length));
@@ -62,20 +62,20 @@ namespace NDjango.Designer.Parsing
 
         internal List<NodeSnapshot> GetNodes(SnapshotSpan snapshotSpan)
         {
-            List<NodeSnapshot> tokens;
-            lock (token_lock)
+            List<NodeSnapshot> nodes;
+            lock (node_lock)
             {
-                tokens = this.tokens;
+                nodes = this.nodes;
             }
-            if (tokens.Count == 0)
-                return tokens;
+            if (nodes.Count == 0)
+                return nodes;
             
-            // just in case if while the tokens list was being rebuilt
+            // just in case if while the node list was being rebuilt
             // another modification was made
-            if (this.tokens[0].SnapshotSpan.Snapshot != snapshotSpan.Snapshot)
-                this.tokens.ForEach(token => token.TranslateTo(snapshotSpan.Snapshot));
+            if (this.nodes[0].SnapshotSpan.Snapshot != snapshotSpan.Snapshot)
+                this.nodes.ForEach(node => node.TranslateTo(snapshotSpan.Snapshot));
 
-            return tokens;
+            return nodes;
         }
         
         /// <summary>
@@ -86,7 +86,7 @@ namespace NDjango.Designer.Parsing
         internal INode GetNode(SnapshotPoint point)
         {
             NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
-                            .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
+                            .FirstOrDefault(node => node.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return null;
             return result.Node;

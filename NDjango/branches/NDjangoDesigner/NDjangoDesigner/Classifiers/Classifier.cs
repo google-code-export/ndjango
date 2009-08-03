@@ -30,10 +30,10 @@ namespace NDjango.Designer.Classifiers
         {
             this.classificationTypeRegistry = classificationTypeRegistry;
             nodeProvider = parser.GetNodeProvider(buffer);
-            nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(tokenizer_TagsChanged);
+            nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(nodeProvider_TagsChanged);
         }
 
-        private void tokenizer_TagsChanged(SnapshotSpan snapshotSpan)
+        private void nodeProvider_TagsChanged(SnapshotSpan snapshotSpan)
         {
             if (ClassificationChanged != null)
                 ClassificationChanged(this, new ClassificationChangedEventArgs(snapshotSpan));

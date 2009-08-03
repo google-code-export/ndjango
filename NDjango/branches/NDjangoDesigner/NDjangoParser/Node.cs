@@ -9,8 +9,6 @@ namespace NDjango.Designer.Parsing
     /// </summary>
     public struct Node : INode
     {
-        //public enum TokenType { Tag, Marker, TagName, Keyword, Variable, Expression, Reference, Filter, FilterName, FilterParam };
-
         public enum PurposeType { TagList, InnerNodes, Filters, Fields };
         /// <summary>
         /// Type of the node. Depending of type, nodes may provide different functionality
@@ -33,15 +31,15 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="position"></param>
         /// <param name="length"></param>
-        /// <param name="tokenType">type of the token</param>
+        /// <param name="nodeType">type of the node</param>
         /// <param name="Text">tag name</param>
-        public Node(int position, int length, NodeType tokenType, string Text)
+        public Node(int position, int length, NodeType nodeType, string Text)
         {
             // TODO: Complete member initialization
             this.TagName = Text;
             this.Position = position;
             this.Length = length;
-            this.Type = tokenType;
+            this.Type = nodeType;
             this.Info = "Quick info about " + Text + " tag";
 
             Values = new List<string>();
@@ -73,7 +71,7 @@ namespace NDjango.Designer.Parsing
             }
         }
 
-        public void AddChildNode(Node token, PurposeType purpose)
+        public void AddChildNode(Node node, PurposeType purpose)
         {
             //ChildNodesByPurpose[purpose].Add(token);
         }
