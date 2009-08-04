@@ -115,9 +115,9 @@ namespace NDjango.Designer.Intellisense
 
                 if (caretPoint.HasValue)
                 {
-                    INode completionNode = 
-                        nodeProviders[caretPoint.Value.Snapshot.TextBuffer].GetNode(caretPoint.Value);
-                    if (completionNode != null && completionNode.Values.Count() > 0)
+                    List<INode> completionNodes = 
+                        nodeProviders[caretPoint.Value.Snapshot.TextBuffer].GetNodes(caretPoint.Value);
+                    if (completionNodes != null)
                     {
                         // the invocation occurred in a subject buffer of interest to us
                         ICompletionBroker broker = completionBrokerMap.GetBrokerForTextView(textView, caretPoint.Value.Snapshot.TextBuffer);
@@ -128,7 +128,7 @@ namespace NDjango.Designer.Intellisense
 
                         // Set the completion provider that will be used by the completion source
                         activeSession.Properties.AddProperty(CompletionProvider.CompletionProviderSessionKey, 
-                            new CompletionProvider(completionNode));
+                            new CompletionProvider(completionNodes));
                         // Attach to the session events
                         activeSession.Dismissed += new System.EventHandler(OnActiveSessionDismissed);
                         activeSession.Committed += new System.EventHandler(OnActiveSessionCommitted);

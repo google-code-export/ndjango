@@ -24,8 +24,10 @@ namespace NDjango.Designer.QuickInfo
             object node;
             if (session.Properties.TryGetProperty<object>(SourceProvider.QuickInfoProviderSessionKey, out node))
             {
-                INode quickInfoNode = (INode)session.Properties.GetProperty(SourceProvider.QuickInfoProviderSessionKey);
-                return quickInfoNode.Info;
+                List<INode> quickInfoNodes = (List<INode>)session.Properties.GetProperty(SourceProvider.QuickInfoProviderSessionKey);
+                //quickInfoNodes.ConvertAll(infoNode => infoNode.Info);
+                //TODO: define what exactly node's info to be displayed
+                return quickInfoNodes.Find(infoNode => infoNode.Priority > -1).Info;
             }
 
             return null;

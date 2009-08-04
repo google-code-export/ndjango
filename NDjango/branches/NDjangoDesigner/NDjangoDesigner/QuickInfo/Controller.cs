@@ -44,8 +44,8 @@ namespace NDjango.Designer.QuickInfo
                                                  PositionAffinity.Predecessor);
             if (point.HasValue)
             {
-                INode quickInfoNode = tokenizers[point.Value.Snapshot.TextBuffer].GetNode(point.Value);
-                if (quickInfoNode != null)
+                List<INode> quickInfoNodes = tokenizers[point.Value.Snapshot.TextBuffer].GetNodes(point.Value);
+                if (quickInfoNodes != null)
                 {
                     // the invocation occurred in a subject buffer of interest to us
                     IQuickInfoBroker broker = brokerMapService.GetBrokerForTextView(textView, point.Value.Snapshot.TextBuffer);
@@ -53,7 +53,7 @@ namespace NDjango.Designer.QuickInfo
 
                     // Create a quickInfo session
                     activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
-                    activeSession.Properties.AddProperty(SourceProvider.QuickInfoProviderSessionKey, quickInfoNode);
+                    activeSession.Properties.AddProperty(SourceProvider.QuickInfoProviderSessionKey, quickInfoNodes);
                     activeSession.Start();
                 }
             }

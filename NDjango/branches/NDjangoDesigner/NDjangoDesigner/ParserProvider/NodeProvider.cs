@@ -83,13 +83,13 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="point">point identifiying the desired node</param>
         /// <returns></returns>
-        internal INode GetNode(SnapshotPoint point)
+        internal List<INode> GetNodes(SnapshotPoint point)
         {
-            NodeSnapshot result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
-                            .FirstOrDefault(token => token.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
+            List<NodeSnapshot> result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
+                            .FindAll(node => node.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
             if (result == null)
                 return null;
-            return result.Node;
+            return result.ConvertAll(node => node.Node);
         }
     }
 }
