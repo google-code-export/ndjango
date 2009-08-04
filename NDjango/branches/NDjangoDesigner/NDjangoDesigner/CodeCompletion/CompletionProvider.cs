@@ -9,9 +9,14 @@ namespace NDjango.Designer.Intellisense
         internal static string CompletionProviderSessionKey = "ndjango.completionProvider";
         private List<string> completions;
 
-        public CompletionProvider(INode completionNode)
+        public CompletionProvider(List<INode> completionNodes)
         {
-            this.completions = new List<string>(completionNode.Values);
+            this.completions = new List<string>();
+            foreach (INode node in completionNodes)
+            {
+                if(node.Priority > -1)
+                    this.completions.AddRange(node.Values);
+            }
         }
 
         internal IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> GetCompletions(Microsoft.VisualStudio.Language.Intellisense.ICompletionSession session)

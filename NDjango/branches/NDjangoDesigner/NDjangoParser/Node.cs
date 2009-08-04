@@ -20,6 +20,7 @@ namespace NDjango.Designer.Parsing
         public List<string> Values;
         public string Info;
         public Error Error;
+        public int Priority;
         /// <summary>
         /// defines the child nodes, distributed by their type (purpose).
         /// Every node at least will have two child nodes lists.
@@ -41,6 +42,7 @@ namespace NDjango.Designer.Parsing
             this.Length = length;
             this.Type = nodeType;
             this.Info = "Quick info about " + Text + " tag";
+            this.Priority = 0;
 
             Values = new List<string>();
             Error = new Error();
@@ -108,6 +110,11 @@ namespace NDjango.Designer.Parsing
         Error INode.ErrorMessage
         {
             get { return this.Error; }
+        }
+
+        int INode.Priority
+        {
+            get { return Priority; }
         }
 
         string INode.Info

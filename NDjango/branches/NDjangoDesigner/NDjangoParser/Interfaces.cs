@@ -103,6 +103,7 @@ namespace NDjango.Interfaces
         /// Indicates the quick info message.
         /// </summary>
         string Info { get; }
+        int Priority { get; }
         Dictionary<string, IEnumerable<INode>> Nodes { get; }
     }
 }
