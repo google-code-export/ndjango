@@ -27,10 +27,25 @@ namespace NDjango.Designer.QuickInfo
                 List<INode> quickInfoNodes = (List<INode>)session.Properties.GetProperty(SourceProvider.QuickInfoProviderSessionKey);
                 //quickInfoNodes.ConvertAll(infoNode => infoNode.Info);
                 //TODO: define what exactly node's info to be displayed
-                return quickInfoNodes.Find(infoNode => infoNode.Priority > -1).Info;
+                return GetToolTipMessage(quickInfoNodes);
             }
 
             return null;
+        }
+
+        private string GetToolTipMessage(List<INode> nodes)
+        {
+            StringBuilder result = new StringBuilder();
+            foreach (INode node in nodes)
+            {
+                result.Append(node.ErrorMessage.Message);
+                result.AppendLine();
+            }
+
+            if (nodes.Exists(someNode => someNode.NodeType == NodeType.Tag))
+                result.Append(nodes.Find(someNode => someNode.NodeType == NodeType.Tag).Info);
+                
+            return result.ToString();
         }
     }
 }

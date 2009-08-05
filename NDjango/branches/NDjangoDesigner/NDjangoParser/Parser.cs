@@ -30,7 +30,7 @@ namespace NDjango.Designer.Parsing
                     Node tagToken = new Node(token_start, end + 2 - start, NodeType.Tag,
                         line.Substring(start, end + 2 - start).Replace("{%", string.Empty).Replace("%}", string.Empty));
                     result.Add(tagToken);
-                    CreateInnerChildNodes(tagToken);
+                    result.AddRange(CreateInnerChildNodes(tagToken));
                     
                     pos = end;
                 }
@@ -39,25 +39,74 @@ namespace NDjango.Designer.Parsing
             return result;
         }
 
-        private void CreateInnerChildNodes(Node tagToken)
-        {
-            if (tagToken.Type != NodeType.Tag)
-                return;
+        //private void CreateInnerChildNodes(Node tagToken)
+        //{
+        //    if (tagToken.Type != NodeType.Tag)
+        //        return;
 
-            string[] lexemes = tagToken.TagName.Split(' ');
-            foreach (string lexeme in lexemes)
+        //    string[] lexemes = tagToken.TagName.Split(' ');
+        //    foreach (string lexeme in lexemes)
+        //    {
+        //        if (lexeme != string.Empty)
+        //        {
+        //            tagToken.AddChildNode(new Node(0, 0, IdentifyTokenType(tagToken, lexeme), lexeme), Constants.NODELIST_TAG_ELEMENTS);
+        //        }
+        //    }
+        //}
+
+        private List<INode> CreateInnerChildNodes(INode node)
+        {
+            List<INode> result = new List<INode>();
+            if (node.Text.Contains(" "))
             {
-                if (lexeme != string.Empty)
+                node.NodeType = NodeType.Tag;
+                string[] lexemes = node.Text.Split(' ');
+                foreach (string lexeme in lexemes)
                 {
-                    tagToken.AddChildNode(new Node(0, 0, IdentifyTokenType(tagToken, lexeme), lexeme), Node.PurposeType.InnerNodes);
+                    if (lexeme != string.Empty)
+                    {
+                        Node childNode = new Node(node.Position, node.Length, NodeType.TagName, lexeme);
+                        ((Node)node).AddChildNode(childNode, Constants.NODELIST_TAG_ELEMENTS);
+                        result.Add(childNode);
+                        result.AddRange(CreateInnerChildNodes(childNode));
+                    }
                 }
             }
+            else if(node.Text.Contains("."))
+            {
+                node.NodeType = NodeType.Expression;
+                string[] lexemes = node.Text.Split('.');
+                foreach (string lexeme in lexemes)
+                {
+                    if (lexeme != string.Empty)
+                    {
+                        Node childNode = new Node(node.Position, node.Length, NodeType.Variable, lexeme);
+                        ((Node)node).AddChildNode(childNode, Constants.NODELIST_TAG_CHILDREN);
+                        result.Add(childNode);
+                    }
+                }
+            }
+            else if (node.Text.Contains("|"))
+            {
+                node.NodeType = NodeType.Filter;
+                string[] lexemes = node.Text.Split('|');
+                foreach (string lexeme in lexemes)
+                {
+                    if (lexeme != string.Empty)
+                    {
+                        Node childNode = new Node(node.Position, node.Length, NodeType.FilterName, lexeme);
+                        ((Node)node).AddChildNode(childNode, Constants.NODELIST_TAG_CHILDREN);
+                        result.Add(childNode);
+                    }
+                }
+            }
+            return result;
         }
 
         private NodeType IdentifyTokenType(Node parentToken, string lexeme)
         {
             //not implemented
-            return NodeType.Keyword;
+            return NodeType.TagName;
         }
 
         static Regex r = new Regex("{{.*}}", RegexOptions.Compiled);
