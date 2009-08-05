@@ -6,10 +6,16 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Language.Intellisense;
 using NDjango.Designer.Parsing;
 using NDjango.Interfaces;
+using System;
+using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.OLE.Interop;
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace NDjango.Designer.Intellisense
 {
-    class CompletionController : IIntellisenseController
+    class Controller : IIntellisenseController
     {
         private IList<ITextBuffer> subjectBuffers;
         private ITextView subjectTextView;
@@ -18,24 +24,56 @@ namespace NDjango.Designer.Intellisense
         private ICompletionSession activeSession;
         private Completion selectedCompletionBeforeCommit;
         private Dictionary<ITextBuffer, NodeProvider> nodeProviders = new Dictionary<ITextBuffer,NodeProvider>();
+        private IVsEditorAdaptersFactoryService adaptersFactory;
 
-        public CompletionController(INodeProviderBroker parser, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap)
+        public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, 
+            ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap,
+            IVsEditorAdaptersFactoryService adaptersFactory)
         {
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;
             this.completionBrokerMap = completionBrokerMap;
-            subjectBuffers.ToList().ForEach(buffer => nodeProviders.Add(buffer, parser.GetNodeProvider(buffer)));
+            this.adaptersFactory = adaptersFactory;
+            subjectBuffers.ToList().ForEach(buffer => nodeProviders.Add(buffer, nodeProviderBroker.GetNodeProvider(buffer)));
 
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
             {
-                KeyProcessor.KeyDownEvent += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
-                KeyProcessor.KeyUpEvent += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
-                //WpfTextView.VisualElement.KeyDown += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
-                //WpfTextView.VisualElement.KeyUp += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                GetShellCommandDispatcher(subjectTextView);
+                WpfTextView.VisualElement.KeyDown += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
+                WpfTextView.VisualElement.KeyUp += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
             }
         }
-
+        
+        /// <summary>        
+        /// Get the SUIHostCommandDispatcher from the shell.  This method is rather ugly, and will (hopefully) be cleaned up        
+        /// slightly whenever [Import]ing an IServiceProvider is available.        
+        /// </summary>        
+        /// <param name="view"></param>        
+        /// <returns></returns>        
+        IOleCommandTarget GetShellCommandDispatcher(ITextView view)        
+        {            
+            IOleCommandTarget shellCommandDispatcher;             
+            var vsBuffer = adaptersFactory.GetBufferAdapter(view.TextBuffer);            
+            if (vsBuffer == null)                
+                return null;             
+            Guid guidServiceProvider = VSConstants.IID_IUnknown;            
+            IObjectWithSite objectWithSite = vsBuffer as IObjectWithSite;            
+            IntPtr ptrServiceProvider = IntPtr.Zero;            
+            objectWithSite.GetSite(ref guidServiceProvider, out ptrServiceProvider);             
+            Microsoft.VisualStudio.OLE.Interop.IServiceProvider serviceProvider = 
+                (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)Marshal.GetObjectForIUnknown(ptrServiceProvider);
+            Guid guidService = typeof(SUIHostCommandDispatcher).GUID;            
+            Guid guidInterface = typeof(IOleCommandTarget).GUID;            
+            IntPtr ptrObject = IntPtr.Zero;             
+            int hr = serviceProvider.QueryService(ref guidService, ref guidInterface, out ptrObject);
+            if (ErrorHandler.Failed(hr) || ptrObject == IntPtr.Zero)
+                return null;
+            shellCommandDispatcher = (IOleCommandTarget)Marshal.GetObjectForIUnknown(ptrObject);
+            Marshal.Release(ptrObject);
+            var vsTextView = adaptersFactory.GetViewAdapter(view);
+            return shellCommandDispatcher;        
+        }
         /// <summary>
         /// Handles the key up event.
         /// The intellisense window is dismissed when one presses ESC key
@@ -99,12 +137,7 @@ namespace NDjango.Designer.Intellisense
             if (!(e.Key >= Key.A && e.Key <= Key.Z))
                 return;
 
-            if (activeSession != null)
-            {
-//                activeSession.SelectedCompletionSet.Filter(CompletionMatchType.MatchDisplayText, true);
-//                activeSession.SelectedCompletionSet.SelectBestMatch();
-            }
-            else
+            if (activeSession == null)
             {
 
                 // determine which subject buffer is affected by looking at the caret position
@@ -153,11 +186,6 @@ namespace NDjango.Designer.Intellisense
             //}
         }
 
-        private CompletionSet GetCompletionSet()
-        {
-            return activeSession.CompletionSets.FirstOrDefault(set => set.DisplayName == CompletionSource.CompletionSetName);
-        }
-
         public void ConnectSubjectBuffer(ITextBuffer subjectBuffer)
         { }
 
@@ -169,10 +197,8 @@ namespace NDjango.Designer.Intellisense
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
             {
-                KeyProcessor.KeyDownEvent -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
-                KeyProcessor.KeyUpEvent -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
-                //WpfTextView.VisualElement.KeyDown -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
-                //WpfTextView.VisualElement.KeyUp -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                WpfTextView.VisualElement.KeyDown -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
+                WpfTextView.VisualElement.KeyUp -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
             }
         }
     }
