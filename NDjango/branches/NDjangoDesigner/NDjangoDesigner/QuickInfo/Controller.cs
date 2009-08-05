@@ -51,7 +51,6 @@ namespace NDjango.Designer.QuickInfo
                     IQuickInfoBroker broker = brokerMapService.GetBrokerForTextView(textView, point.Value.Snapshot.TextBuffer);
                     ITrackingPoint triggerPoint = point.Value.Snapshot.CreateTrackingPoint(point.Value.Position, PointTrackingMode.Positive);
 
-                    // Create a quickInfo session
                     activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
                     activeSession.Properties.AddProperty(SourceProvider.QuickInfoProviderSessionKey, quickInfoNodes);
                     activeSession.Start();
@@ -60,18 +59,14 @@ namespace NDjango.Designer.QuickInfo
         }
 
         public void ConnectSubjectBuffer(ITextBuffer subjectBuffer)
-        {
-//            throw new NotImplementedException();
-        }
+        { }
 
         public void Detach(ITextView textView)
-        {
-//            throw new NotImplementedException();
-        }
+        { }
 
         public void DisconnectSubjectBuffer(ITextBuffer subjectBuffer)
         {
-//            throw new NotImplementedException();
+            textView.MouseHover -= new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
         }
     }
 }
