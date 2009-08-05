@@ -21,45 +21,56 @@ namespace NDjango.Interfaces
         /// <example>{% if somevalue %}</example>
         /// </summary>
         Tag,
+        
         /// <summary>
         /// The markers, which frame django tag. 
         /// <example>{%, %}</example>
         /// </summary>
         Marker,
+        
         /// <summary>
         /// Django template tag.
         /// <example> "with", "for", "ifequal"</example>
         /// </summary>
         TagName,
+
         /// <summary>
-        /// The keyword, that is necessary for some tags.
+        /// The keyword, as required by some tags.
         /// <example>"and", "as"</example>
         /// </summary>
         Keyword,
+
         /// <summary>
-        /// The variable of expression.
-        /// <example>In "User.DoB" expression "DoB" is a variable</example>
+        /// The variable definition used in tags which introduce new variables i.e. 
+        /// loop variable in the For tag.
+        /// <example>loop_item</example>
         /// </summary>
         Variable,
+
         /// <summary>
-        /// Expression, which may contain variables and filters
+        /// Expression, which consists of a reference followed by 0 or more filters
         /// <example>User.DoB|date:"D d M Y"</example>
         /// </summary>
         Expression,
+        
         /// <summary>
-        /// 
+        /// Reference to a value in the current context.
+        /// <example>User.DoB</example>
         /// </summary>
         Reference,
+
         /// <summary>
-        /// The filter or a group of filters. May contain parameters.
-        /// <example>first|length|default:"nothing"</example>
+        /// Filter with o without a parameter. Parameter can be a constant or a reference
+        /// <example>default:"nothing"</example>
         /// </summary>
         Filter,
+
         /// <summary>
         /// The name of the filter.
         /// <example>"length", "first", "default"</example>
         /// </summary>
         FilterName,
+        
         /// <summary>
         /// Filter parameter.
         /// <example>any valid value</example>
@@ -69,9 +80,22 @@ namespace NDjango.Interfaces
 
     public static class Constants
     {
+        /// <summary>
+        /// List nodes representing the elements of the tag itself, including 
+        /// markers, tag name, tag paremeters, etc
+        /// </summary>
         public const string NODELIST_TAG_ELEMENTS = "standard.elements";
+        /// <summary>
+        /// Stadard list of nodes representing child tags
+        /// </summary>
         public const string NODELIST_TAG_CHILDREN = "standard.children";
+        /// <summary>
+        /// List of nodes representing the <b>true</b> branch of the if tag and similar tags
+        /// </summary>
         public const string NODELIST_IFTAG_IFTRUE = "if.true.children";
+        /// <summary>
+        /// List of nodes representing the <b>false</b> branch of the if tag and similar tags
+        /// </summary>
         public const string NODELIST_IFTAG_IFFALSE = "if.false.children";
     }
 
@@ -97,10 +121,13 @@ namespace NDjango.Interfaces
         int Position { get; }
         int Length { get; }
         string Text { get; }
+        /// <summary>
+        /// List of allowed values
+        /// </summary>
         IEnumerable<string> Values { get; }
         Error ErrorMessage { get; }
         /// <summary>
-        /// Indicates the quick info message.
+        /// Text to be shown as the node description.
         /// </summary>
         string Info { get; }
         int Priority { get; }

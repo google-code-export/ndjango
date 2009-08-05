@@ -14,7 +14,7 @@ namespace NDjango.Designer.QuickInfo
 {
     [Export(typeof(IIntellisenseControllerProvider))]
     [Name("NDjango Completion Controller")]
-    [Order(Before = "Default Completion Controller")]
+    [Order]
     [ContentType(Constants.NDJANGO)]
     internal class CompletionControllerProvider : IIntellisenseControllerProvider
     {
