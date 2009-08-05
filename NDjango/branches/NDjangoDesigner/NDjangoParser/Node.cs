@@ -117,7 +117,7 @@ namespace NDjango.Designer.Parsing
             get { return Priority; }
         }
 
-        string INode.Info
+        string INode.Description
         {
             get
             {

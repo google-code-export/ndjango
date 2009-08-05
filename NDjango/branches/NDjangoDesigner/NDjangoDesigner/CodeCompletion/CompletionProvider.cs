@@ -12,11 +12,7 @@ namespace NDjango.Designer.Intellisense
         public CompletionProvider(List<INode> completionNodes)
         {
             this.completions = new List<string>();
-            foreach (INode node in completionNodes)
-            {
-                if(node.Priority > -1)
-                    this.completions.AddRange(node.Values);
-            }
+            completionNodes.ForEach(node => this.completions.AddRange(node.Values));
         }
 
         internal IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> GetCompletions(Microsoft.VisualStudio.Language.Intellisense.ICompletionSession session)
