@@ -93,7 +93,7 @@ namespace NDjango.Interfaces
 
     public interface INode
     {
-        NodeType NodeType { get; }
+        NodeType NodeType { get; set; }
         int Position { get; }
         int Length { get; }
         string Text { get; }

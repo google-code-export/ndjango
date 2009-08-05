@@ -9,7 +9,6 @@ namespace NDjango.Designer.Parsing
     /// </summary>
     public struct Node : INode
     {
-        public enum PurposeType { TagList, InnerNodes, Filters, Fields };
         /// <summary>
         /// Type of the node. Depending of type, nodes may provide different functionality
         /// </summary>
@@ -45,7 +44,7 @@ namespace NDjango.Designer.Parsing
             this.Priority = 0;
 
             Values = new List<string>();
-            Error = new Error();
+            Error = new Error(0, "Test error in" + Text + "tag. Node type: " + nodeType);
             ChildNodesByPurpose = new Dictionary<string, IEnumerable<INode>>();
             //ChildNodesByPurpose.Add(Constants.NODELIST_TAG_CHILDREN, tagList);
             //ChildNodesByPurpose.Add(Constants.NODELIST_TAG_CHILDREN, innerNodes);
@@ -73,7 +72,7 @@ namespace NDjango.Designer.Parsing
             }
         }
 
-        public void AddChildNode(Node node, PurposeType purpose)
+        public void AddChildNode(Node node, string purpose)
         {
             //ChildNodesByPurpose[purpose].Add(token);
         }
@@ -81,6 +80,7 @@ namespace NDjango.Designer.Parsing
         NodeType INode.NodeType
         {
             get { return Type; }
+            set { Type = value; }
         }
 
         int INode.Position
