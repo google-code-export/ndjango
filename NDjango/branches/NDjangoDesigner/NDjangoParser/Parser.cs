@@ -39,21 +39,6 @@ namespace NDjango.Designer.Parsing
             return result;
         }
 
-        //private void CreateInnerChildNodes(Node tagToken)
-        //{
-        //    if (tagToken.Type != NodeType.Tag)
-        //        return;
-
-        //    string[] lexemes = tagToken.TagName.Split(' ');
-        //    foreach (string lexeme in lexemes)
-        //    {
-        //        if (lexeme != string.Empty)
-        //        {
-        //            tagToken.AddChildNode(new Node(0, 0, IdentifyTokenType(tagToken, lexeme), lexeme), Constants.NODELIST_TAG_ELEMENTS);
-        //        }
-        //    }
-        //}
-
         private List<INode> CreateInnerChildNodes(INode node)
         {
             List<INode> result = new List<INode>();
