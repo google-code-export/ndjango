@@ -43,7 +43,7 @@ namespace NDjango.Designer.QuickInfo
             }
 
             if (nodes.Exists(someNode => someNode.NodeType == NodeType.Tag))
-                result.Append(nodes.Find(someNode => someNode.NodeType == NodeType.Tag).Info);
+                result.Append(nodes.Find(someNode => someNode.NodeType == NodeType.Tag).Description);
                 
             return result.ToString();
         }

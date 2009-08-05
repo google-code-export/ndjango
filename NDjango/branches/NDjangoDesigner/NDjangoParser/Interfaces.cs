@@ -129,7 +129,7 @@ namespace NDjango.Interfaces
         /// <summary>
         /// Text to be shown as the node description.
         /// </summary>
-        string Info { get; }
+        string Description { get; }
         int Priority { get; }
         Dictionary<string, IEnumerable<INode>> Nodes { get; }
     }
