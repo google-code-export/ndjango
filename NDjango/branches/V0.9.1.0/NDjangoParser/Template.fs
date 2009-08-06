@@ -66,9 +66,6 @@ module internal Template =
                 | None ->
                        load_template name false
         
-            member x.GetTemplateVariables name = 
-                Array.of_list ((x :>ITemplateManager).GetTemplate name).GetVariables 
-
             
     /// Implements the template (ITemplate interface)
     and internal Impl(provider : ITemplateManagerProvider, template: TextReader) =
@@ -96,8 +93,6 @@ module internal Template =
                     }) :> System.IO.TextReader
                 
             member this.Nodes = node_list
-            
-            member this.GetVariables = node_list |> List.fold (fun result node -> result @ node.GetVariables) []
             
     and
         private Context (externalContext, variables, autoescape: bool) =

@@ -100,7 +100,7 @@ module internal For =
         }
         
             
-    type Node(
+    type TagNode(
                 token : BlockToken,
                 enumerator : FilterExpression, 
                 variables : string list, 
@@ -108,7 +108,7 @@ module internal For =
                 emptyNodes: NDjango.Interfaces.INodeImpl list,
                 reversed: bool
                 ) =
-        inherit NDjango.ASTNodes.Node(Block token)
+        inherit NDjango.ASTNodes.TagNode(token)
 
         /// Creates a new ForContext object to represent the current iteration
         /// for the loop. The third parameter (context) is a context for the 
@@ -208,12 +208,12 @@ module internal For =
                 | _ -> {walker with parent=Some walker; nodes=emptyNodes}
             | None -> {walker with parent=Some walker; nodes=emptyNodes}
     
-    /// this is a for loop helper node. The real loop node <see cref="Node"/> places a list of nodes
+    /// this is a for loop helper node. The real loop node <see cref="TagNode"/> places a list of nodes
     /// for the loop body into the walker, it adds the Repeater as the last one. The repeater checks for
     /// the endloop condition and if another iteration is necessary re-adds the list of nodes and itself to 
     /// the walker
     and Repeater(token:BlockToken, enumerator:obj seq, createWalker) =
-        inherit NDjango.ASTNodes.Node(Block token)
+        inherit NDjango.ASTNodes.TagNode(token)
         
         override this.walk manager walker =
             if Seq.isEmpty enumerator then
@@ -248,5 +248,5 @@ module internal For =
                             [], remaining
                     | _ -> [], remaining
 
-                ((Node(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
+                ((TagNode(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
 

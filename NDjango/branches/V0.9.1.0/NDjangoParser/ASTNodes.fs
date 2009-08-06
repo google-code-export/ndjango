@@ -23,85 +23,18 @@
 namespace NDjango
 
 open System.Collections.Generic
-
 open OutputHandling
 open Lexer
 open NDjango.Interfaces
 open Expressions
+open ParserNodes
 
 module internal ASTNodes =
 
-
-    /// Base class of the Django AST 
-    type Node(token: Token) =
-    
-        /// Indicates whether this node must be the first non-text node in the template
-        abstract member must_be_first: bool
-        default this.must_be_first = false
+    /// Base class for all NDJango Tag nodes
+    type TagNode(token: BlockToken) =
+        inherit Node(Block token)
         
-        /// The token that defined the node
-        member this.Token with get() = token
-
-        /// Processes this node and all child nodes
-        abstract member walk: ITemplateManager -> Walker -> Walker
-        default  this.walk manager walker = walker
-        
-        /// returns a list of immediate child nodes contained within this node
-        abstract member nodes: INodeImpl list
-        default x.nodes with get() = []
-
-        /// returns a list of nodes representing tag elements
-        abstract member elements: INode list
-        default x.elements with get() = []
-        
-        abstract member nodeLists: Map<string, IEnumerable<INode>>
-        default x.nodeLists = 
-            new Map<string, IEnumerable<INode>>([]) 
-//                |> Map.add Constants.NODELIST_TAG_CHILDREN (x.nodes :> IEnumerable<INode>)
-                |> Map.add Constants.NODELIST_TAG_ELEMENTS (x.elements :> IEnumerable<INode>)
-
-        /// returns all child nodes contained within this node
-        abstract member GetVariables: string list
-        default this.GetVariables 
-            with get() =
-                this.nodes |> List.fold 
-                    (fun vars node -> 
-                        match node.Token with 
-                        | Block b -> node.GetVariables @ vars
-                        | Variable v -> node.GetVariables @ vars
-                        | _ -> vars
-                    ) 
-                    []
-            
-        interface INode with
-
-             /// Node type
-            member x.NodeType = NodeType.Tag 
-            
-            /// Position of the first character of the node text
-            member x.Position = (get_textToken token).Position
-            
-            /// Length of the node text
-            member x.Length = (get_textToken token).Length
-
-            /// a list of values allowed for the node
-            member x.Values = []
-            
-            /// message associated with the node
-            member x.ErrorMessage = new Error(-1,"")
-            
-            /// Node description (will be shown in the tooltip)
-            member x.Description = ""
-            
-            /// node lists
-            member x.Nodes = x.nodeLists :> IDictionary<string, IEnumerable<INode>>
-
-        interface INodeImpl with
-            member this.must_be_first = this.must_be_first
-            member this.Token = this.Token
-            member this.walk manager walker = this.walk manager walker
-            member this.GetVariables = this.GetVariables
-
     /// retrieves a template given the template name. The name is supplied as a FilterExpression
     /// which when resolved should eithter get a ready to use template, or a string (url)
     /// to the source code for the template
@@ -114,10 +47,10 @@ module internal ASTNodes =
             | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Can't construct template from %A" o, None))
         | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Variable %A is undefined" templateRef, None))
 
-    type SuperBlockPointer = {super:Node}
+    type SuperBlockPointer = {super:TagNode}
 
     and SuperBlock (token:BlockToken, parents: BlockNode list) =
-        inherit Node(Block token)
+        inherit TagNode(token)
         
         let nodelist, parent = 
             match parents with
@@ -137,7 +70,7 @@ module internal ASTNodes =
         
         
     and BlockNode(token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
-        inherit Node(Block token)
+        inherit TagNode(token)
 
         member this.MapNodes blocks =
             match Map.tryFind this.Name blocks with
@@ -171,8 +104,8 @@ module internal ASTNodes =
             
         override this.nodes with get() = this.Nodelist
        
-    and ExtendsNode(token:BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
-        inherit Node(Block token)
+    and ExtendsNode(token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
+        inherit TagNode(token)
             
         /// produces a flattened list of all nodes and child nodes within a node list
         let rec unfold_nodes = function

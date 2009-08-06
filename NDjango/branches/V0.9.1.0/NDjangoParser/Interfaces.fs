@@ -98,7 +98,7 @@ type Error(severity:int, message:string) =
 /// A representation of a node of the template abstract syntax tree    
 type INode =
 
-    /// Node type
+    /// TagNode type
     abstract member NodeType: NodeType 
     
     /// Position of the first character of the node text
@@ -113,7 +113,7 @@ type INode =
     /// message associated with the node
     abstract member ErrorMessage: Error
     
-    /// Node description (will be shown in the tooltip)
+    /// TagNode description (will be shown in the tooltip)
     abstract member Description: string
     
     /// node lists
@@ -163,9 +163,6 @@ type ITemplateManager =
     /// that will stream out the results of the render.
     abstract member RenderTemplate: path:string * context:IDictionary<string, obj> -> TextReader
 
-    /// given the template name returns a list of names of the variables referenced in the template
-    abstract member GetTemplateVariables: path:string -> string []
-
     /// given the path to the template and context returns the template implementation
     abstract member GetTemplate: path:string -> ITemplate
 
@@ -178,9 +175,6 @@ and ITemplate =
     
     /// A list of top level sibling nodes
     abstract Nodes: INodeImpl list
-    
-    /// returns a list of names of the variables referenced in the template
-    abstract GetVariables: string list
 
 /// Rendering state used by the ASTWalker to keep track of the rendering process as it walks through 
 /// the template abstract syntax tree
@@ -209,9 +203,6 @@ and INodeImpl =
 
     /// Processes this node and advances the walker to reflect the progress made
     abstract member walk: manager:ITemplateManager -> walker:Walker -> Walker
-    
-    /// returns a list of names of the variables referenced in the template node
-    abstract member GetVariables: string list
 
 /// Parsing interface definition
 type IParser =
