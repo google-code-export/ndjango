@@ -22,6 +22,8 @@
 
 namespace NDjango
 
+open System.Collections.Generic
+
 open OutputHandling
 open Lexer
 open NDjango.Interfaces
@@ -32,6 +34,7 @@ module internal ASTNodes =
 
     /// Base class of the Django AST 
     type Node(token: Token) =
+    
         /// Indicates whether this node must be the first non-text node in the template
         abstract member must_be_first: bool
         default this.must_be_first = false
@@ -43,9 +46,19 @@ module internal ASTNodes =
         abstract member walk: ITemplateManager -> Walker -> Walker
         default  this.walk manager walker = walker
         
-        /// returns all child nodes contained within this node
-        abstract member nodes: INode list
-        default this.nodes with get() = []
+        /// returns a list of immediate child nodes contained within this node
+        abstract member nodes: INodeImpl list
+        default x.nodes with get() = []
+
+        /// returns a list of nodes representing tag elements
+        abstract member elements: INode list
+        default x.elements with get() = []
+        
+        abstract member nodeLists: Map<string, IEnumerable<INode>>
+        default x.nodeLists = 
+            new Map<string, IEnumerable<INode>>([]) 
+//                |> Map.add Constants.NODELIST_TAG_CHILDREN (x.nodes :> IEnumerable<INode>)
+                |> Map.add Constants.NODELIST_TAG_ELEMENTS (x.elements :> IEnumerable<INode>)
 
         /// returns all child nodes contained within this node
         abstract member GetVariables: string list
@@ -59,8 +72,31 @@ module internal ASTNodes =
                         | _ -> vars
                     ) 
                     []
-        
+            
         interface INode with
+
+             /// Node type
+            member x.NodeType = NodeType.Tag 
+            
+            /// Position of the first character of the node text
+            member x.Position = (get_textToken token).Position
+            
+            /// Length of the node text
+            member x.Length = (get_textToken token).Length
+
+            /// a list of values allowed for the node
+            member x.Values = []
+            
+            /// message associated with the node
+            member x.ErrorMessage = new Error(-1,"")
+            
+            /// Node description (will be shown in the tooltip)
+            member x.Description = ""
+            
+            /// node lists
+            member x.Nodes = x.nodeLists :> IDictionary<string, IEnumerable<INode>>
+
+        interface INodeImpl with
             member this.must_be_first = this.must_be_first
             member this.Token = this.Token
             member this.walk manager walker = this.walk manager walker
@@ -100,7 +136,7 @@ module internal ASTNodes =
             | None -> new SuperBlock(token,[])
         
         
-    and BlockNode(token: BlockToken, name: string, nodelist: INode list, ?parent: BlockNode) =
+    and BlockNode(token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
         inherit Node(Block token)
 
         member this.MapNodes blocks =
@@ -135,18 +171,18 @@ module internal ASTNodes =
             
         override this.nodes with get() = this.Nodelist
        
-    and ExtendsNode(token:BlockToken, nodelist: INode list, parent: Expressions.FilterExpression) =
+    and ExtendsNode(token:BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
         inherit Node(Block token)
             
         /// produces a flattened list of all nodes and child nodes within a node list
         let rec unfold_nodes = function
-        | (h:INode)::t -> 
+        | (h:INodeImpl)::t -> 
             h :: unfold_nodes (h:?>Node).nodes @ unfold_nodes t
         | _ -> []
 
         let blocks = Map.of_list 
                      <| List.choose 
-                             (fun (node: INode) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
+                             (fun (node: INodeImpl) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
                               (unfold_nodes nodelist)
                               
 

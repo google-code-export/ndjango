@@ -186,7 +186,7 @@ module internal Now =
                             with
                                 override this.walk manager walker = 
                                     {walker with buffer = f |> format |> System.DateTime.Now.ToString }
-                        } :> INode), tokens
+                        } :> INodeImpl), tokens
                     | _ -> raise (TemplateSyntaxError ("malformed 'now' tag", Some (token:>obj)))
                         
 

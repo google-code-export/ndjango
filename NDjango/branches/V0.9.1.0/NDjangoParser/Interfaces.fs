@@ -25,6 +25,99 @@ namespace NDjango.Interfaces
 open System.Collections.Generic
 open System.IO
 open NDjango
+type NodeType =
+            
+        /// <summary>
+        /// The whole tag.
+        /// <example>{% if somevalue %}</example>
+        /// </summary>
+        | Tag = 0x0001
+        
+        /// <summary>
+        /// The markers, which frame django tag. 
+        /// <example>{%, %}</example>
+        /// </summary>
+        | Marker = 0x0002
+        
+        /// <summary>
+        /// Django template tag.
+        /// <example> "with", "for", "ifequal"</example>
+        /// </summary>
+        | TagName = 0x0003
+
+        /// <summary>
+        /// The keyword, as required by some tags.
+        /// <example>"and", "as"</example>
+        /// </summary>
+        | Keyword = 0x0004
+
+        /// <summary>
+        /// The variable definition used in tags which introduce new variables i.e. 
+        /// loop variable in the For tag.
+        /// <example>loop_item</example>
+        /// </summary>
+        | Variable = 0x0005
+
+        /// <summary>
+        /// Expression, which consists of a reference followed by 0 or more filters
+        /// <example>User.DoB|date:"D d M Y"</example>
+        /// </summary>
+        | Expression = 0x0006
+        
+        /// <summary>
+        /// Reference to a value in the current context.
+        /// <example>User.DoB</example>
+        /// </summary>
+        | Reference = 0x0007
+
+        /// <summary>
+        /// Filter with o without a parameter. Parameter can be a constant or a reference
+        /// <example>default:"nothing"</example>
+        /// </summary>
+        | Filter = 0x0008
+
+        /// <summary>
+        /// The name of the filter.
+        /// <example>"length", "first", "default"</example>
+        /// </summary>
+        | FilterName = 0x0009
+        
+        /// <summary>
+        /// Filter parameter.
+        /// <example>any valid value</example>
+        /// </summary>
+        | FilterParam = 0x000a
+
+/// Error message
+type Error(severity:int, message:string) =
+    /// indicates the severity of the error with 0 being the information message
+    /// negative severity is used to mark a dummy message ("No messages" message) 
+    member x.Severity = severity
+    member x.Message = message
+
+/// A representation of a node of the template abstract syntax tree    
+type INode =
+
+    /// Node type
+    abstract member NodeType: NodeType 
+    
+    /// Position of the first character of the node text
+    abstract member Position: int
+    
+    /// Length of the node text
+    abstract member Length: int
+
+    /// a list of values allowed for the node
+    abstract member Values: string list
+    
+    /// message associated with the node
+    abstract member ErrorMessage: Error
+    
+    /// Node description (will be shown in the tooltip)
+    abstract member Description: string
+    
+    /// node lists
+    abstract member Nodes: IDictionary<string, IEnumerable<INode>>
 
 /// A no-parameter filter
 type ISimpleFilter = 
@@ -84,7 +177,7 @@ and ITemplate =
     abstract Walk: ITemplateManager -> IDictionary<string, obj> -> System.IO.TextReader
     
     /// A list of top level sibling nodes
-    abstract Nodes: INode list
+    abstract Nodes: INodeImpl list
     
     /// returns a list of names of the variables referenced in the template
     abstract GetVariables: string list
@@ -96,7 +189,7 @@ and Walker =
         /// parent walker to be resumed after the processing of this one is completed
         parent: Walker option
         /// List of nodes to walk
-        nodes: INode list
+        nodes: INodeImpl list
         /// string rendered by the last node
         buffer: string
         /// the index of the first character in the buffer yet to be sent to output
@@ -106,7 +199,7 @@ and Walker =
     }
     
 /// A representation of a node of the template abstract syntax tree    
-and INode =
+and INodeImpl =
 
     /// Indicates whether this node must be the first non-text node in the template
     abstract member must_be_first: bool
@@ -124,15 +217,15 @@ and INode =
 type IParser =
     /// Produces a commited node list and uncommited token list as a result of parsing until
     /// a block from the string list is encotuntered
-    abstract member Parse: tokens:LazyList<Lexer.Token> -> parse_until:string list -> (INode list * LazyList<Lexer.Token>)
+    abstract member Parse: tokens:LazyList<Lexer.Token> -> parse_until:string list -> (INodeImpl list * LazyList<Lexer.Token>)
+   
+    /// Parses the template From the source in the reader into the node list
+    abstract member ParseTemplate: template:TextReader -> INodeImpl list
    
     /// Produces an uncommited token list as a result of parsing until
     /// a block from the string list is encotuntered
     abstract member Seek: tokens:LazyList<Lexer.Token> -> parse_until:string list -> LazyList<Lexer.Token>
     
-    /// returns the provider used to create the parser
-//    abstract member Provider: ITemplateManagerProvider
-
 /// Top level object managing multi threaded access to configuration settings and template cache.
 and ITemplateManagerProvider =
 
@@ -161,5 +254,5 @@ and ITemplateManagerProvider =
 /// A tag implementation
 and ITag = 
     /// Transforms a {% %} tag into a list of nodes and uncommited token list
-    abstract member Perform: Lexer.BlockToken -> ITemplateManagerProvider -> LazyList<Lexer.Token> -> (INode * LazyList<Lexer.Token>)
+    abstract member Perform: Lexer.BlockToken -> ITemplateManagerProvider -> LazyList<Lexer.Token> -> (INodeImpl * LazyList<Lexer.Token>)
 

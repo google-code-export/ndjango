@@ -140,7 +140,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 with 
                     override this.walk manager walker = 
                         {walker with buffer = textToken.Text}
-            } :> INode), tokens
+            } :> INodeImpl), tokens
             
         | Lexer.Variable var -> 
             let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
@@ -151,7 +151,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         | Some w -> w
                         | None -> walker
                     override this.GetVariables = expression.GetVariables
-            } :> INode), tokens
+            } :> INodeImpl), tokens
             
         | Lexer.Block block -> 
             match Map.tryFind block.Verb tags with 
@@ -163,7 +163,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             // the default behavior of the walk override is to return the same walker
             // Considering that when walk is called the buffer is empty, this will 
             // work for the comment node, so overriding the walk method here is unnecessary
-            (new Node(token) :> INode), tokens 
+            (new Node(token) :> INodeImpl), tokens 
 
     /// determines whether the given element is included in the termination token list
     let is_term_token elem (parse_until:string list) =
@@ -177,7 +177,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream
     /// the list is returned in the reversed order
-    let rec parse_internal provider (nodes:INode list) (tokens : LazyList<Lexer.Token>) parse_until =
+    let rec parse_internal provider (nodes:INodeImpl list) (tokens : LazyList<Lexer.Token>) parse_until =
        match tokens with
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
@@ -185,7 +185,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             if is_term_token token parse_until then
-                ((new Node(token) :> INode) :: nodes, tokens)
+                ((new Node(token) :> INodeImpl) :: nodes, tokens)
             else
                 if List.isEmpty parse_until || LazyList.nonempty tokens || is_term_token token parse_until then
                     let node, tokens = parse_token provider tokens token
@@ -262,11 +262,18 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         member x.Loader = loader
 
     interface IParser with
+        
         /// Parses the sequence of tokens until one of the given tokens is encountered
         member x.Parse tokens parse_until =
             let nodes, tokens = parse_internal x [] tokens parse_until
             (nodes |> List.rev, tokens)
         
+        /// Parses the template From the source in the reader into the node list
+        member x.ParseTemplate template =
+            // this will cause the TextReader to be closed when the template goes out of scope
+            use template = template
+            fst <| (x :> IParser).Parse (NDjango.Lexer.tokenize template) []
+
         /// Repositions the token stream after the first token found from the parse_until list
         member x.Seek tokens parse_until = 
             if List.length parse_until = 0 then failwith "Seek must have at least one termination tag"
