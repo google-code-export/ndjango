@@ -9,29 +9,38 @@ namespace NDjango.Designer.QuickInfo
 {
     class Source : IQuickInfoSource
     {
-        private Microsoft.VisualStudio.Text.ITextBuffer textBuffer;
-
-        public Source(Microsoft.VisualStudio.Text.ITextBuffer textBuffer)
-        {
-            // TODO: Complete member initialization
-            this.textBuffer = textBuffer;
-        }
 
         public object GetToolTipContent(IQuickInfoSession session, out Microsoft.VisualStudio.Text.ITrackingSpan applicableToSpan)
         {
-            applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
-                session.TriggerPoint.GetPoint(session.SubjectBuffer.CurrentSnapshot).Position, 
-                0, 
-                Microsoft.VisualStudio.Text.SpanTrackingMode.EdgeExclusive);
-
-            object node;
-            if (session.Properties.TryGetProperty<object>(SourceProvider.QuickInfoProviderSessionKey, out node))
+            StringBuilder message = new StringBuilder();
+            int position = session.SubjectBuffer.CurrentSnapshot.Length;
+            int length = 0;
+            List<INode> nodes;
+            if (session.Properties.TryGetProperty<List<INode>>(SourceProvider.QuickInfoProviderSessionKey, out nodes))
             {
-                List<INode> quickInfoNodes = (List<INode>)session.Properties.GetProperty(SourceProvider.QuickInfoProviderSessionKey);
-                return GetToolTipMessage(quickInfoNodes);
+                nodes.ForEach(
+                    node => 
+                    {
+                        if (!String.IsNullOrEmpty(node.Description))
+                            message.Insert(0, node.Description + "\n");
+                        message.Append("\n" + node.ErrorMessage.Message);
+                        if (node.Length > length)
+                            length = node.Length;
+                        if (node.Position < position)
+                            position = node.Position;
+                    }
+                        );
             }
 
-            return null;
+            applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
+                position,
+                length,
+                Microsoft.VisualStudio.Text.SpanTrackingMode.EdgeExclusive);
+
+            if (message.Length > 0)
+                return message.ToString();
+            else
+                return null;
         }
 
         private string GetToolTipMessage(List<INode> nodes)
