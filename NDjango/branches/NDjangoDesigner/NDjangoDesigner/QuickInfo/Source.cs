@@ -19,14 +19,15 @@ namespace NDjango.Designer.QuickInfo
 
         public object GetToolTipContent(IQuickInfoSession session, out Microsoft.VisualStudio.Text.ITrackingSpan applicableToSpan)
         {
-            applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(0, 10, Microsoft.VisualStudio.Text.SpanTrackingMode.EdgeExclusive);
+            applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
+                session.TriggerPoint.GetPoint(session.SubjectBuffer.CurrentSnapshot).Position, 
+                0, 
+                Microsoft.VisualStudio.Text.SpanTrackingMode.EdgeExclusive);
 
             object node;
             if (session.Properties.TryGetProperty<object>(SourceProvider.QuickInfoProviderSessionKey, out node))
             {
                 List<INode> quickInfoNodes = (List<INode>)session.Properties.GetProperty(SourceProvider.QuickInfoProviderSessionKey);
-                //quickInfoNodes.ConvertAll(infoNode => infoNode.Info);
-                //TODO: define what exactly node's info to be displayed
                 return GetToolTipMessage(quickInfoNodes);
             }
 
