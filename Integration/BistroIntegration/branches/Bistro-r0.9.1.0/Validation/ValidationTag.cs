@@ -19,7 +19,7 @@ namespace NDjango.BistroIntegration.Validation
         /// <param name="content">The content.</param>
         /// <param name="parms">The parms.</param>
         /// <returns></returns>
-        public override string ProcessTag(string content, object[] parms)
+        public override string ProcessTag(NDjango.Interfaces.IContext context, string content, object[] parms)
         {
             IValidator v = null;
             foreach (string ns in parms)
