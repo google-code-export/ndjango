@@ -104,8 +104,8 @@ module internal For =
                 token : BlockToken,
                 enumerator : FilterExpression, 
                 variables : string list, 
-                bodyNodes : NDjango.Interfaces.INode list, 
-                emptyNodes: NDjango.Interfaces.INode list,
+                bodyNodes : NDjango.Interfaces.INodeImpl list, 
+                emptyNodes: NDjango.Interfaces.INodeImpl list,
                 reversed: bool
                 ) =
         inherit NDjango.ASTNodes.Node(Block token)
@@ -196,7 +196,7 @@ module internal For =
                     let rec createWalker (first:bool) (walker:Walker) (enumerator: obj seq) =
                         {walker with 
                             parent = Some walker; 
-                            nodes = bodyNodes @ [(Repeater(token, Seq.skip 1 enumerator, createWalker false) :> NDjango.Interfaces.INode)];
+                            nodes = bodyNodes @ [(Repeater(token, Seq.skip 1 enumerator, createWalker false) :> NDjango.Interfaces.INodeImpl)];
                             context = enumerator |> Seq.hd |> createContext first walker
                             }
                     
@@ -248,5 +248,5 @@ module internal For =
                             [], remaining
                     | _ -> [], remaining
 
-                ((Node(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INode), remaining2)
+                ((Node(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
 

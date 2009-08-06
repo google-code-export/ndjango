@@ -82,7 +82,7 @@ module internal IfEqual =
                                 }
                         
                             override this.nodes with get() = node_list_true @ node_list_false
-                    } :> INode), remaining
+                    } :> INodeImpl), remaining
                 | _ -> raise (TemplateSyntaxError (sprintf "'%s' takes two arguments" tag, Some (token:>obj)))
 
                 

@@ -53,7 +53,7 @@ module internal Misc =
                                 context = createContext walker; 
                                 nodes=nodelist}
                         override this.nodes with get() = nodelist
-                   } :> INode), 
+                   } :> INodeImpl), 
                    remaining)
                         
     /// Ignores everything between ``{% comment %}`` and ``{% endcomment %}``.
@@ -61,7 +61,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token provider tokens =
                 let remaining = (provider :?> IParser).Seek tokens ["endcomment"]
-                ((Node(Block token) :> INode), remaining)
+                ((Node(Block token) :> INodeImpl), remaining)
                 
     /// Outputs a whole load of debugging information, including the current
     /// context and imported modules.
@@ -73,7 +73,7 @@ module internal Misc =
     ///     </pre>
     type DebugTag() =
         interface ITag with
-            member this.Perform token parser tokens = (new NDjango.Tags.Debug.Node(Block token) :> INode), tokens
+            member this.Perform token parser tokens = (new NDjango.Tags.Debug.Node(Block token) :> INodeImpl), tokens
             
     /// Outputs the first variable passed that is not False.
     /// 
@@ -113,7 +113,7 @@ module internal Misc =
                                     match variables |> List.tryPick (fun var -> var.ResolveForOutput manager walker ) with
                                     | None -> walker 
                                     | Some w -> w
-                        } :> INode), tokens
+                        } :> INodeImpl), tokens
                         
 /// regroup¶
 /// Regroup a list of alike objects by a common attribute.
@@ -242,7 +242,7 @@ module internal Misc =
                                 match regroup walker.context with
                                 | [] -> walker
                                 | _ as list -> {walker with context=walker.context.add(result, (list :> obj))}
-                    } :> INode), tokens
+                    } :> INodeImpl), tokens
 
                 | _ -> raise (TemplateSyntaxError ("malformed 'regroup' tag", Some (token:>obj)))
 
@@ -283,7 +283,7 @@ module internal Misc =
                                 let buf = spaces_re.Replace(reader.ReadToEnd(), "><")
                                 {walker with buffer = buf}
                             override this.nodes with get() = node_list
-                    } :> INode), remaining
+                    } :> INodeImpl), remaining
 
                 | _ -> raise (TemplateSyntaxError ("'spaceless' tag should not have any arguments", Some (token:>obj)))
                 
@@ -324,7 +324,7 @@ module internal Misc =
                     with 
                         override this.walk manager walker =
                             {walker with buffer = buf}
-                } :> INode), tokens
+                } :> INodeImpl), tokens
 
 
     /// For creating bar charts and such, this tag calculates the ratio of a given
@@ -361,7 +361,7 @@ module internal Misc =
                                             / toFloat (fst <| maxValue.Resolve walker.context false) 
                                             * width + 0.5
                                 {walker with buffer = ratio |> int |> string}
-                       } :> INode), 
+                       } :> INodeImpl), 
                        tokens)
                 | _ -> raise (TemplateSyntaxError ("'widthratio' takes three arguments", Some (token:>obj)))
 
@@ -392,7 +392,7 @@ module internal Misc =
                                     context = context; 
                                     nodes=nodes}
                             override this.nodes with get() = nodes
-                       } :> INode), 
+                       } :> INodeImpl), 
                        remaining)
                 | _ -> raise (TemplateSyntaxError ("'with' expected format is 'value as name'", Some (token:>obj)))
 
@@ -443,5 +443,5 @@ module Abstract =
                             match var with 
                             | None -> { walker with buffer = url }
                             | Some v -> { walker with context = walker.context.add(v, (url :> obj)) }
-                            } :> INode),
+                            } :> INodeImpl),
                     tokens)

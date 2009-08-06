@@ -95,4 +95,4 @@ module internal IfChanged =
                             createWalker manager walker 
                                    
                         override this.nodes with get() = nodes_ifchanged @ nodes_ifsame
-                    } :> INode), remaining)
+                    } :> INodeImpl), remaining)

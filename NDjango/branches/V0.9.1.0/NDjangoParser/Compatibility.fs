@@ -82,4 +82,4 @@ module Compatibility =
                                         {walker with buffer = x.ProcessTag "" resolved_parms}
                                     else
                                         {walker with buffer = x.ProcessTag (read_walker manager walker nodelist) resolved_parms}
-                    } :> INode), tokens
+                    } :> INodeImpl), tokens

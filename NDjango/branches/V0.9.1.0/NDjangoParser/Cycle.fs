@@ -125,5 +125,5 @@ module internal Cycle =
                         else ("$Anonymous$Cycle", values)
                         
                 let values = List.map (fun v -> new Variable(provider, Block token, v)) values
-                ((new Node(token, name, values) :> NDjango.Interfaces.INode), tokens)
+                ((new Node(token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)
 

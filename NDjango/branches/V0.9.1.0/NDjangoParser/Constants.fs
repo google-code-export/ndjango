@@ -122,3 +122,24 @@ module Constants =
     let TEMPLATE_STRING_IF_INVALID = "settings.TEMPLATE_STRING_IF_INVALID"
  
     let RELOAD_IF_UPDATED = "settings.RELOAD_IF_UPDATED"
+    
+    /// <summary>
+    /// List nodes representing the elements of the tag itself, including 
+    /// markers, tag name, tag paremeters, etc
+    /// </summary>
+    let NODELIST_TAG_ELEMENTS = "standard.elements";
+    
+    /// <summary>
+    /// Stadard list of nodes representing child tags
+    /// </summary>
+    let NODELIST_TAG_CHILDREN = "standard.children";
+    
+    /// <summary>
+    /// List of nodes representing the <b>true</b> branch of the if tag and similar tags
+    /// </summary>
+    let NODELIST_IFTAG_IFTRUE = "if.true.children";
+    
+    /// <summary>
+    /// List of nodes representing the <b>false</b> branch of the if tag and similar tags
+    /// </summary>
+    let NODELIST_IFTAG_IFFALSE = "if.false.children";

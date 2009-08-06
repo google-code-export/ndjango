@@ -96,8 +96,8 @@ module internal If =
     type Node(
                 token: BlockToken,
                 bool_vars: (bool * FilterExpression) list, 
-                node_list_true: NDjango.Interfaces.INode list, 
-                node_list_false: NDjango.Interfaces.INode list, 
+                node_list_true: NDjango.Interfaces.INodeImpl list, 
+                node_list_false: NDjango.Interfaces.INodeImpl list, 
                 link_type: IfLinkType
                 ) =
         inherit NDjango.ASTNodes.Node(Block token)
@@ -184,6 +184,6 @@ module internal If =
                             [], remaining
                     | _ -> [], remaining
 
-                ((new Node(token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INode), remaining2)
+                ((new Node(token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INodeImpl), remaining2)
 
 
