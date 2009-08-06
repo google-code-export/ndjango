@@ -94,7 +94,7 @@ module internal LoaderTags =
                         new FilterExpression(provider, Block token, name)
                     ({
                         //todo: we're not producing a node list here. may have to revisit
-                        new Node(Block token) 
+                        new TagNode(token) 
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager template_name walker.context).Nodes}
@@ -117,7 +117,7 @@ module internal LoaderTags =
     type Reader = Path of string | TextReader of System.IO.TextReader
 
     type SsiNode(token:BlockToken, reader: Reader, loader: string->TextReader) = 
-        inherit Node(Block token)
+        inherit TagNode(token)
 
         override this.walk manager walker =
             let templateReader =  
@@ -142,7 +142,7 @@ module internal LoaderTags =
                 | path::"parsed"::[] ->
                     let templateRef = FilterExpression (provider, Block token, "\"" + path + "\"")
                     ({
-                        new Node(Block token) 
+                        new TagNode(token) 
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager templateRef walker.context).Nodes}

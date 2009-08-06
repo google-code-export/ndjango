@@ -330,7 +330,7 @@ module Expressions =
                 
         member this.Token with get() = expression
         
-        member this.GetVariables: string list = 
-            let variables = variable :: (filters |> List.fold (fun list item -> (item |> snd) @ list) [])
-            variables |> List.filter (fun item -> item.IsLiteral |> not) |> List.map (fun item -> item.ExpressionText)
+//        member this.GetVariables: string list = 
+//            let variables = variable :: (filters |> List.fold (fun list item -> (item |> snd) @ list) [])
+//            variables |> List.filter (fun item -> item.IsLiteral |> not) |> List.map (fun item -> item.ExpressionText)
             

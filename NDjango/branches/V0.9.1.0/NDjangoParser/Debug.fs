@@ -28,8 +28,8 @@ open System.Collections
 module internal Debug =
         
     /// Produces debug information
-    type Node(t:NDjango.Lexer.Token) =
-        inherit NDjango.ASTNodes.Node(t)
+    type TagNode(t: NDjango.Lexer.BlockToken) =
+        inherit NDjango.ASTNodes.TagNode(t)
 
         override this.walk manager walker = 
             let output = new System.Text.StringBuilder()

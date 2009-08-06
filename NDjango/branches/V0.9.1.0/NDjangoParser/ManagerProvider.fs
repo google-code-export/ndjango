@@ -27,6 +27,7 @@ open NDjango.Filters
 open NDjango.Tags
 open NDjango.Tags.Misc
 open NDjango.ASTNodes
+open NDjango.ParserNodes
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -129,8 +130,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
         else (fun (name,ts) -> false) 
     
-    /// parses a single token, returning an AST Node list. this function may advance the token stream if an 
-    /// element consuming multiple tokens is encountered. In this scenario, the Node list returned will
+    /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
+    /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
     let parse_token (provider: TemplateManagerProvider) tokens (token:NDjango.Lexer.Token) = 
         match token with
@@ -150,7 +151,6 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         match expression.ResolveForOutput manager walker with
                         | Some w -> w
                         | None -> walker
-                    override this.GetVariables = expression.GetVariables
             } :> INodeImpl), tokens
             
         | Lexer.Block block -> 
@@ -185,7 +185,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             if is_term_token token parse_until then
-                ((new Node(token) :> INodeImpl) :: nodes, tokens)
+                match token with
+                | Lexer.Block b -> ((new TagNode(b) :> INodeImpl) :: nodes, tokens)
+                | _ -> raise  (TemplateSyntaxError ("should never happen", None))
             else
                 if List.isEmpty parse_until || LazyList.nonempty tokens || is_term_token token parse_until then
                     let node, tokens = parse_token provider tokens token

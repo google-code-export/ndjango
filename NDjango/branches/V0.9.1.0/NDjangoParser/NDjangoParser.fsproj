@@ -65,6 +65,7 @@
     <Compile Include="ASTWalker.fs" />
     <Compile Include="Filters.fs" />
     <Compile Include="Expressions.fs" />
+    <Compile Include="ParserNodes.fs" />
     <Compile Include="ASTNodes.fs" />
     <Compile Include="Debug.fs" />
     <Compile Include="Tags.fs" />

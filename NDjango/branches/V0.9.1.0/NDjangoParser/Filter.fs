@@ -35,7 +35,7 @@ module internal Filter =
     let FILTER_VARIABLE_NAME = "$filter"
 
     type FilterNode(token:BlockToken, filter: FilterExpression, node_list: INodeImpl list) =
-        inherit Node(Block token)
+        inherit TagNode(token)
 
         override this.walk manager walker = 
             let reader = 
