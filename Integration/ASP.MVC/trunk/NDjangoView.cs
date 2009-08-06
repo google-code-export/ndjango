@@ -11,6 +11,24 @@ namespace NDjango.ASPMVCIntegration
     /// </summary>
     public class NDjangoView: IView
     {
+        /// <summary>
+        /// Simple wrapper class to satisfy IViewDataContainer requirements
+        /// </summary>
+        class ViewDataContainerWrapper : IViewDataContainer
+        {
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ViewDataContainerWrapper"/> class.
+            /// </summary>
+            /// <param name="data">The data.</param>
+            public ViewDataContainerWrapper(ViewDataDictionary data)
+            {
+                this.ViewData = data;
+            }
+
+            public ViewDataDictionary ViewData { get; set; }
+        }
+
+
         public const string aspmvcContextKey = "__asp.mvc.context.key__";
 
         /// <summary>
@@ -62,6 +80,8 @@ namespace NDjango.ASPMVCIntegration
 
             requestContext.Add("model", viewContext.ViewData.Model);
             requestContext.Add("modelState", viewContext.ViewData.ModelState);
+            requestContext.Add("htmlHelper", 
+                new HtmlHelper(viewContext, new ViewDataContainerWrapper(viewContext.ViewData)));
 
             if (viewContext.HttpContext.Session != null)
                 foreach (object key in viewContext.HttpContext.Session.Keys)
