@@ -35,6 +35,9 @@ module internal ASTNodes =
     type TagNode(token: BlockToken) =
         inherit Node(Block token)
         
+        override x.elements =
+            (new TagNameNode(token) :> INode) :: base.elements
+        
     /// retrieves a template given the template name. The name is supplied as a FilterExpression
     /// which when resolved should eithter get a ready to use template, or a string (url)
     /// to the source code for the template
