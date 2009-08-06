@@ -8,26 +8,30 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
 using System.Windows.Input;
 using NDjango.Interfaces;
+using Microsoft.VisualStudio.Text.Projection;
 
 namespace NDjango.Designer.QuickInfo
 {
     class Controller : IIntellisenseController
     {
-        private INodeProviderBroker parser;
         private IList<ITextBuffer> subjectBuffers;
         private ITextView textView;
         private IQuickInfoBrokerMapService brokerMapService;
         private IQuickInfoSession activeSession;
-        private Dictionary<ITextBuffer, NodeProvider> tokenizers = new Dictionary<ITextBuffer,NodeProvider>();
+        private Dictionary<ITextBuffer, NodeProvider> nodeProviders 
+            = new Dictionary<ITextBuffer,NodeProvider>();
 
-        public Controller(INodeProviderBroker parser, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
+        public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
         {
-            // TODO: Complete member initialization
-            this.parser = parser;
             this.subjectBuffers = subjectBuffers;
             this.textView = textView;
             this.brokerMapService = brokerMapService;
-            subjectBuffers.ToList().ForEach(buffer => tokenizers.Add(buffer, parser.GetNodeProvider(buffer)));
+            subjectBuffers.ToList().ForEach(
+                    buffer => { 
+                        if (nodeProviderBroker.IsNDjango(buffer))
+                            nodeProviders.Add(buffer, nodeProviderBroker.GetNodeProvider(buffer)); 
+                    }
+                );
 
             textView.MouseHover += new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
 
@@ -38,13 +42,19 @@ namespace NDjango.Designer.QuickInfo
             if (activeSession != null)
                 activeSession.Dismiss();
 
-            SnapshotPoint? point = e.TextPosition.GetPoint
-                                    (textBuffer => (subjectBuffers.Contains(textBuffer) &&
-                                         brokerMapService.GetBrokerForTextView(textView, textBuffer) != null),
-                                                 PositionAffinity.Predecessor);
-            if (point.HasValue)
+            SnapshotPoint? point = e.TextPosition.GetPoint(
+                textBuffer => 
+                    (
+                        subjectBuffers.Contains(textBuffer) 
+                        && brokerMapService.GetBrokerForTextView(textView, textBuffer) != null
+                        && !(textBuffer is IProjectionBuffer)
+                    )
+                ,PositionAffinity.Predecessor);
+            
+            NodeProvider nodeProvider;
+            if (point.HasValue && nodeProviders.TryGetValue(point.Value.Snapshot.TextBuffer, out nodeProvider))
             {
-                List<INode> quickInfoNodes = tokenizers[point.Value.Snapshot.TextBuffer].GetNodes(point.Value);
+                List<INode> quickInfoNodes = nodeProvider.GetNodes(point.Value);
                 if (quickInfoNodes != null)
                 {
                     // the invocation occurred in a subject buffer of interest to us
@@ -65,8 +75,6 @@ namespace NDjango.Designer.QuickInfo
         { }
 
         public void DisconnectSubjectBuffer(ITextBuffer subjectBuffer)
-        {
-            textView.MouseHover -= new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
-        }
+        { }
     }
 }
