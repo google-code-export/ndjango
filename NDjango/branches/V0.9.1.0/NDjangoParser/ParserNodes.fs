@@ -61,10 +61,10 @@ module internal ParserNodes =
         abstract member elements: INode list
         default x.elements 
             with get() = 
-                        [
-                            (new TagBracketNode(get_textToken token, Open) :> INode); 
-                            (new TagBracketNode(get_textToken token, Close) :> INode)
-                        ]
+                [
+                    (new TagBracketNode(get_textToken token, Open) :> INode); 
+                    (new TagBracketNode(get_textToken token, Close) :> INode)
+                ]
         
         abstract member Values: string list
         default x.Values = []
