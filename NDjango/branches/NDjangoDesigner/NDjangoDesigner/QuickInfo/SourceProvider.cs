@@ -20,7 +20,7 @@ namespace NDjango.Designer.QuickInfo
 
         public IQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            return new Source(textBuffer);
+            return new Source();
         }
     }
 }
