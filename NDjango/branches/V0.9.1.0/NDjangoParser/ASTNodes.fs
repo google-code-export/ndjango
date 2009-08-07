@@ -31,9 +31,12 @@ open ParserNodes
 
 module internal ASTNodes =
 
+
     /// Base class for all NDJango Tag nodes
     type TagNode(token: BlockToken) =
         inherit Node(Block token)
+
+        override x.node_type = NodeType.Tag   
         
         override x.elements =
             (new TagNameNode(token) :> INode) :: base.elements

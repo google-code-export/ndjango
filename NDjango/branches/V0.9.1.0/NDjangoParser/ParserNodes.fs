@@ -33,11 +33,14 @@ module internal ParserNodes =
         |Close
 
     /// Base class of the Django AST 
+    [<AbstractClass>]
     type Node(token: Token) =
     
         /// Indicates whether this node must be the first non-text node in the template
         abstract member must_be_first: bool
         default this.must_be_first = false
+        
+        abstract member node_type: NodeType
         
         /// The token that defined the node
         member this.Token with get() = token
@@ -78,7 +81,7 @@ module internal ParserNodes =
         interface INode with
 
              /// TagNode type
-            member x.NodeType = NodeType.Tag 
+            member x.NodeType = x.node_type 
             
             /// Position of the first character of the node text
             member x.Position = (get_textToken token).Position

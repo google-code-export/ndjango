@@ -88,6 +88,18 @@ type NodeType =
         /// </summary>
         | FilterParam = 0x000a
 
+        /// <summary>
+        /// Text node.
+        /// <example>any valid value</example>
+        /// </summary>
+        | Text = 0x000b
+
+        /// <summary>
+        /// Text node.
+        /// <example>any valid value</example>
+        /// </summary>
+        | Comment = 0x000c
+
 /// Error message
 type Error(severity:int, message:string) =
     /// indicates the severity of the error with 0 being the information message

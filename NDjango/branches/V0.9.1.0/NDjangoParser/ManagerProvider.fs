@@ -141,6 +141,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 with 
                     override this.walk manager walker = 
                         {walker with buffer = textToken.Text}
+                    override x.node_type = NodeType.Text        
             } :> INodeImpl), tokens
             
         | Lexer.Variable var -> 
@@ -151,6 +152,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         match expression.ResolveForOutput manager walker with
                         | Some w -> w
                         | None -> walker
+                    override x.node_type = NodeType.Reference
             } :> INodeImpl), tokens
             
         | Lexer.Block block -> 
@@ -163,7 +165,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             // the default behavior of the walk override is to return the same walker
             // Considering that when walk is called the buffer is empty, this will 
             // work for the comment node, so overriding the walk method here is unnecessary
-            (new Node(token) :> INodeImpl), tokens 
+            ({new Node(token) with override x.node_type = NodeType.Comment} :> INodeImpl), tokens 
 
     /// determines whether the given element is included in the termination token list
     let is_term_token elem (parse_until:string list) =
