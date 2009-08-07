@@ -18,14 +18,13 @@ namespace NDjango.Designer.QuickInfo
             List<INode> nodes;
             if (session.Properties.TryGetProperty<List<INode>>(SourceProvider.QuickInfoProviderSessionKey, out nodes))
             {
-                int i = 0;
                 nodes.ForEach(
                     node => 
                     {
                         if (!String.IsNullOrEmpty(node.Description))
-                            message.Insert(0, node.Description + "\n" + Convert.ToString(++i));
+                            message.Insert(0, node.Description + "\n");
                         if (node.ErrorMessage.Severity >= 0)
-                            message.Append("\n" + Convert.ToString(++i) + node.ErrorMessage.Message);
+                            message.Append("\n" + node.ErrorMessage.Message);
                         if (node.Length > length)
                             length = node.Length;
                         if (node.Position < position)
