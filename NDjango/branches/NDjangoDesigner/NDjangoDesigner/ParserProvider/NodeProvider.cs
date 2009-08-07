@@ -109,7 +109,7 @@ namespace NDjango.Designer.Parsing
             List<NodeSnapshot> result = new List<NodeSnapshot>();
             foreach (NodeSnapshot node in nodes)
             {
-                if (node.SnapshotSpan.OverlapsWith(snapshotSpan))
+                if (node.SnapshotSpan.IntersectsWith(snapshotSpan))
                     result.Add(node);
                 result.AddRange(GetNodes(snapshotSpan, node.Children));
             }

@@ -18,7 +18,8 @@ namespace NDjango.Designer.Parsing
     internal class NodeProviderBroker : INodeProviderBroker
     {
 
-        IParser parser = new NDjango.TemplateManagerProvider(); // {get; set;}
+        IParser parser = new NDjango.TemplateManagerProvider()
+            .WithSetting(NDjango.Constants.EXCEPTION_IF_ERROR, false); // {get; set;}
 
      
         public bool IsNDjango(ITextBuffer buffer)
