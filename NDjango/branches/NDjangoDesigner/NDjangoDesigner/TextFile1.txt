@@ -11,5 +11,5 @@
 
 
 aaa
-{% aaaaa a %} cccc
-{%bb   b%}
+{% spaceless %} cccc
+{%endspaceless%}

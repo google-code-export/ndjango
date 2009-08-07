@@ -33,7 +33,7 @@ namespace NDjango.Designer.Tags
             {
                 foreach (NodeSnapshot node in nodeProvider.GetNodes(span))
                 {
-                    if (node.SnapshotSpan.OverlapsWith(span) && node.Node.ErrorMessage.Severity > -1)
+                    if (node.Node.ErrorMessage.Severity > -1)
                         yield return new TagSpan<Constants.ErrorTag>(node.SnapshotSpan, new Constants.ErrorTag());
                 }
             }

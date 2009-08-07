@@ -110,7 +110,7 @@ module internal ParserNodes =
 
         interface INode with
              /// TagNode type
-            member x.NodeType = NodeType.TagName 
+            member x.NodeType = NodeType.Marker 
             
             /// Position of the first character of the node text
             member x.Position = 
