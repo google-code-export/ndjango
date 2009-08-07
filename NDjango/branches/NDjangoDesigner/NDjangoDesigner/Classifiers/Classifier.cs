@@ -50,15 +50,15 @@ namespace NDjango.Designer.Classifiers
         {
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
-            foreach (NodeSnapshot node in nodeProvider.GetNodes(span))
-            {
-                if (node.SnapshotSpan.OverlapsWith(span))
-                    classifications.Add(
-                        new ClassificationSpan(
-                            node.SnapshotSpan,
-                            classificationTypeRegistry.GetClassificationType(node.Type)
-                            ));
-            }
+            nodeProvider.GetNodes(span).ForEach(
+                node =>
+                classifications.Add(
+                    new ClassificationSpan(
+                        node.SnapshotSpan,
+                        classificationTypeRegistry.GetClassificationType(node.Type)
+                        ))
+                        );
+
             return classifications;
         }
 

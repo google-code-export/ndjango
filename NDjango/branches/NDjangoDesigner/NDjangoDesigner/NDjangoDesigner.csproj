@@ -33,6 +33,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>True</SpecificVersion>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.CoreUtility">
       <Private>False</Private>
     </Reference>
@@ -124,8 +127,8 @@
     <Content Include="VSIXProject_small.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NDjangoParser\NDjangoParser.csproj">
-      <Project>{CFB29A30-C735-4279-A8EE-659D1B0D3092}</Project>
+    <ProjectReference Include="..\NDjangoParser\NDjangoParser.fsproj">
+      <Project>{B75384C4-C545-4511-A7FE-93D438B8AFA4}</Project>
       <Name>NDjangoParser</Name>
     </ProjectReference>
   </ItemGroup>
