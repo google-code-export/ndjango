@@ -49,15 +49,12 @@ module internal ASTWalker =
         let read (buffer: char[]) index count = 
             let mutable transferred = 0;
             while getChar() <> -1 && transferred < count do
-                if walker.bufferIndex < walker.buffer.Length then
-                    let mutable index = walker.bufferIndex
-                    while index < walker.buffer.Length && transferred < count do
-                        buffer.[transferred] <- walker.buffer.[index]
-                        transferred <- transferred+1
-                        index <- index+1
-                    walker <- {walker with bufferIndex = index}
-                // should never happen after a call to getChar                    
-                else raise (System.Exception("should never happen after a call to getChar"))
+                let mutable index = walker.bufferIndex
+                while index < walker.buffer.Length && transferred < count do
+                    buffer.[transferred] <- walker.buffer.[index]
+                    transferred <- transferred+1
+                    index <- index+1
+                walker <- {walker with bufferIndex = index}
             transferred
 
         let rec read_to_end (buffers:System.Text.StringBuilder) = 
@@ -76,10 +73,7 @@ module internal ASTWalker =
         override this.Read() =
             let result = getChar()
             if result <> -1 then
-                if walker.bufferIndex < walker.buffer.Length then
-                    walker <- {walker with bufferIndex = walker.bufferIndex+1}
-                // should never happen after a call to getChar                    
-                else raise (System.Exception("should never happen after a call to getChar"))
+                walker <- {walker with bufferIndex = walker.bufferIndex+1}
             result
         
         override this.Read(buffer: char[], index: int, count: int) = read buffer index count

@@ -117,11 +117,11 @@ module Constants =
                 Replace("%(i18n_close)s", !!I18N_CLOSE), RegexOptions.Compiled)
 
 
+    /// Standard settings
     let DEFAULT_AUTOESCAPE = "settings.DEFAULT_AUTOESCAPE"
-    
     let TEMPLATE_STRING_IF_INVALID = "settings.TEMPLATE_STRING_IF_INVALID"
- 
     let RELOAD_IF_UPDATED = "settings.RELOAD_IF_UPDATED"
+    let EXCEPTION_IF_ERROR = "settings.EXCEPTION_IF_ERROR"
     
     /// <summary>
     /// List nodes representing the elements of the tag itself, including 
