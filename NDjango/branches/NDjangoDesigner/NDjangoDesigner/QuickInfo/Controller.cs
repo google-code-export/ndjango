@@ -18,20 +18,14 @@ namespace NDjango.Designer.QuickInfo
         private ITextView textView;
         private IQuickInfoBrokerMapService brokerMapService;
         private IQuickInfoSession activeSession;
-        private Dictionary<ITextBuffer, NodeProvider> nodeProviders 
-            = new Dictionary<ITextBuffer,NodeProvider>();
+        private INodeProviderBroker nodeProviderBroker;
 
         public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
         {
+            this.nodeProviderBroker = nodeProviderBroker;
             this.subjectBuffers = subjectBuffers;
             this.textView = textView;
             this.brokerMapService = brokerMapService;
-            subjectBuffers.ToList().ForEach(
-                    buffer => { 
-                        if (nodeProviderBroker.IsNDjango(buffer))
-                            nodeProviders.Add(buffer, nodeProviderBroker.GetNodeProvider(buffer)); 
-                    }
-                );
 
             textView.MouseHover += new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
 
@@ -45,15 +39,17 @@ namespace NDjango.Designer.QuickInfo
             SnapshotPoint? point = e.TextPosition.GetPoint(
                 textBuffer => 
                     (
-                        subjectBuffers.Contains(textBuffer) 
+                        subjectBuffers.Contains(textBuffer)
+                        && nodeProviderBroker.IsNDjango(textBuffer)
                         && brokerMapService.GetBrokerForTextView(textView, textBuffer) != null
                         && !(textBuffer is IProjectionBuffer)
                     )
                 ,PositionAffinity.Predecessor);
             
-            NodeProvider nodeProvider;
-            if (point.HasValue && nodeProviders.TryGetValue(point.Value.Snapshot.TextBuffer, out nodeProvider))
+            
+            if (point.HasValue)
             {
+                NodeProvider nodeProvider = nodeProviderBroker.GetNodeProvider(point.Value.Snapshot.TextBuffer);
                 List<INode> quickInfoNodes = nodeProvider.GetNodes(point.Value);
                 if (quickInfoNodes != null)
                 {
