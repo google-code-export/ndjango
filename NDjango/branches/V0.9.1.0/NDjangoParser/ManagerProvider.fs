@@ -139,20 +139,24 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | Lexer.Text textToken -> 
             ({new Node(token)
                 with 
+                    override x.node_type = NodeType.Text        
+
+                    override x.elements = []
+                    
                     override this.walk manager walker = 
                         {walker with buffer = textToken.Text}
-                    override x.node_type = NodeType.Text        
             } :> INodeImpl), tokens
             
         | Lexer.Variable var -> 
             let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
             ({new Node(token)
                 with 
+                    override x.node_type = NodeType.Reference
+
                     override this.walk manager walker = 
                         match expression.ResolveForOutput manager walker with
                         | Some w -> w
                         | None -> walker
-                    override x.node_type = NodeType.Reference
             } :> INodeImpl), tokens
             
         | Lexer.Block block -> 
