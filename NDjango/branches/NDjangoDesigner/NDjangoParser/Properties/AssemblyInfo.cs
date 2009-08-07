@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("NDjangoParser")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("AIM")]
+[assembly: AssemblyCompany("Hill30")]
 [assembly: AssemblyProduct("NDjangoParser")]
-[assembly: AssemblyCopyright("Copyright © AIM 2009")]
+[assembly: AssemblyCopyright("Copyright © Hill30 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("cc5b67d9-7c5f-401a-995d-b62d49762d23")]
+//[assembly: Guid("cc5b67d9-7c5f-401a-995d-b62d49762d23")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -34,3 +34,4 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: VsCatalogName("Microsoft.VisualStudio.Editor")]
