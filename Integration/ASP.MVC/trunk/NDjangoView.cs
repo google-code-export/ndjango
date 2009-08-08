@@ -79,7 +79,18 @@ namespace NDjango.ASPMVCIntegration
                 requestContext.Add(key, viewContext.ViewData[key]);
 
             requestContext.Add("model", viewContext.ViewData.Model);
-            requestContext.Add("modelState", viewContext.ViewData.ModelState);
+
+            var modelState = new Dictionary<string, object>();
+            foreach (string key in viewContext.ViewData.ModelState.Keys)
+            {
+                var value = viewContext.ViewData.ModelState[key].Value;
+
+                if (value != null)
+                    modelState.Add(key, value.AttemptedValue);
+            }
+
+            requestContext.Add("modelState", modelState);
+            requestContext.Add("fullModelState", viewContext.ViewData.ModelState);
             requestContext.Add("htmlHelper", 
                 new HtmlHelper(viewContext, new ViewDataContainerWrapper(viewContext.ViewData)));
 
