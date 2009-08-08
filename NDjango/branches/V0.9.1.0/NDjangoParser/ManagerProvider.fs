@@ -175,7 +175,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 ({
                     new Node(token) 
                         with 
-                            override x.node_type = NodeType.Text
+                            override x.node_type = NodeType.Tag
                             override x.ErrorMessage = new Error(2, e.Message)
                 } :> INodeImpl), tokens
             |_ -> rethrow()
