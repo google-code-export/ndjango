@@ -94,13 +94,14 @@ module internal If =
 
     /// AST TagNode representing an entire if tag, with all nested and composing tags
     type TagNode(
-                token: BlockToken,
+                provider,
+                token,
                 bool_vars: (bool * FilterExpression) list, 
                 node_list_true: NDjango.Interfaces.INodeImpl list, 
                 node_list_false: NDjango.Interfaces.INodeImpl list, 
                 link_type: IfLinkType
                 ) =
-        inherit NDjango.ASTNodes.TagNode(token)
+        inherit NDjango.ASTNodes.TagNode(provider, token)
         
         /// Evaluates a single filter expression against the context. Results are intepreted as follows: 
         /// None: false (or invalid values, as FilterExpression.Resolve is called with ignoreFailure = true)
@@ -184,6 +185,6 @@ module internal If =
                             [], remaining
                     | _ -> [], remaining
 
-                ((new TagNode(token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INodeImpl), remaining2)
+                ((new TagNode(provider, token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INodeImpl), remaining2)
 
 

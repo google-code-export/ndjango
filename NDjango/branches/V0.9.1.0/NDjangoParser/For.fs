@@ -101,14 +101,15 @@ module internal For =
         
             
     type TagNode(
-                token : BlockToken,
+                provider,
+                token,
                 enumerator : FilterExpression, 
                 variables : string list, 
                 bodyNodes : NDjango.Interfaces.INodeImpl list, 
                 emptyNodes: NDjango.Interfaces.INodeImpl list,
                 reversed: bool
                 ) =
-        inherit NDjango.ASTNodes.TagNode(token)
+        inherit NDjango.ASTNodes.TagNode(provider, token)
 
         /// Creates a new ForContext object to represent the current iteration
         /// for the loop. The third parameter (context) is a context for the 
@@ -196,7 +197,7 @@ module internal For =
                     let rec createWalker (first:bool) (walker:Walker) (enumerator: obj seq) =
                         {walker with 
                             parent = Some walker; 
-                            nodes = bodyNodes @ [(Repeater(token, Seq.skip 1 enumerator, createWalker false) :> NDjango.Interfaces.INodeImpl)];
+                            nodes = bodyNodes @ [(Repeater(provider, token, Seq.skip 1 enumerator, createWalker false) :> NDjango.Interfaces.INodeImpl)];
                             context = enumerator |> Seq.hd |> createContext first walker
                             }
                     
@@ -212,8 +213,8 @@ module internal For =
     /// for the loop body into the walker, it adds the Repeater as the last one. The repeater checks for
     /// the endloop condition and if another iteration is necessary re-adds the list of nodes and itself to 
     /// the walker
-    and Repeater(token:BlockToken, enumerator:obj seq, createWalker) =
-        inherit NDjango.ASTNodes.TagNode(token)
+    and Repeater(provider, token, enumerator, createWalker) =
+        inherit NDjango.ASTNodes.TagNode(provider, token)
         
         override this.walk manager walker =
             if Seq.isEmpty enumerator then
@@ -248,5 +249,5 @@ module internal For =
                             [], remaining
                     | _ -> [], remaining
 
-                ((TagNode(token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
+                ((TagNode(provider, token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
 

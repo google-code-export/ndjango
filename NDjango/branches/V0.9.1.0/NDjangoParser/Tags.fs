@@ -46,7 +46,7 @@ module internal Misc =
                     | _ -> raise (TemplateSyntaxError("invalid argumanents for 'Autoescape' tag", Some (token:>obj)))
                     
                 (({
-                    new TagNode(token) with
+                    new TagNode(provider, token) with
                         override this.walk manager walker = 
                             {walker with 
                                 parent=Some walker; 
@@ -61,7 +61,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token provider tokens =
                 let remaining = (provider :?> IParser).Seek tokens ["endcomment"]
-                ((TagNode(token) :> INodeImpl), remaining)
+                ((TagNode(provider, token) :> INodeImpl), remaining)
                 
     /// Outputs a whole load of debugging information, including the current
     /// context and imported modules.
@@ -73,7 +73,7 @@ module internal Misc =
     ///     </pre>
     type DebugTag() =
         interface ITag with
-            member this.Perform token parser tokens = (new NDjango.Tags.Debug.TagNode(token) :> INodeImpl), tokens
+            member this.Perform token provider tokens = (new NDjango.Tags.Debug.TagNode(provider, token) :> INodeImpl), tokens
             
     /// Outputs the first variable passed that is not False.
     /// 
@@ -107,7 +107,7 @@ module internal Misc =
                     | _ -> 
                         let variables = token.Args |> List.map (fun (name) -> new FilterExpression(provider, Block token, name))
                         ({
-                            new TagNode(token)
+                            new TagNode(provider, token)
                             with 
                                 override this.walk manager walker =
                                     match variables |> List.tryPick (fun var -> var.ResolveForOutput manager walker ) with
@@ -236,7 +236,7 @@ module internal Misc =
                             | _ -> []
                         | None -> []
                     ({
-                        new TagNode(token)
+                        new TagNode(provider, token)
                         with 
                             override this.walk manager walker =
                                 match regroup walker.context with
@@ -275,7 +275,7 @@ module internal Misc =
                 | [] ->
                     let node_list, remaining = (provider :?> IParser).Parse tokens ["endspaceless"]
                     ({
-                        new TagNode(token)
+                        new TagNode(provider, token)
                         with 
                             override this.walk manager walker =
                                 let reader = 
@@ -320,7 +320,7 @@ module internal Misc =
                         | _ -> raise (TemplateSyntaxError ("invalid format for 'template' tag", Some (token:>obj)))
                 let variables = token.Args |> List.map (fun (name) -> new FilterExpression(provider, Block token, name))
                 ({
-                    new TagNode(token)
+                    new TagNode(provider, token)
                     with 
                         override this.walk manager walker =
                             {walker with buffer = buf}
@@ -355,7 +355,7 @@ module internal Misc =
                     let maxValue = new FilterExpression(provider, Block token, maxValue)
                     let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (TemplateSyntaxError ("'widthratio' 3rd argument must be integer", Some (token:>obj)))
                     (({
-                        new TagNode(token) with
+                        new TagNode(provider, token) with
                             override this.walk manager walker = 
                                 let ratio = toFloat (fst <| value.Resolve walker.context false)
                                             / toFloat (fst <| maxValue.Resolve walker.context false) 
@@ -381,7 +381,7 @@ module internal Misc =
                     let nodes, remaining = (provider :?> IParser).Parse tokens ["endwith"]
                     let expression = new FilterExpression(provider, Block token, var)
                     (({
-                        new TagNode(token) with
+                        new TagNode(provider, token) with
                             override this.walk manager walker = 
                                 let context = 
                                     match fst <| expression.Resolve walker.context false with
@@ -432,7 +432,7 @@ module Abstract =
                         new FilterExpression(provider, Block token, path), argList, var
                 
                 (({
-                    new TagNode(token) with
+                    new TagNode(provider, token) with
                         override x.walk manager walker =
                             let shortResolve (expr: FilterExpression) = 
                                 match fst <| expr.Resolve walker.context false with

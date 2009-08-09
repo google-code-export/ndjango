@@ -178,11 +178,11 @@ module internal Now =
     
     type Tag() =
         interface ITag with
-            member this.Perform token parser tokens =
+            member this.Perform token provider tokens =
                 match token.Args with
                     | f::[] ->
                         ({
-                            new TagNode(token)
+                            new TagNode(provider, token)
                             with
                                 override this.walk manager walker = 
                                     {walker with buffer = f |> format |> System.DateTime.Now.ToString }

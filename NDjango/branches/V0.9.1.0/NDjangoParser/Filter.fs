@@ -34,8 +34,8 @@ module internal Filter =
 
     let FILTER_VARIABLE_NAME = "$filter"
 
-    type FilterNode(token:BlockToken, filter: FilterExpression, node_list: INodeImpl list) =
-        inherit TagNode(token)
+    type FilterNode(provider, token, filter: FilterExpression, node_list) =
+        inherit TagNode(provider, token)
 
         override this.walk manager walker = 
             let reader = 
@@ -63,7 +63,7 @@ module internal Filter =
                 | filter::[] ->
                     let filter_expr = new FilterExpression(provider, Block token, FILTER_VARIABLE_NAME + "|" + filter)
                     let node_list, remaining = (provider :?> IParser).Parse tokens ["endfilter"]
-                    (new FilterNode(token, filter_expr, node_list) :> INodeImpl), remaining
+                    (new FilterNode(provider, token, filter_expr, node_list) :> INodeImpl), remaining
                 | _ -> raise (TemplateSyntaxError ("'filter' tag requires one argument", Some (token:>obj)))
                 
                

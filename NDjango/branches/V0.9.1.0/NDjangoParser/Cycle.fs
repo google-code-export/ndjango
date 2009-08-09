@@ -58,8 +58,8 @@ module internal Cycle =
         member this.Value = List.hd values
         
     /// Cycles among the given strings each time this tag is encountered.
-    type TagNode(token:BlockToken, name: string, values: Variable list) =
-        inherit NDjango.ASTNodes.TagNode(token)
+    type TagNode(provider, token, name: string, values: Variable list) =
+        inherit NDjango.ASTNodes.TagNode(provider, token)
         
         let createController (controller: CycleController option) =
             match controller with
@@ -125,5 +125,5 @@ module internal Cycle =
                         else ("$Anonymous$Cycle", values)
                         
                 let values = List.map (fun v -> new Variable(provider, Block token, v)) values
-                ((new TagNode(token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)
+                ((new TagNode(provider, token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)
 
