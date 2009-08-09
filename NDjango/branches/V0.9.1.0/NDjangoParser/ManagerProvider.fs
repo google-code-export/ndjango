@@ -134,7 +134,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
     /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
-    let parse_token (provider: TemplateManagerProvider) tokens (token:NDjango.Lexer.Token) = 
+    let parse_token (provider: TemplateManagerProvider) tokens token = 
         try
             match token with
             | Lexer.Text textToken -> 
@@ -180,15 +180,6 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 } :> INodeImpl), tokens
             |_ -> rethrow()
 
-    /// determines whether the given element is included in the termination token list
-    let is_term_token elem (parse_until:string list) =
-        if parse_until = [] then false else
-            match elem with 
-            | Lexer.Block block -> parse_until |> List.exists block.Verb.Equals
-            | _ -> false
-            
-    let fail_unclosed_tags tag_list = raise (TemplateSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" tag_list), None))
-
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream
     /// the list is returned in the reversed order
@@ -196,28 +187,28 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        match tokens with
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
-                fail_unclosed_tags parse_until
+                raise (TemplateSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), Some (nodes :> obj)))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
-            if is_term_token token parse_until then
-                match token with
-                | Lexer.Block b -> ((new TagNode(b) :> INodeImpl) :: nodes, tokens)
-                | _ -> raise  (TemplateSyntaxError ("should never happen", None))
-            else
-                if List.isEmpty parse_until || LazyList.nonempty tokens || is_term_token token parse_until then
-                    let node, tokens = parse_token provider tokens token
-                    parse_internal provider (node :: nodes) tokens parse_until
-                else 
-                    fail_unclosed_tags parse_until
+            match token with 
+            | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
+                 ((new TagNode(block) :> INodeImpl) :: nodes, tokens)
+            | _ ->
+                let node, tokens = parse_token provider tokens token
+                parse_internal provider (node :: nodes) tokens parse_until
             
     /// tries to return a list positioned just after one of the elements of parse_until. Returns None
     /// if no such element was found.
     let rec seek_internal parse_until tokens = 
         match tokens with 
-        | LazyList.Nil -> fail_unclosed_tags parse_until
+        | LazyList.Nil -> 
+                raise (TemplateSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), None))
         | LazyList.Cons(token, tokens) -> 
-            if is_term_token token parse_until then tokens
-            else seek_internal parse_until tokens
+            match token with 
+            | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
+                 tokens
+            | _ ->
+                seek_internal parse_until tokens
     
     public new () =
         new TemplateManagerProvider(Defaults.defaultSettings, Defaults.standardTags, Defaults.standardFilters, new DefaultLoader())
@@ -293,7 +284,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
 
         /// Repositions the token stream after the first token found from the parse_until list
         member x.Seek tokens parse_until = 
-            if List.length parse_until = 0 then failwith "Seek must have at least one termination tag"
+            if List.length parse_until = 0 then 
+                raise (new TemplateSyntaxError("Seek must have at least one termination tag", None))
             else
                 seek_internal parse_until tokens
 
