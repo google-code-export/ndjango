@@ -98,6 +98,7 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("if-tag-error03", "{% if foo or %}yes{% else %}no{% endif %}", ContextObjects.p("foo", true), ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
             lst.Add(new TestDescriptor("if-tag-error04", "{% if not foo and %}yes{% else %}no{% endif %}", ContextObjects.p("foo", true), ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
             lst.Add(new TestDescriptor("if-tag-error05", "{% if not foo or %}yes{% else %}no{% endif %}", ContextObjects.p("foo", true), ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
+            lst.Add(new TestDescriptor("if-tag-error06", "{% if not foo %}yes{% else %}no", ContextObjects.p("foo", true), ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
             
             // IFEqual TAG
             lst.Add(new TestDescriptor("ifequal-tag-01", "{% ifequal foo bar %}yes{% else %}no{% endifequal %}", ContextObjects.p("foo", true, "bar", true), ContextObjects.p("yes")));
