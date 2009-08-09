@@ -40,6 +40,11 @@ module internal ASTNodes =
         
         override x.elements =
             (new TagNameNode(token) :> INode) :: base.elements
+            
+    type TagErrorNode(token: BlockToken, error) =
+        inherit TagNode(token)
+        
+        override x.ErrorMessage = error
         
     /// retrieves a template given the template name. The name is supplied as a FilterExpression
     /// which when resolved should eithter get a ready to use template, or a string (url)

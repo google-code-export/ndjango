@@ -146,7 +146,7 @@ module internal ParserNodes =
             member x.Length = token.Verb.Length
 
             /// a list of values allowed for the node
-            member x.Values = []
+            member x.Values = ["if";"block"]
             
             /// message associated with the node
             member x.ErrorMessage = new Error(-1,"")

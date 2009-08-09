@@ -11,5 +11,5 @@
 
 
 aaa
-{% spaceless %} cccc
+{% f spaceless %} cccc
 {%endspaceless%}

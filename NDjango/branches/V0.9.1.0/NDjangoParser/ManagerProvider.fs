@@ -135,50 +135,47 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
     let parse_token (provider: TemplateManagerProvider) tokens token = 
-        try
-            match token with
-            | Lexer.Text textToken -> 
-                ({new Node(token)
-                    with 
-                        override x.node_type = NodeType.Text        
+        match token with
+        | Lexer.Text textToken -> 
+            ({new Node(token)
+                with 
+                    override x.node_type = NodeType.Text        
 
-                        override x.elements = []
-                        
-                        override this.walk manager walker = 
-                            {walker with buffer = textToken.Text}
-                } :> INodeImpl), tokens
-            | Lexer.Variable var -> 
-                let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
-                ({new Node(token)
-                    with 
-                        override x.node_type = NodeType.Reference
+                    override x.elements = []
+                    
+                    override this.walk manager walker = 
+                        {walker with buffer = textToken.Text}
+            } :> INodeImpl), tokens
+        | Lexer.Variable var -> 
+            let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
+            ({new Node(token)
+                with 
+                    override x.node_type = NodeType.Reference
 
-                        override this.walk manager walker = 
-                            match expression.ResolveForOutput manager walker with
-                            | Some w -> w
-                            | None -> walker
-                } :> INodeImpl), tokens
-            | Lexer.Block block -> 
+                    override this.walk manager walker = 
+                        match expression.ResolveForOutput manager walker with
+                        | Some w -> w
+                        | None -> walker
+            } :> INodeImpl), tokens
+        | Lexer.Block block -> 
+            try
                 match Map.tryFind block.Verb tags with 
                 | None -> raise (TemplateSyntaxError ("Invalid block tag:" + block.Verb, Some (block:>obj)))
                 | Some (tag: ITag) -> tag.Perform block provider tokens
-            | Lexer.Comment comment -> 
-                // include it in the output to cover all scenarios, but don't actually bring the comment across
-                // the default behavior of the walk override is to return the same walker
-                // Considering that when walk is called the buffer is empty, this will 
-                // work for the comment node, so overriding the walk method here is unnecessary
-                ({new Node(token) with override x.node_type = NodeType.Comment} :> INodeImpl), tokens 
-        with
-            | :? TemplateSyntaxError as e ->
-                if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool) 
-                    then rethrow()
-                ({
-                    new Node(token) 
-                        with 
-                            override x.node_type = NodeType.Tag
-                            override x.ErrorMessage = new Error(2, e.Message)
-                } :> INodeImpl), tokens
-            |_ -> rethrow()
+            with
+                | :? TemplateSyntaxError as e ->
+                    if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool) 
+                        then rethrow()
+                    (
+                        new TagErrorNode(block, new Error(2, e.Message))
+                     :> INodeImpl), tokens
+                |_ -> rethrow()
+        | Lexer.Comment comment -> 
+            // include it in the output to cover all scenarios, but don't actually bring the comment across
+            // the default behavior of the walk override is to return the same walker
+            // Considering that when walk is called the buffer is empty, this will 
+            // work for the comment node, so overriding the walk method here is unnecessary
+            ({new Node(token) with override x.node_type = NodeType.Comment} :> INodeImpl), tokens 
 
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream

@@ -15,65 +15,34 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace NDjango.Designer.Intellisense
 {
-    class Controller : IIntellisenseController
+    class Controller : IIntellisenseController, IOleCommandTarget
     {
         private IList<ITextBuffer> subjectBuffers;
         private ITextView subjectTextView;
         private IWpfTextView WpfTextView;
         private ICompletionBrokerMapService completionBrokerMap;
+        private INodeProviderBroker nodeProviderBroker;
         private ICompletionSession activeSession;
-        private Completion selectedCompletionBeforeCommit;
-        private Dictionary<ITextBuffer, NodeProvider> nodeProviders = new Dictionary<ITextBuffer,NodeProvider>();
         private IVsEditorAdaptersFactoryService adaptersFactory;
 
         public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, 
             ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap,
             IVsEditorAdaptersFactoryService adaptersFactory)
         {
+            this.nodeProviderBroker = nodeProviderBroker;
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;
             this.completionBrokerMap = completionBrokerMap;
             this.adaptersFactory = adaptersFactory;
-            subjectBuffers.ToList().ForEach(buffer => nodeProviders.Add(buffer, nodeProviderBroker.GetNodeProvider(buffer)));
 
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
             {
-                GetShellCommandDispatcher(subjectTextView);
                 WpfTextView.VisualElement.KeyDown += new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
                 WpfTextView.VisualElement.KeyUp += new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
             }
         }
         
-        /// <summary>        
-        /// Get the SUIHostCommandDispatcher from the shell.  This method is rather ugly, and will (hopefully) be cleaned up        
-        /// slightly whenever [Import]ing an IServiceProvider is available.        
-        /// </summary>        
-        /// <param name="view"></param>        
-        /// <returns></returns>        
-        IOleCommandTarget GetShellCommandDispatcher(ITextView view)        
-        {            
-            IOleCommandTarget shellCommandDispatcher;             
-            var vsBuffer = adaptersFactory.GetBufferAdapter(view.TextBuffer);            
-            if (vsBuffer == null)                
-                return null;             
-            Guid guidServiceProvider = VSConstants.IID_IUnknown;            
-            IObjectWithSite objectWithSite = vsBuffer as IObjectWithSite;            
-            IntPtr ptrServiceProvider = IntPtr.Zero;            
-            objectWithSite.GetSite(ref guidServiceProvider, out ptrServiceProvider);             
-            Microsoft.VisualStudio.OLE.Interop.IServiceProvider serviceProvider = 
-                (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)Marshal.GetObjectForIUnknown(ptrServiceProvider);
-            Guid guidService = typeof(SUIHostCommandDispatcher).GUID;            
-            Guid guidInterface = typeof(IOleCommandTarget).GUID;            
-            IntPtr ptrObject = IntPtr.Zero;             
-            int hr = serviceProvider.QueryService(ref guidService, ref guidInterface, out ptrObject);
-            if (ErrorHandler.Failed(hr) || ptrObject == IntPtr.Zero)
-                return null;
-            shellCommandDispatcher = (IOleCommandTarget)Marshal.GetObjectForIUnknown(ptrObject);
-            Marshal.Release(ptrObject);
-            var vsTextView = adaptersFactory.GetViewAdapter(view);
-            return shellCommandDispatcher;        
-        }
         /// <summary>
         /// Handles the key up event.
         /// The intellisense window is dismissed when one presses ESC key
@@ -92,23 +61,8 @@ namespace NDjango.Designer.Intellisense
 
                 if (e.Key == Key.Enter)
                 {
-                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null /*&& this.activeSession.SelectedCompletionSet.SelectionStatus.IsSelected*/ )
+                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null )
                     {
-                        selectedCompletionBeforeCommit = this.activeSession.SelectedCompletionSet.SelectionStatus.Completion as Completion;
-                        activeSession.Commit();
-                    }
-                    else
-                    {
-                        activeSession.Dismiss();
-                    }
-                    e.Handled = true;
-                }
-
-                if (e.Key == Key.Tab)
-                {
-                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null)
-                    {
-                        selectedCompletionBeforeCommit = this.activeSession.SelectedCompletionSet.SelectionStatus.Completion as Completion;
                         activeSession.Commit();
                     }
                     else
@@ -142,16 +96,33 @@ namespace NDjango.Designer.Intellisense
 
                 // determine which subject buffer is affected by looking at the caret position
                 SnapshotPoint? caretPoint = textView.Caret.Position.Point.GetPoint
-                                                (textBuffer => (subjectBuffers.Contains(textBuffer) &&
-                                                                completionBrokerMap.GetBrokerForTextView(textView, textBuffer) != null),
-                                                 PositionAffinity.Predecessor);
+                    (textBuffer => 
+                        (
+                            subjectBuffers.Contains(textBuffer) 
+                            && nodeProviderBroker.IsNDjango(textBuffer)
+                            && completionBrokerMap.GetBrokerForTextView(textView, textBuffer) != null
+                        ),
+                        PositionAffinity.Predecessor);
 
                 if (caretPoint.HasValue)
                 {
                     List<INode> completionNodes = 
-                        nodeProviders[caretPoint.Value.Snapshot.TextBuffer].GetNodes(caretPoint.Value);
-                    if (completionNodes != null)
+                        nodeProviderBroker.GetNodeProvider(caretPoint.Value.Snapshot.TextBuffer).GetNodes(caretPoint.Value)
+                            .FindAll(node => node.Values.Count() > 0);
+                    if (completionNodes.Count > 0)
                     {
+                        string prefix = caretPoint.Value.Snapshot.GetText(0, caretPoint.Value.Position);
+                        for (int i = prefix.Length - 1; i >= 0; i--)
+                            if (prefix[i] == ' ' || prefix[i] == '\t')
+                                continue;
+                            else
+                                if (i > 0 || prefix[i] == '%' || prefix[i - 1] == '{')
+                                    break;
+                                else
+                                    return;
+
+                        ErrorHandler.ThrowOnFailure(adaptersFactory.GetViewAdapter(subjectTextView).AddCommandFilter(this, out oldFilter));
+
                         // the invocation occurred in a subject buffer of interest to us
                         ICompletionBroker broker = completionBrokerMap.GetBrokerForTextView(textView, caretPoint.Value.Snapshot.TextBuffer);
                         ITrackingPoint triggerPoint = caretPoint.Value.Snapshot.CreateTrackingPoint(caretPoint.Value.Position, PointTrackingMode.Positive);
@@ -175,22 +146,22 @@ namespace NDjango.Designer.Intellisense
 
         void OnActiveSessionDismissed(object sender, System.EventArgs e)
         {
+            ErrorHandler.ThrowOnFailure(adaptersFactory.GetViewAdapter(subjectTextView).RemoveCommandFilter(this));
             activeSession = null;
         }
 
         void OnActiveSessionCommitted(object sender, System.EventArgs e)
         {
-            //if (selectedCompletionBeforeCommit != null)
-            //{
-            //    activeSession.TextView.Caret.MoveTo(new VirtualSnapshotPoint(activeSession.TextView.Caret.Position.BufferPosition));
-            //}
+            ErrorHandler.ThrowOnFailure(adaptersFactory.GetViewAdapter(subjectTextView).RemoveCommandFilter(this));
         }
 
         public void ConnectSubjectBuffer(ITextBuffer subjectBuffer)
         { }
 
         public void Detach(Microsoft.VisualStudio.Text.Editor.ITextView textView)
-        { }
+        {
+            ErrorHandler.ThrowOnFailure(adaptersFactory.GetViewAdapter(subjectTextView).RemoveCommandFilter(this));
+        }
 
         public void DisconnectSubjectBuffer(ITextBuffer subjectBuffer)
         {
@@ -199,7 +170,25 @@ namespace NDjango.Designer.Intellisense
             {
                 WpfTextView.VisualElement.KeyDown -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyDown);
                 WpfTextView.VisualElement.KeyUp -= new System.Windows.Input.KeyEventHandler(VisualElement_KeyUp);
+                ErrorHandler.ThrowOnFailure(adaptersFactory.GetViewAdapter(subjectTextView).RemoveCommandFilter(this));
             }
+        }
+
+        public IOleCommandTarget oldFilter;
+
+        private static readonly Guid CMDSETID_StandardCommandSet2k = new Guid("1496a755-94de-11d0-8c3f-00c04fc2aae2");
+        private static readonly uint ECMD_RETURN = 3;
+
+        public int Exec(ref Guid pguidCmdGroup, uint nCmdID, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut)
+        {
+            if (pguidCmdGroup == CMDSETID_StandardCommandSet2k && nCmdID == ECMD_RETURN)
+                return VSConstants.S_OK;
+            return oldFilter.Exec(pguidCmdGroup, nCmdID, nCmdexecopt, pvaIn, pvaOut);
+        }
+
+        public int QueryStatus(ref Guid pguidCmdGroup, uint cCmds, OLECMD[] prgCmds, IntPtr pCmdText)
+        {
+            return oldFilter.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText);
         }
     }
 }
