@@ -33,16 +33,16 @@ module internal ASTNodes =
 
 
     /// Base class for all NDJango Tag nodes
-    type TagNode(token: BlockToken) =
+    type TagNode(provider, token: BlockToken) =
         inherit Node(Block token)
 
         override x.node_type = NodeType.Tag   
         
         override x.elements =
-            (new TagNameNode(token) :> INode) :: base.elements
+            (new TagNameNode(provider, token) :> INode) :: base.elements
             
-    type TagErrorNode(token: BlockToken, error) =
-        inherit TagNode(token)
+    type TagErrorNode(provider, token: BlockToken, error) =
+        inherit TagNode(provider, token)
         
         override x.ErrorMessage = error
         
@@ -60,13 +60,13 @@ module internal ASTNodes =
 
     type SuperBlockPointer = {super:TagNode}
 
-    and SuperBlock (token:BlockToken, parents: BlockNode list) =
-        inherit TagNode(token)
+    and SuperBlock (provider, token:BlockToken, parents: BlockNode list) =
+        inherit TagNode(provider, token)
         
         let nodelist, parent = 
             match parents with
             | h::[] -> h.Nodelist, None
-            | h::t -> h.Nodelist, Some <| new SuperBlock(token,t)
+            | h::t -> h.Nodelist, Some <| new SuperBlock(provider, token,t)
             | _ -> [], None
         
         override this.walk manager walker = 
@@ -77,11 +77,11 @@ module internal ASTNodes =
         member this.super = 
             match parent with
             | Some v -> v
-            | None -> new SuperBlock(token,[])
+            | None -> new SuperBlock(provider, token,[])
         
         
-    and BlockNode(token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
-        inherit TagNode(token)
+    and BlockNode(provider, token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
+        inherit TagNode(provider, token)
 
         member this.MapNodes blocks =
             match Map.tryFind this.Name blocks with
@@ -108,15 +108,15 @@ module internal ASTNodes =
                 nodes=final_nodelist; 
                 context= 
                     if overriden && not (List.isEmpty parents) then
-                        walker.context.add("block", ({super= new SuperBlock(token, parents)} :> obj))
+                        walker.context.add("block", ({super= new SuperBlock(provider, token, parents)} :> obj))
                     else
                         walker.context
             }
             
         override this.nodes with get() = this.Nodelist
        
-    and ExtendsNode(token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
-        inherit TagNode(token)
+    and ExtendsNode(provider: ITemplateManagerProvider, token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
+        inherit TagNode(provider, token)
             
         /// produces a flattened list of all nodes and child nodes within a node list
         let rec unfold_nodes = function

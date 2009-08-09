@@ -133,7 +133,7 @@ module internal ParserNodes =
             /// node lists
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
 
-    type TagNameNode(token: BlockToken) =
+    type TagNameNode(provider: ITemplateManagerProvider, token: BlockToken) =
 
         interface INode with
              /// TagNode type
@@ -146,7 +146,7 @@ module internal ParserNodes =
             member x.Length = token.Verb.Length
 
             /// a list of values allowed for the node
-            member x.Values = ["if";"block"]
+            member x.Values = provider.Tags |> Map.to_list |> List.map (fun tag -> tag |> fst)
             
             /// message associated with the node
             member x.ErrorMessage = new Error(-1,"")

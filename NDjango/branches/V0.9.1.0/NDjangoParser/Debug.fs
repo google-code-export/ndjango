@@ -24,12 +24,14 @@ namespace NDjango.Tags
 open System.Text
 open System.Text.RegularExpressions
 open System.Collections
+open NDjango.Lexer
+open NDjango.Interfaces
 
 module internal Debug =
         
     /// Produces debug information
-    type TagNode(t: NDjango.Lexer.BlockToken) =
-        inherit NDjango.ASTNodes.TagNode(t)
+    type TagNode(provider: ITemplateManagerProvider, t: BlockToken) =
+        inherit NDjango.ASTNodes.TagNode(provider, t)
 
         override this.walk manager walker = 
             let output = new System.Text.StringBuilder()

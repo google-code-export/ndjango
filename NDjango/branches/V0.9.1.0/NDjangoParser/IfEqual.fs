@@ -71,7 +71,7 @@ module internal IfEqual =
                     let var1 = new FilterExpression(provider, Block token, var1)
                     let var2 = new FilterExpression(provider, Block token, var2)
                     ({
-                        new TagNode(token)
+                        new TagNode(provider, token)
                         with 
                             override this.walk manager walker =
                                 {

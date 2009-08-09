@@ -39,7 +39,7 @@ module internal LoaderTags =
                 match token.Args with 
                 | name::[] -> 
                     let node_list, remaining = (provider :?> IParser).Parse tokens ["endblock"; "endblock " + name]
-                    (new BlockNode(token, name, node_list) :> INodeImpl), remaining
+                    (new BlockNode(provider, token, name, node_list) :> INodeImpl), remaining
                 | _ -> raise (TemplateSyntaxError ("block tag takes only one argument", Some (token:>obj)))
 
     /// Signal that this template extends a parent template.
@@ -59,7 +59,7 @@ module internal LoaderTags =
                     let parent_name_expr = 
                         new FilterExpression(provider, Block token, parent)
                         
-                    (new ExtendsNode(token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
+                    (new ExtendsNode(provider, token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
                 | _ -> raise (TemplateSyntaxError ("extends tag takes only one argument", Some (token:>obj)))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
@@ -94,7 +94,7 @@ module internal LoaderTags =
                         new FilterExpression(provider, Block token, name)
                     ({
                         //todo: we're not producing a node list here. may have to revisit
-                        new TagNode(token) 
+                        new TagNode(provider, token) 
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager template_name walker.context).Nodes}
@@ -116,8 +116,8 @@ module internal LoaderTags =
 
     type Reader = Path of string | TextReader of System.IO.TextReader
 
-    type SsiNode(token:BlockToken, reader: Reader, loader: string->TextReader) = 
-        inherit TagNode(token)
+    type SsiNode(provider, token, reader: Reader, loader: string->TextReader) = 
+        inherit TagNode(provider, token)
 
         override this.walk manager walker =
             let templateReader =  
@@ -130,7 +130,7 @@ module internal LoaderTags =
             let nodes = 
                 if length = 0 
                 then templateReader.Close(); walker.nodes
-                else (new SsiNode(token, TextReader templateReader, loader) :> INodeImpl) :: walker.nodes
+                else (new SsiNode(provider, token, TextReader templateReader, loader) :> INodeImpl) :: walker.nodes
             {walker with buffer = buffer; nodes=nodes}
 
     type SsiTag() =
@@ -138,11 +138,11 @@ module internal LoaderTags =
         interface ITag with
             member this.Perform token provider tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(token, Path path, provider.Loader.GetTemplate) :> INodeImpl), tokens
+                | path::[] -> (new SsiNode(provider, token, Path path, provider.Loader.GetTemplate) :> INodeImpl), tokens
                 | path::"parsed"::[] ->
                     let templateRef = FilterExpression (provider, Block token, "\"" + path + "\"")
                     ({
-                        new TagNode(token) 
+                        new TagNode(provider, token) 
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager templateRef walker.context).Nodes}

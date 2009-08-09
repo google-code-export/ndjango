@@ -74,7 +74,7 @@ module Compatibility =
                         if nested then (provider :?> IParser).Parse tokens ["end" + name]
                         else [], tokens
                         
-                    ({new ASTNodes.TagNode(token)
+                    ({new ASTNodes.TagNode(provider, token)
                             with
                                 override this.walk manager walker =
                                     let resolved_parms =  resolve_all parms walker.context

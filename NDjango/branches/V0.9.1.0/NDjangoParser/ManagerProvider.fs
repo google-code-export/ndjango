@@ -167,7 +167,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                     if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool) 
                         then rethrow()
                     (
-                        new TagErrorNode(block, new Error(2, e.Message))
+                        new TagErrorNode(provider, block, new Error(2, e.Message))
                      :> INodeImpl), tokens
                 |_ -> rethrow()
         | Lexer.Comment comment -> 
@@ -189,7 +189,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
-                 ((new TagNode(block) :> INodeImpl) :: nodes, tokens)
+                 ((new TagNode(provider, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
                 let node, tokens = parse_token provider tokens token
                 parse_internal provider (node :: nodes) tokens parse_until
