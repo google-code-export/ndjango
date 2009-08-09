@@ -46,7 +46,6 @@ namespace NDjango.Designer.Parsing
         class SnapshotReader : TextReader
         {
             ITextSnapshot snapshot;
-            string line;
             int pos = 0;
             public SnapshotReader(ITextSnapshot snapshot)
             {
@@ -123,11 +122,7 @@ namespace NDjango.Designer.Parsing
         /// <returns></returns>
         internal List<INode> GetNodes(SnapshotPoint point)
         {
-            List<NodeSnapshot> result = GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0))
-                            .FindAll(node => node.SnapshotSpan.IntersectsWith(new SnapshotSpan(point.Snapshot, point.Position, 0)));
-            if (result == null)
-                return null;
-            return result.ConvertAll(node => node.Node);
+            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0)).ConvertAll(node => node.Node);
         }
     }
 }
