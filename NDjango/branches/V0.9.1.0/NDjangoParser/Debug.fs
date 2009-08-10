@@ -31,7 +31,7 @@ module internal Debug =
         
     /// Produces debug information
     type TagNode(provider: ITemplateManagerProvider, t: BlockToken) =
-        inherit NDjango.ASTNodes.TagNode(provider, t)
+        inherit NDjango.ParserNodes.TagNode(provider, t)
 
         override this.walk manager walker = 
             let output = new System.Text.StringBuilder()

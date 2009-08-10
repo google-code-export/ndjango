@@ -24,8 +24,9 @@ namespace NDjango.Tags
 
 open System
 
-open NDjango.Lexer
 open NDjango.OutputHandling
+open NDjango.Lexer
+open NDjango.Interfaces
 open NDjango.Expressions
 
 module internal Cycle =
@@ -59,7 +60,7 @@ module internal Cycle =
         
     /// Cycles among the given strings each time this tag is encountered.
     type TagNode(provider, token, name: string, values: Variable list) =
-        inherit NDjango.ASTNodes.TagNode(provider, token)
+        inherit NDjango.ParserNodes.TagNode(provider, token)
         
         let createController (controller: CycleController option) =
             match controller with
@@ -75,7 +76,10 @@ module internal Cycle =
                 | Some v -> Some (v :?> CycleController)
                 | None -> 
                     match values with
-                    | [] -> raise (TemplateSyntaxError (sprintf "Named cycle '%s' does not exist" name, Some (token:>obj)))
+                    | [] -> raise (TemplateRenderingError (
+                                    sprintf "Named cycle '%s' does not exist" name, 
+                                    (token :> TextToken)
+                                    ))
                     | _ -> None
             let newc =
                 match oldc with
@@ -116,7 +120,7 @@ module internal Cycle =
             member this.Perform token provider tokens =
                 let name, values =
                     match List.rev token.Args with
-                    | [] -> raise (TemplateSyntaxError ("'cycle' tag requires at least one argument", Some (token:>obj)))
+                    | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
                     | name::"as"::values ->
                         (name, values |> List.rev |> normalize)
                     | _ ->

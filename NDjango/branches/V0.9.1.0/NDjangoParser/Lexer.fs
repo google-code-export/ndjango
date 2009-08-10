@@ -31,18 +31,27 @@ open NDjango.OutputHandling
 
 module Lexer =
 
+    let private qualified_message text line pos =
+        sprintf " in token: \"%s\" at line %d pos %d " text line pos
+    
     type TextToken(text:string, pos:int, line:int, linePos:int) =
         member x.Text = text
         member x.Position = pos
+        member x.Line = line
+        member x.LinePos = linePos
         member x.Length = text.Length
-        override this.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text line linePos
+        override this.ToString() = qualified_message text line linePos
 
+    /// Exception raised when template syntax errors are encountered
+    and SyntaxErrorException (message: string, token: TextToken) =
+        inherit System.ApplicationException(message + token.ToString()) 
+    
     type BlockToken(text, pos, line, linePos) =
         inherit TextToken(text, pos, line, linePos)
         let verb, args = 
             match smart_split (text.[Constants.BLOCK_TAG_START.Length..text.Length-Constants.BLOCK_TAG_END.Length-1].Trim()) with
             | verb::args -> verb, args 
-            | _ -> raise (TemplateSyntaxError ("Empty tag block", Some (TextToken(text, pos, line, linePos):>obj)))
+            | _ -> raise (SyntaxError(qualified_message "Empty tag block" line linePos))
         member this.Verb = verb 
         member this.Args = args
     
@@ -52,7 +61,7 @@ module Lexer =
             
         member this.Expression = 
             if expression.Equals("") then
-                raise (TemplateSyntaxError ("Empty variable block", Some (TextToken(text, pos, line, linePos):>obj)))
+                raise (SyntaxError(qualified_message "Empty variable block" line linePos))
             expression 
     
     type CommentToken(text, pos, line, linePos) =

@@ -31,21 +31,6 @@ open ParserNodes
 
 module internal ASTNodes =
 
-
-    /// Base class for all NDJango Tag nodes
-    type TagNode(provider, token: BlockToken) =
-        inherit Node(Block token)
-
-        override x.node_type = NodeType.Tag   
-        
-        override x.elements =
-            (new TagNameNode(provider, token) :> INode) :: base.elements
-            
-    type TagErrorNode(provider, token: BlockToken, error) =
-        inherit TagNode(provider, token)
-        
-        override x.ErrorMessage = error
-        
     /// retrieves a template given the template name. The name is supplied as a FilterExpression
     /// which when resolved should eithter get a ready to use template, or a string (url)
     /// to the source code for the template
@@ -55,12 +40,12 @@ module internal ASTNodes =
             match o with
             | :? ITemplate as template -> template
             | :? string as name -> manager.GetTemplate name
-            | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Can't construct template from %A" o, None))
-        | _ -> raise (TemplateSyntaxError (sprintf "Invalid template name in 'extends' tag. Variable %A is undefined" templateRef, None))
+            | _ -> raise (RenderingError (sprintf "Invalid template name in 'extends' tag. Can't construct template from %A" o))
+        | _ -> raise (RenderingError (sprintf "Invalid template name in 'extends' tag. Variable %A is undefined" templateRef))
 
     type SuperBlockPointer = {super:TagNode}
 
-    and SuperBlock (provider, token:BlockToken, parents: BlockNode list) =
+    and SuperBlock (provider: ITemplateManagerProvider, token:BlockToken, parents: BlockNode list) =
         inherit TagNode(provider, token)
         
         let nodelist, parent = 
@@ -80,7 +65,7 @@ module internal ASTNodes =
             | None -> new SuperBlock(provider, token,[])
         
         
-    and BlockNode(provider, token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
+    and BlockNode(provider: ITemplateManagerProvider, token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
         inherit TagNode(provider, token)
 
         member this.MapNodes blocks =

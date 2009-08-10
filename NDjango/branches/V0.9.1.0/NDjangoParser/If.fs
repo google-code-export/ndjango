@@ -101,7 +101,7 @@ module internal If =
                 node_list_false: NDjango.Interfaces.INodeImpl list, 
                 link_type: IfLinkType
                 ) =
-        inherit NDjango.ASTNodes.TagNode(provider, token)
+        inherit NDjango.ParserNodes.TagNode(provider, token)
         
         /// Evaluates a single filter expression against the context. Results are intepreted as follows: 
         /// None: false (or invalid values, as FilterExpression.Resolve is called with ignoreFailure = true)
@@ -160,12 +160,12 @@ module internal If =
                 append_vars IfLinkType.And var token notFlag (var2::tail) parser vars 
             | var::"or"::var2::tail -> 
                 append_vars IfLinkType.Or var token notFlag (var2::tail) parser vars 
-            | _ -> raise (TemplateSyntaxError ("invalid conditional expression in 'if' tag", Some (token:>obj)))
+            | _ -> raise (SyntaxError ("invalid conditional expression in 'if' tag"))
             
         and append_vars linkType var
             token notFlag (tokens: string list) parser vars =
             match fst vars with
-            | Some any when any <> linkType -> raise (TemplateSyntaxError ("'if' tags can't mix 'and' and 'or'", Some (token:>obj)))
+            | Some any when any <> linkType -> raise (SyntaxError ("'if' tags can't mix 'and' and 'or'"))
             | _ -> ()
             build_vars token false tokens parser (Some linkType, snd vars @ [(notFlag, new FilterExpression(parser, Block token, var))])
         
@@ -175,12 +175,12 @@ module internal If =
 
                 let link_type, bool_vars = build_vars token false token.Args provider (None,[])
                 
-                let node_list_true, remaining = (provider :?> IParser).Parse tokens ["else"; "endif"]
+                let node_list_true, remaining = (provider :?> IParser).Parse (Some token) tokens ["else"; "endif"]
                 let node_list_false, remaining2 =
                     match node_list_true.[node_list_true.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "else" then
-                            (provider :?> IParser).Parse remaining ["endif"]
+                            (provider :?> IParser).Parse (Some token) remaining ["endif"]
                         else
                             [], remaining
                     | _ -> [], remaining

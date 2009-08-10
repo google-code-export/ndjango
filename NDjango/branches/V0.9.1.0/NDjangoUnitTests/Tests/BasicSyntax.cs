@@ -37,11 +37,11 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("basic-syntax04", "as{{ missing }}df", ContextObjects.empty, ContextObjects.p("asdf", "asINVALIDdf")));
 
             // A variable may not contain more than one word
-            lst.Add(new TestDescriptor("basic-syntax06", "{{ multi word variable }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
+            lst.Add(new TestDescriptor("basic-syntax06", "{{ multi word variable }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
 
             // Raise TemplateSyntaxError for ContextObjects.empty variable tags
-            lst.Add(new TestDescriptor("basic-syntax07", "{{ }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
-            lst.Add(new TestDescriptor("basic-syntax08", "{{        }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
+            lst.Add(new TestDescriptor("basic-syntax07", "{{ }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
+            lst.Add(new TestDescriptor("basic-syntax08", "{{        }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
 
             // Attribute syntax allows a template to call an object's attribute
             lst.Add(new TestDescriptor("basic-syntax09", "{{ var.method }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p("SomeClass.method")));
@@ -54,14 +54,14 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("basic-syntax11", "{{ var.blech }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p("", "INVALID")));
 
             // Raise TemplateSyntaxError when trying to access a variable beginning with an underscore
-            lst.Add(new TestDescriptor("basic-syntax12", "{{ var.__dict__ }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
+            lst.Add(new TestDescriptor("basic-syntax12", "{{ var.__dict__ }}", ContextObjects.p("var", new ContextObjects.SomeClass()), ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
 
             // Raise TemplateSyntaxError when trying to access a variable containing an illegal character
-            lst.Add(new TestDescriptor("basic-syntax13", "{{ va>r }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
-            lst.Add(new TestDescriptor("basic-syntax14", "{{ (var.r) }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
-            lst.Add(new TestDescriptor("basic-syntax15", "{{ sp%am }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
-            lst.Add(new TestDescriptor("basic-syntax16", "{{ eggs! }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
-            lst.Add(new TestDescriptor("basic-syntax17", "{{ moo? }}", ContextObjects.empty, ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
+            lst.Add(new TestDescriptor("basic-syntax13", "{{ va>r }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
+            lst.Add(new TestDescriptor("basic-syntax14", "{{ (var.r) }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
+            lst.Add(new TestDescriptor("basic-syntax15", "{{ sp%am }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
+            lst.Add(new TestDescriptor("basic-syntax16", "{{ eggs! }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
+            lst.Add(new TestDescriptor("basic-syntax17", "{{ moo? }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
 
             var d = new Dictionary<string, string>();
             d.Add("bar", "baz");
@@ -82,7 +82,7 @@ namespace NDjango.UnitTests
 
             // Will try to treat "moo //} {{ cow" as the variable. Not ideal, but
             // costly to work around, so this triggers an error.
-            lst.Add(new TestDescriptor("basic-syntax23", "{{ moo //} {{ cow }}", ContextObjects.p("cow", "cow"), ContextObjects.p(typeof(OutputHandling.TemplateSyntaxError))));
+            lst.Add(new TestDescriptor("basic-syntax23", "{{ moo //} {{ cow }}", ContextObjects.p("cow", "cow"), ContextObjects.p(typeof(Lexer.SyntaxErrorException))));
 
             // Embedded newlines make it not-a-tag.
             lst.Add(new TestDescriptor("basic-syntax24", "{{ moo\n }}", ContextObjects.empty, ContextObjects.p("{{ moo\n }}")));
