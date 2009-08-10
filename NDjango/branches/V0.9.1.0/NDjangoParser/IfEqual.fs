@@ -24,7 +24,7 @@ namespace NDjango.Tags
 
 open NDjango.Lexer
 open NDjango.Interfaces
-open NDjango.ASTNodes
+open NDjango.ParserNodes
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -48,12 +48,12 @@ module internal IfEqual =
         interface ITag with
             member this.Perform token provider tokens =
                 let tag = token.Verb
-                let node_list_true, remaining = (provider :?> IParser).Parse tokens ["else"; "end" + tag]
+                let node_list_true, remaining = (provider :?> IParser).Parse (Some token) tokens ["else"; "end" + tag]
                 let node_list_false, remaining =
                     match node_list_true.[node_list_true.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "else" then
-                            (provider :?> IParser).Parse remaining ["end" + tag]
+                            (provider :?> IParser).Parse (Some token) remaining ["end" + tag]
                         else
                             [], remaining
                     | _ -> [], remaining
@@ -83,6 +83,6 @@ module internal IfEqual =
                         
                             override this.nodes with get() = node_list_true @ node_list_false
                     } :> INodeImpl), remaining
-                | _ -> raise (TemplateSyntaxError (sprintf "'%s' takes two arguments" tag, Some (token:>obj)))
+                | _ -> raise (SyntaxError (sprintf "'%s' takes two arguments" tag))
 
                 

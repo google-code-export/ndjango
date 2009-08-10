@@ -24,7 +24,7 @@ namespace NDjango.Tags
 
 open NDjango.Lexer
 open NDjango.Interfaces
-open NDjango.ASTNodes
+open NDjango.ParserNodes
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -54,12 +54,12 @@ module internal IfChanged =
     type Tag() =
         interface ITag with
             member this.Perform token provider tokens =
-                let nodes_ifchanged, remaining = (provider :?> IParser).Parse tokens ["else"; "endifchanged"]
+                let nodes_ifchanged, remaining = (provider :?> IParser).Parse (Some token) tokens ["else"; "endifchanged"]
                 let nodes_ifsame, remaining =
                     match nodes_ifchanged.[nodes_ifchanged.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "else" then
-                            (provider :?> IParser).Parse remaining ["endifchanged"]
+                            (provider :?> IParser).Parse (Some token) remaining ["endifchanged"]
                         else
                             [], remaining
                     | _ -> [], remaining

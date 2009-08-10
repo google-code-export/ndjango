@@ -68,13 +68,13 @@ module Compatibility =
                     List.map (fun elem -> new FilterExpression(provider, Block token, elem))
                 
                 if not (parms.Length = num_params) then
-                    raise (TemplateSyntaxError(sprintf "%s expects %d parameters, but was given %d." name num_params (parms.Length), Some (token:>obj)))
+                    raise (SyntaxError(sprintf "%s expects %d parameters, but was given %d." name num_params (parms.Length)))
                 else
                     let nodelist, tokens =
-                        if nested then (provider :?> IParser).Parse tokens ["end" + name]
+                        if nested then (provider :?> IParser).Parse (Some token) tokens ["end" + name]
                         else [], tokens
                         
-                    ({new ASTNodes.TagNode(provider, token)
+                    ({new ParserNodes.TagNode(provider, token)
                             with
                                 override this.walk manager walker =
                                     let resolved_parms =  resolve_all parms walker.context

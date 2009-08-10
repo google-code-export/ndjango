@@ -26,6 +26,7 @@ open System.Text.RegularExpressions
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ParserNodes
 open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
@@ -37,13 +38,13 @@ module internal Misc =
         interface ITag with
             member this.Perform token provider tokens =
 
-                let nodelist, remaining = (provider :?> IParser).Parse tokens ["endautoescape"]
+                let nodelist, remaining = (provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
                 let createContext walker = 
                     match token.Args with 
                     | "on"::[] -> walker.context.WithAutoescape(true)
                     | "off"::[] -> walker.context.WithAutoescape(false)
-                    | _ -> raise (TemplateSyntaxError("invalid argumanents for 'Autoescape' tag", Some (token:>obj)))
+                    | _ -> raise (SyntaxError("invalid argumanents for 'Autoescape' tag"))
                     
                 (({
                     new TagNode(provider, token) with
@@ -103,7 +104,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token provider tokens =
                 match token.Args with
-                    | [] -> raise (TemplateSyntaxError ("'firstof' tag requires at least one argument", Some (token:>obj)))
+                    | [] -> raise (SyntaxError ("'firstof' tag requires at least one argument"))
                     | _ -> 
                         let variables = token.Args |> List.map (fun (name) -> new FilterExpression(provider, Block token, name))
                         ({
@@ -244,7 +245,7 @@ module internal Misc =
                                 | _ as list -> {walker with context=walker.context.add(result, (list :> obj))}
                     } :> INodeImpl), tokens
 
-                | _ -> raise (TemplateSyntaxError ("malformed 'regroup' tag", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("malformed 'regroup' tag"))
 
 /// spaceless¶
 /// Removes whitespace between HTML tags. This includes tab characters and newlines.
@@ -273,7 +274,7 @@ module internal Misc =
             member this.Perform token provider tokens =
                 match token.Args with
                 | [] ->
-                    let node_list, remaining = (provider :?> IParser).Parse tokens ["endspaceless"]
+                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
                     ({
                         new TagNode(provider, token)
                         with 
@@ -285,7 +286,7 @@ module internal Misc =
                             override this.nodes with get() = node_list
                     } :> INodeImpl), remaining
 
-                | _ -> raise (TemplateSyntaxError ("'spaceless' tag should not have any arguments", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("'spaceless' tag should not have any arguments"))
                 
                 
     ///Output one of the syntax characters used to compose template tags.
@@ -317,7 +318,7 @@ module internal Misc =
                         | "closebrace"::[] -> "}"
                         | "opencomment"::[] -> "{#"
                         | "closecomment"::[] -> "#}"
-                        | _ -> raise (TemplateSyntaxError ("invalid format for 'template' tag", Some (token:>obj)))
+                        | _ -> raise (SyntaxError ("invalid format for 'template' tag"))
                 let variables = token.Args |> List.map (fun (name) -> new FilterExpression(provider, Block token, name))
                 ({
                     new TagNode(provider, token)
@@ -343,17 +344,17 @@ module internal Misc =
 
                 let toFloat (v:obj option) =
                     match v with 
-                    | None -> raise (TemplateSyntaxError ("'widthratio' cannot convert empty value to a numeric", Some (token:>obj)))
+                    | None -> raise (SyntaxError ("'widthratio' cannot convert empty value to a numeric"))
                     | Some value ->
                         try 
                             System.Convert.ToDouble(value)
-                        with |_ -> raise (TemplateSyntaxError (sprintf "'widthratio' cannot convert value %s to a numeric" (System.Convert.ToString(value)), Some (token:>obj)))
+                        with |_ -> raise (SyntaxError (sprintf "'widthratio' cannot convert value %s to a numeric" (System.Convert.ToString(value))))
         
                 match token.Args with
                 | value::maxValue::maxWidth::[] ->
                     let value = new FilterExpression(provider, Block token, value)
                     let maxValue = new FilterExpression(provider, Block token, maxValue)
-                    let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (TemplateSyntaxError ("'widthratio' 3rd argument must be integer", Some (token:>obj)))
+                    let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (SyntaxError ("'widthratio' 3rd argument must be integer"))
                     (({
                         new TagNode(provider, token) with
                             override this.walk manager walker = 
@@ -363,7 +364,7 @@ module internal Misc =
                                 {walker with buffer = ratio |> int |> string}
                        } :> INodeImpl), 
                        tokens)
-                | _ -> raise (TemplateSyntaxError ("'widthratio' takes three arguments", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("'widthratio' takes three arguments"))
 
     /// Adds a value to the context (inside of this block) for caching and easy
     /// access.
@@ -378,7 +379,7 @@ module internal Misc =
             member this.Perform token provider tokens =
                 match token.Args with
                 | var::"as"::name::[] ->
-                    let nodes, remaining = (provider :?> IParser).Parse tokens ["endwith"]
+                    let nodes, remaining = (provider :?> IParser).Parse (Some token) tokens ["endwith"]
                     let expression = new FilterExpression(provider, Block token, var)
                     (({
                         new TagNode(provider, token) with
@@ -394,7 +395,7 @@ module internal Misc =
                             override this.nodes with get() = nodes
                        } :> INodeImpl), 
                        remaining)
-                | _ -> raise (TemplateSyntaxError ("'with' expected format is 'value as name'", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("'with' expected format is 'value as name'"))
 
 module Abstract =
     /// Returns an absolute URL matching given view with its parameters.
@@ -424,7 +425,7 @@ module Abstract =
             member this.Perform token provider tokens =
                 let path, argList, var =
                     match token.Args with
-                    | [] -> raise (TemplateSyntaxError ("'url' tag requires at least one parameter", Some (token:>obj)))
+                    | [] -> raise (SyntaxError ("'url' tag requires at least one parameter"))
                     | path::args -> 
                         let argList, var = parseArgs token provider (List.fold (fun state elem -> 
                                                                                                     match String.trim [','] elem with

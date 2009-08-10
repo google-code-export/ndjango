@@ -109,7 +109,7 @@ module internal For =
                 emptyNodes: NDjango.Interfaces.INodeImpl list,
                 reversed: bool
                 ) =
-        inherit NDjango.ASTNodes.TagNode(provider, token)
+        inherit NDjango.ParserNodes.TagNode(provider, token)
 
         /// Creates a new ForContext object to represent the current iteration
         /// for the loop. The third parameter (context) is a context for the 
@@ -214,7 +214,7 @@ module internal For =
     /// the endloop condition and if another iteration is necessary re-adds the list of nodes and itself to 
     /// the walker
     and Repeater(provider, token, enumerator, createWalker) =
-        inherit NDjango.ASTNodes.TagNode(provider, token)
+        inherit NDjango.ParserNodes.TagNode(provider, token)
         
         override this.walk manager walker =
             if Seq.isEmpty enumerator then
@@ -236,15 +236,15 @@ module internal For =
                             var,
                             syntax,
                             true
-                        | _ -> raise (TemplateSyntaxError ("malformed 'for' tag", Some (token:>obj)))
+                        | _ -> raise (SyntaxError ("malformed 'for' tag"))
                 let enumExpr = FilterExpression(provider, Block token, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
-                let node_list_body, remaining = (provider :?> IParser).Parse tokens ["empty"; "endfor"]
+                let node_list_body, remaining = (provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
                 let node_list_empty, remaining2 =
                     match node_list_body.[node_list_body.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "empty" then
-                            (provider :?> IParser).Parse remaining ["endfor"]
+                            (provider :?> IParser).Parse (Some token) remaining ["endfor"]
                         else
                             [], remaining
                     | _ -> [], remaining

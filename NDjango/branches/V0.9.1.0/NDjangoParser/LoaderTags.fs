@@ -26,6 +26,7 @@ open System.IO
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ParserNodes
 open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
@@ -38,9 +39,9 @@ module internal LoaderTags =
             member this.Perform token provider tokens =
                 match token.Args with 
                 | name::[] -> 
-                    let node_list, remaining = (provider :?> IParser).Parse tokens ["endblock"; "endblock " + name]
+                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name]
                     (new BlockNode(provider, token, name, node_list) :> INodeImpl), remaining
-                | _ -> raise (TemplateSyntaxError ("block tag takes only one argument", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("block tag takes only one argument"))
 
     /// Signal that this template extends a parent template.
     /// 
@@ -54,13 +55,13 @@ module internal LoaderTags =
             member this.Perform token provider tokens = 
                 match token.Args with
                 | parent::[] -> 
-                    let node_list, remaining = (provider :?> IParser).Parse tokens []
+                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens []
                     
                     let parent_name_expr = 
                         new FilterExpression(provider, Block token, parent)
                         
                     (new ExtendsNode(provider, token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
-                | _ -> raise (TemplateSyntaxError ("extends tag takes only one argument", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("extends tag takes only one argument"))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
     ///
@@ -99,7 +100,7 @@ module internal LoaderTags =
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager template_name walker.context).Nodes}
                     } :> INodeImpl), tokens
-                | _ -> raise (TemplateSyntaxError ("'include' tag takes only one argument", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("'include' tag takes only one argument"))
 
 /// ssi¶
 /// Output the contents of a given file into the page.
@@ -148,5 +149,5 @@ module internal LoaderTags =
                                 {walker with parent=Some walker; nodes=(get_template manager templateRef walker.context).Nodes}
                     } :> INodeImpl), tokens
                 | _ ->
-                    raise (TemplateSyntaxError ("malformed 'ssi' tag", Some (token:>obj)))
+                    raise (SyntaxError ("malformed 'ssi' tag"))
                 

@@ -135,9 +135,8 @@ module OutputHandling =
         | Some v ->
             sprintf "%s (at %s" msg ( sprintf "%d%s" v (match length with | None -> ")" | Some l -> sprintf "/%d)" l))
 
-    /// Exception raised when template syntax errors are encountered
-    type TemplateSyntaxError (message: string, details:obj option, ?innerException: exn) =
-        inherit System.ApplicationException(message + (match details with |None->""|Some v->v.ToString()), defaultArg innerException null)
+    /// Exception raised when a template syntax error is encountered
+    type SyntaxError (message) = 
+        inherit System.ApplicationException(message)
     
-    type RenderingError (message: string, ?innerException: exn, ?position: int, ?length: int) =
-            inherit System.ApplicationException((extend_syntax_error_message message position length), defaultArg innerException null)
+

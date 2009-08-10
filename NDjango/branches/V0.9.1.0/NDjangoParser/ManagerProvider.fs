@@ -22,6 +22,7 @@
 namespace NDjango
 
 open System.IO
+open NDjango.Lexer
 open NDjango.Interfaces
 open NDjango.Filters
 open NDjango.Tags
@@ -130,7 +131,35 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     let validate_template = 
         if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
         else (fun (name,ts) -> false) 
-    
+
+    let generate_diag_for_tag (ex: System.Exception) (token : BlockToken option) (provider:TemplateManagerProvider) =
+        match (token, ex) with
+        | (_ , :? SyntaxError ) & (Some t, e) ->
+            if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+            then
+                raise (SyntaxErrorException(e.Message, (t :> TextToken)))
+            else
+                Some ({
+                        new TagNode(provider, t)
+                        with
+                            override x.ErrorMessage = new Error(2, e.Message)
+                    } :> INodeImpl)
+        |_  -> None
+        
+    let generate_diag_for_var (ex: System.Exception) (token : VariableToken) (provider:TemplateManagerProvider) =
+        match ex with
+        | :? SyntaxError as e ->
+            if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+            then
+                raise (SyntaxErrorException(e.Message, (token :> TextToken)))
+            else
+                Some ({
+                        new VariableNode(provider, token)
+                        with
+                            override x.ErrorMessage = new Error(2, e.Message)
+                    } :> INodeImpl)
+        |_  -> None
+        
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
     /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
@@ -146,30 +175,33 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                     override this.walk manager walker = 
                         {walker with buffer = textToken.Text}
             } :> INodeImpl), tokens
-        | Lexer.Variable var -> 
-            let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
-            ({new Node(token)
-                with 
-                    override x.node_type = NodeType.Reference
+        | Lexer.Variable var ->
+            try 
+                let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
+                ({new Node(token)
+                    with 
+                        override x.node_type = NodeType.Reference
 
-                    override this.walk manager walker = 
-                        match expression.ResolveForOutput manager walker with
-                        | Some w -> w
-                        | None -> walker
-            } :> INodeImpl), tokens
+                        override this.walk manager walker = 
+                            match expression.ResolveForOutput manager walker with
+                            | Some w -> w
+                            | None -> walker
+                } :> INodeImpl), tokens
+            with
+                |_ as ex -> 
+                    match generate_diag_for_var ex var provider with
+                    | Some errorNode -> (errorNode , tokens)
+                    | None -> rethrow()
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb tags with 
-                | None -> raise (TemplateSyntaxError ("Invalid block tag:" + block.Verb, Some (block:>obj)))
+                | None -> raise (SyntaxError ("Invalid block tag:" + block.Verb))
                 | Some (tag: ITag) -> tag.Perform block provider tokens
             with
-                | :? TemplateSyntaxError as e ->
-                    if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool) 
-                        then rethrow()
-                    (
-                        new TagErrorNode(provider, block, new Error(2, e.Message))
-                     :> INodeImpl), tokens
-                |_ -> rethrow()
+                |_ as ex -> 
+                    match generate_diag_for_tag ex (Some block) provider with
+                    | Some errorNode -> (errorNode , tokens)
+                    | None -> rethrow()
         | Lexer.Comment comment -> 
             // include it in the output to cover all scenarios, but don't actually bring the comment across
             // the default behavior of the walk override is to return the same walker
@@ -184,7 +216,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        match tokens with
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
-                raise (TemplateSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), Some (nodes :> obj)))
+                raise (CompoundSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), nodes))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
@@ -199,7 +231,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     let rec seek_internal parse_until tokens = 
         match tokens with 
         | LazyList.Nil -> 
-                raise (TemplateSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), None))
+                raise (SyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until)))
         | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
@@ -269,20 +301,26 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     interface IParser with
         
         /// Parses the sequence of tokens until one of the given tokens is encountered
-        member x.Parse tokens parse_until =
-            let nodes, tokens = parse_internal x [] tokens parse_until
-            (nodes |> List.rev, tokens)
+        member x.Parse parent tokens parse_until =
+            try
+                let nodes, tokens = parse_internal x [] tokens parse_until
+                (nodes |> List.rev, tokens)
+            with
+            | _ as ex -> 
+                match generate_diag_for_tag ex parent x with
+                | Some errorNode -> ([errorNode], tokens)
+                | None -> rethrow()
         
         /// Parses the template From the source in the reader into the node list
         member x.ParseTemplate template =
             // this will cause the TextReader to be closed when the template goes out of scope
             use template = template
-            fst <| (x :> IParser).Parse (NDjango.Lexer.tokenize template) []
+            fst <| (x :> IParser).Parse None (NDjango.Lexer.tokenize template) []
 
         /// Repositions the token stream after the first token found from the parse_until list
         member x.Seek tokens parse_until = 
             if List.length parse_until = 0 then 
-                raise (new TemplateSyntaxError("Seek must have at least one termination tag", None))
+                raise (new SyntaxError("Seek must have at least one termination tag"))
             else
                 seek_internal parse_until tokens
 

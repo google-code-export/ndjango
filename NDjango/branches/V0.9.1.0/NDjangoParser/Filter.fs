@@ -26,6 +26,7 @@ open System
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.ParserNodes
 open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
@@ -62,8 +63,8 @@ module internal Filter =
                 match token.Args with
                 | filter::[] ->
                     let filter_expr = new FilterExpression(provider, Block token, FILTER_VARIABLE_NAME + "|" + filter)
-                    let node_list, remaining = (provider :?> IParser).Parse tokens ["endfilter"]
+                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens ["endfilter"]
                     (new FilterNode(provider, token, filter_expr, node_list) :> INodeImpl), remaining
-                | _ -> raise (TemplateSyntaxError ("'filter' tag requires one argument", Some (token:>obj)))
+                | _ -> raise (SyntaxError ("'filter' tag requires one argument"))
                 
                

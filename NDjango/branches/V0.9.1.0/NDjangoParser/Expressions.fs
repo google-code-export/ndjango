@@ -131,9 +131,9 @@ module Expressions =
         
         let fail_syntax v = 
             raise (
-                TemplateSyntaxError (
-                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" variable v
-                    , Some (Lexer.get_textToken token :> obj)))
+                SyntaxError (
+                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" variable v)
+                    )
 
         do match variable with 
             | ComponentStartsWith "-" v->
@@ -220,7 +220,7 @@ module Expressions =
             match filter with 
             | :? IFilter as f->
                 if List.length provided = 0 && f.DefaultValue = null then
-                    raise (TemplateSyntaxError (sprintf "%s requires argument, none provided" name, Some (Lexer.get_textToken token :> obj)))
+                    raise (SyntaxError (sprintf "%s requires argument, none provided" name))
                 else true
             | _ -> true
         
@@ -228,8 +228,7 @@ module Expressions =
         let rec parse_var (filter_match: Match) upto (var: Option<string>) =
             if not (filter_match.Success) then
                 if not (upto = expression.Length) 
-                then raise (TemplateSyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression.[upto..] expression
-                                , Some (Lexer.get_textToken token :> obj)))
+                then raise (SyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression.[upto..] expression))
                 else
                     (upto, new Variable(provider, token, var.Value), [])
             else
@@ -238,25 +237,24 @@ module Expressions =
             
                 if not (upto = filter_match.Index) then
                     raise 
-                        (TemplateSyntaxError 
+                        (SyntaxError 
                             (sprintf "Could not parse some characters %s|%s|%s" 
                                 expression.[..upto] 
                                 expression.[upto..filter_match.Index] 
                                 expression.[filter_match.Index..]
-                            , Some (Lexer.get_textToken token :> obj)))
+                            ))
                 else
                     match var with
                     | None ->
                         match filter_match with
                         | Utilities.Matched "var" var_match -> fast_call (Some var_match)
-                        | _ -> raise (TemplateSyntaxError (sprintf "Could not find variable at start of %s" expression, Some (Lexer.get_textToken token :> obj)))
+                        | _ -> raise (SyntaxError (sprintf "Could not find variable at start of %s" expression))
                     | Some s ->
                         let filter_name = filter_match.Groups.["filter_name"]
                         let arg = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list |> List.map (fun c -> Variable(provider, token, c.ToString())) 
                         let filter = Map.tryFind filter_name.Value provider.Filters 
                         
-                        if filter.IsNone then raise (TemplateSyntaxError (sprintf "filter %A could not be found" filter_name.Value
-                                                                , Some (Lexer.get_textToken token :> obj)))
+                        if filter.IsNone then raise (SyntaxError (sprintf "filter %A could not be found" filter_name.Value))
                         else
                             ignore <| args_check filter_name.Value filter.Value arg
 

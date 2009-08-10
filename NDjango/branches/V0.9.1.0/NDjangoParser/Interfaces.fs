@@ -25,6 +25,7 @@ namespace NDjango.Interfaces
 open System.Collections.Generic
 open System.IO
 open NDjango
+
 type NodeType =
             
         /// <summary>
@@ -220,7 +221,7 @@ and INodeImpl =
 type IParser =
     /// Produces a commited node list and uncommited token list as a result of parsing until
     /// a block from the string list is encotuntered
-    abstract member Parse: tokens:LazyList<Lexer.Token> -> parse_until:string list -> (INodeImpl list * LazyList<Lexer.Token>)
+    abstract member Parse: parent: Lexer.BlockToken option -> tokens:LazyList<Lexer.Token> -> parse_until:string list -> (INodeImpl list * LazyList<Lexer.Token>)
    
     /// Parses the template From the source in the reader into the node list
     abstract member ParseTemplate: template:TextReader -> INodeImpl list
@@ -258,4 +259,15 @@ and ITemplateManagerProvider =
 and ITag = 
     /// Transforms a {% %} tag into a list of nodes and uncommited token list
     abstract member Perform: Lexer.BlockToken -> ITemplateManagerProvider -> LazyList<Lexer.Token> -> (INodeImpl * LazyList<Lexer.Token>)
+
+type RenderingError (message: string, ?innerException: exn) =
+        inherit System.ApplicationException(message, defaultArg innerException null)
+
+type TemplateRenderingError (message: string, token:NDjango.Lexer.TextToken, ?innerException: exn) =
+        inherit System.ApplicationException(message, defaultArg innerException null)
+
+type internal CompoundSyntaxError(message, nodes:INodeImpl list) =
+    inherit OutputHandling.SyntaxError(message)
+    
+    member x.Nodes = nodes
 

@@ -156,4 +156,19 @@ module internal ParserNodes =
             
             /// node lists
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
+            
+    /// Base class for all NDJango Tag nodes
+    type TagNode(provider: ITemplateManagerProvider, token: BlockToken) =
+        inherit Node(Block token)
 
+        override x.node_type = NodeType.Tag   
+        
+        override x.elements =
+            (new TagNameNode(provider, token) :> INode) :: base.elements
+            
+    /// Base class for all NDJango Variable nodes
+    type VariableNode(provider: ITemplateManagerProvider, token: VariableToken) =
+        inherit Node(Variable token)
+
+        override x.node_type = NodeType.Tag   
+        
