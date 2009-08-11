@@ -135,7 +135,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     let generate_diag_for_tag (ex: System.Exception) (token : BlockToken option) (provider:TemplateManagerProvider) =
         match (token, ex) with
         | (_ , :? SyntaxError ) & (Some t, e) ->
-            if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+            if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
                 raise (SyntaxErrorException(e.Message, (t :> TextToken)))
             else
@@ -149,7 +149,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     let generate_diag_for_var (ex: System.Exception) (token : VariableToken) (provider:TemplateManagerProvider) =
         match ex with
         | :? SyntaxError as e ->
-            if ((provider :> ITemplateManagerProvider).Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+            if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
                 raise (SyntaxErrorException(e.Message, (token :> TextToken)))
             else
@@ -208,6 +208,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             // Considering that when walk is called the buffer is empty, this will 
             // work for the comment node, so overriding the walk method here is unnecessary
             ({new Node(token) with override x.node_type = NodeType.Comment} :> INodeImpl), tokens 
+        
+        | Lexer.Error error ->
+            raise (SyntaxError(error.ErrorMessage))
 
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream
