@@ -86,7 +86,7 @@ namespace NDjango.BistroIntegration.Validation
                     sb.Append(",");
                     sb.Append(key);
                     sb.Append(": \"");
-                    sb.Append(stripQuotes(Convert.ToString(child.DefiningParams[key])));
+                    sb.Append(new NDjango.FiltersCS.EscapeJSFilter().Perform(Convert.ToString(child.DefiningParams[key])));
                     sb.Append("\"");
                 }
 
@@ -99,11 +99,6 @@ namespace NDjango.BistroIntegration.Validation
                 sb.Remove(sb.Length - 1, 1);
 
             return sb.Append("]}");
-        }
-
-        private string stripQuotes(string p)
-        {
-            return p.Replace("\"", "\\\"");
         }
 
         /// <summary>
