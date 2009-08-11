@@ -48,7 +48,6 @@ namespace NDjango.ASPMVCIntegration
         {
             this.application = application;
             application.BeginRequest += new EventHandler(application_BeginRequest);
-            application.EndRequest += new EventHandler(application_EndRequest);
 
             lock (handleLock)
             {
@@ -73,15 +72,5 @@ namespace NDjango.ASPMVCIntegration
             application.Context.Items[MANAGER_HANDLE] = manager;
         }
 
-        /// <summary>
-        /// Handles the EndRequest event of the application control. This event handler is
-        /// used to update local instance of the manager.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-        void application_EndRequest(object sender, EventArgs e)
-        {
-            manager = (NDjango.Interfaces.ITemplateManager)application.Context.Items[MANAGER_HANDLE];
-        }
     }
 }

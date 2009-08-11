@@ -55,15 +55,6 @@ namespace NDjango.ASPMVCIntegration
             return (NDjango.Interfaces.ITemplateManager)viewContext.HttpContext.Items[NDjangoHandle.MANAGER_HANDLE];
         }
 
-        /// <summary>
-        /// Updates the manager with the one returned by rendering operations
-        /// </summary>
-        /// <param name="manager">The manager.</param>
-        /// <param name="viewContext">The view context.</param>
-        protected virtual void ReturnManager(NDjango.Interfaces.ITemplateManager manager, ViewContext viewContext)
-        {
-            viewContext.HttpContext.Items[NDjangoHandle.MANAGER_HANDLE] = manager;
-        }
 
         /// <summary>
         /// Renders the specified view context.
@@ -111,7 +102,6 @@ namespace NDjango.ASPMVCIntegration
             while ((count = reader.ReadBlock(buffer, 0, 4096)) > 0)
                 writer.Write(buffer, 0, count);
 
-            ReturnManager(manager, viewContext);
         }
     }
 }
