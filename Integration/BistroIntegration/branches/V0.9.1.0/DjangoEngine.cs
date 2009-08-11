@@ -83,7 +83,7 @@ namespace NDjango.BistroIntegration
 
         private static object lockObj = new object();
 
-        public static TemplateManagerProvider Provider
+        private static TemplateManagerProvider Provider
         {
             get
             {
@@ -104,7 +104,7 @@ namespace NDjango.BistroIntegration
 
         public DjangoEngine(IHttpHandler handler)
         {
-            manager = provider.GetNewManager();
+            manager = Provider.GetNewManager();
         }
         #region private members
         private NDjango.Interfaces.ITemplateManager manager;
