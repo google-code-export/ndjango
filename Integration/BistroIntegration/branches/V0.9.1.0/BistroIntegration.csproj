@@ -33,16 +33,16 @@
   <ItemGroup>
     <Reference Include="Bistro.Core, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Bistro\Bistro\BistroCore\bin\Bistro.Core.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Program Files\Hill30\Bistro\Bistro.Core.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=1.9.6.16, Culture=neutral, PublicKeyToken=a19089b1c74d0809, processorArchitecture=MSIL" />
-    <Reference Include="NDjango.Core, Version=0.9.0.4, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NDjango.Core, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\NDjango\NDjangoParser\bin\NDjango.Core.dll</HintPath>
+      <HintPath>..\..\..\..\NDjango\branches\V0.9.1.0\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NDjango.Filters, Version=0.9.0.4, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NDjango.Filters, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\NDjango\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
+      <HintPath>..\..\..\..\NDjango\branches\V0.9.1.0\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
