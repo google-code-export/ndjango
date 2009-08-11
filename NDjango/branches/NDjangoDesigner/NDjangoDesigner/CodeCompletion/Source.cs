@@ -13,11 +13,11 @@ namespace NDjango.Designer.Intellisense
 
         public System.Collections.ObjectModel.ReadOnlyCollection<CompletionSet> GetCompletionInformation(ICompletionSession session)
         {
+            CompletionProvider completionProvider = session.Properties[CompletionProvider.CompletionProviderSessionKey] as CompletionProvider;
+
             int triggerPointPosition = session.TriggerPoint.GetPosition(session.SubjectBuffer.CurrentSnapshot);
             ITrackingSpan trackingSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
-                triggerPointPosition, 0, SpanTrackingMode.EdgeInclusive);
-
-            CompletionProvider completionProvider = session.Properties[CompletionProvider.CompletionProviderSessionKey] as CompletionProvider;
+                completionProvider.Position, completionProvider.Length, SpanTrackingMode.EdgeInclusive);
 
             if (completionProvider != null)
             {

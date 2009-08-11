@@ -8,11 +8,22 @@ namespace NDjango.Designer.Intellisense
     {
         internal static string CompletionProviderSessionKey = "ndjango.completionProvider";
         private List<string> completions;
+        int position;
+        public int Position { get { return position; } }
+
+        int length;
+        public int Length { get { return length; } }
 
         public CompletionProvider(List<INode> completionNodes)
         {
             this.completions = new List<string>();
             completionNodes.ForEach(node => this.completions.AddRange(node.Values));
+            if (completionNodes.Exists(node => node.NodeType == NodeType.TagName))
+            {
+                INode actualNode = completionNodes.Find(node => node.NodeType == NodeType.TagName);
+                this.position = actualNode.Position;
+                this.length = actualNode.Length;
+            }
         }
 
         internal IEnumerable<Microsoft.VisualStudio.Language.Intellisense.Completion> GetCompletions(Microsoft.VisualStudio.Language.Intellisense.ICompletionSession session)
