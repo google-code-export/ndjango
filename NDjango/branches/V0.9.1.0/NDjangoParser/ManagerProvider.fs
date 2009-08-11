@@ -210,7 +210,15 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             ({new Node(token) with override x.node_type = NodeType.Comment} :> INodeImpl), tokens 
         
         | Lexer.Error error ->
-            raise (SyntaxError(error.ErrorMessage))
+//            raise (SyntaxError(error.ErrorMessage))
+//            let errorMessage = new Error(2, error.ErrorMessage)
+            if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+                then raise (new SyntaxErrorException(error.ErrorMessage, (error :> TextToken)))
+            ({
+                new Node(token) with 
+                    override x.node_type = NodeType.Tag 
+                    override x.ErrorMessage = new Error(2, error.ErrorMessage)
+              } :> INodeImpl), tokens
 
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream
