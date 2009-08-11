@@ -59,7 +59,7 @@ namespace NDjango.ASPMVCIntegration
                 }
             }
 
-            manager = engine.InitialManager;
+            manager = engine.Provider.GetNewManager();
         }
 
         /// <summary>

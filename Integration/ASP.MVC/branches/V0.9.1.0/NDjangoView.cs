@@ -105,9 +105,7 @@ namespace NDjango.ASPMVCIntegration
 
             requestContext.Add(aspmvcContextKey, viewContext.RequestContext);
 
-            var templateTuple = manager.RenderTemplate(path, requestContext);
-            manager = templateTuple.Item1;
-            TextReader reader = templateTuple.Item2;
+            TextReader reader = manager.RenderTemplate(path, requestContext);
             char[] buffer = new char[4096];
             int count = 0;
             while ((count = reader.ReadBlock(buffer, 0, 4096)) > 0)
