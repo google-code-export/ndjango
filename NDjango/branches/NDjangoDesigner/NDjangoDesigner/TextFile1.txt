@@ -1,4 +1,4 @@
-
+{{}}
 
 
 
@@ -11,5 +11,6 @@
 
 
 aaa
-{% f spaceless %} cccc
+{% spaceless %} cccc
+	aa bb {{}}
 {%endspaceless%}
