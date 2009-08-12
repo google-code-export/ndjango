@@ -1,9 +1,33 @@
-﻿using Microsoft.VisualStudio.Text;
+﻿/****************************************************************************
+ * 
+ *  NDjango Parser Copyright © 2009 Hill30 Inc
+ *
+ *  This file is part of the NDjango Designer.
+ *
+ *  The NDjango Parser is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The NDjango Parser is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with NDjango Parser.  If not, see <http://www.gnu.org/licenses/>.
+ *  
+ ***************************************************************************/
+
+using Microsoft.VisualStudio.Text;
 using NDjango.Interfaces;
 using System.Collections.Generic;
 
 namespace NDjango.Designer.Parsing
 {
+    /// <summary>
+    /// Maps a ndjango syntax node to the corresponding snapshotspan in the snapshot
+    /// </summary>
     class NodeSnapshot
     {
         private SnapshotSpan snapshotSpan;
@@ -25,6 +49,9 @@ namespace NDjango.Designer.Parsing
 
         public INode Node { get { return node; } }
 
+        /// <summary>
+        /// Returns the classification type for the node
+        /// </summary>
         public string Type
         {
             get
@@ -41,6 +68,10 @@ namespace NDjango.Designer.Parsing
             }
         }
 
+        /// <summary>
+        /// Translates the NodeSnapshot to a newer snapshot
+        /// </summary>
+        /// <param name="snapshot"></param>
         internal void TranslateTo(ITextSnapshot snapshot)
         {
             snapshotSpan = snapshotSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
