@@ -103,13 +103,25 @@ namespace NDjango.ASPMVCIntegration
         }
 
         /// <summary>
+        /// If string contains tilde - it's a relative path, so leading tilde and slashes should be removed.
+        /// Such path can come only from ASP.MVC itself, there should be no tilde when we load templates from extends or include tags
+        /// </summary>
+        /// <param name="strWithTilde"></param>
+        /// <returns></returns>
+        private string RemoveTilde(string strWithTilde)
+        {
+            return strWithTilde.StartsWith("~/") ? strWithTilde.TrimStart('~', '/') : strWithTilde;
+        }
+
+        /// <summary>
         /// Gets the template source from the app-relative path.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns></returns>
         public TextReader GetTemplate(string name)
         {
-            return File.OpenText(Path.Combine(rootDir, name.TrimStart('~', '/')));
+
+            return File.OpenText(Path.Combine(rootDir, RemoveTilde(name)));
         }
 
         /// <summary>
@@ -122,7 +134,7 @@ namespace NDjango.ASPMVCIntegration
         /// </returns>
         public bool IsUpdated(string name, System.DateTime timestamp)
         {
-            return File.GetLastWriteTime(Path.Combine(rootDir, name.TrimStart('~', '/'))) > timestamp;
+            return File.GetLastWriteTime(Path.Combine(rootDir, RemoveTilde(name))) > timestamp;
         }
     }
 }
