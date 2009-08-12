@@ -30,6 +30,9 @@ namespace NDjango.BistroIntegration
         }
     }
 
+    /// <summary>
+    /// Standalone class for Template loader.
+    /// </summary>
     internal class IntegrationTemplateLoader : NDjango.Interfaces.ITemplateLoader
     {
 
