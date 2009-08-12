@@ -44,7 +44,7 @@ module internal Misc =
                     match token.Args with 
                     | "on"::[] -> walker.context.WithAutoescape(true)
                     | "off"::[] -> walker.context.WithAutoescape(false)
-                    | _ -> raise (SyntaxError("invalid argumanents for 'Autoescape' tag"))
+                    | _ -> raise (SyntaxError("invalid arguments for 'Autoescape' tag"))
                     
                 (({
                     new TagNode(provider, token) with

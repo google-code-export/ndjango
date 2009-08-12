@@ -71,6 +71,27 @@ type NodeType =
         /// </summary>
         | Reference = 0x0007
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /// <summary>
         /// Filter with o without a parameter. Parameter can be a constant or a reference
         /// <example>default:"nothing"</example>
