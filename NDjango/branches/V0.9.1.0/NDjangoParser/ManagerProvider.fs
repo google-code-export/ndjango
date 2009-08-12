@@ -153,11 +153,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             then
                 raise (SyntaxErrorException(e.Message, (token :> TextToken)))
             else
-                Some ({
-                        new VariableNode(provider, token)
-                        with
-                            override x.ErrorMessage = new Error(2, e.Message)
-                    } :> INodeImpl)
+                Some (new ErrorNode(provider, Variable token, new Error(2, e.Message)) :> INodeImpl)
         |_  -> None
         
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
@@ -210,15 +206,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             ({new Node(token) with override x.node_type = NodeType.Comment} :> INodeImpl), tokens 
         
         | Lexer.Error error ->
-//            raise (SyntaxError(error.ErrorMessage))
-//            let errorMessage = new Error(2, error.ErrorMessage)
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then raise (new SyntaxErrorException(error.ErrorMessage, (error :> TextToken)))
-            ({
-                new Node(token) with 
-                    override x.node_type = NodeType.Tag 
-                    override x.ErrorMessage = new Error(2, error.ErrorMessage)
-              } :> INodeImpl), tokens
+            (new ErrorNode(provider, token, new Error(2, error.ErrorMessage)) :> INodeImpl), tokens
 
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream

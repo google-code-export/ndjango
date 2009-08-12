@@ -18,7 +18,7 @@ namespace NDjango.Designer.Intellisense
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            return new CompletionSource();
+            return new TagCompletionSource();
         }
     }
 }
