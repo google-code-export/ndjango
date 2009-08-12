@@ -122,7 +122,7 @@ namespace NDjango.ASPMVCIntegration
         /// </returns>
         public bool IsUpdated(string name, System.DateTime timestamp)
         {
-            return File.GetLastWriteTime(Path.Combine(rootDir, name)) > timestamp;
+            return File.GetLastWriteTime(Path.Combine(rootDir, name.TrimStart('~', '/'))) > timestamp;
         }
     }
 }
