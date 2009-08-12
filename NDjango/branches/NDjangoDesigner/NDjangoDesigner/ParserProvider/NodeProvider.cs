@@ -1,4 +1,25 @@
-﻿using System;
+﻿/****************************************************************************
+ * 
+ *  NDjango Parser Copyright © 2009 Hill30 Inc
+ *
+ *  This file is part of the NDjango Designer.
+ *
+ *  The NDjango Parser is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The NDjango Parser is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with NDjango Parser.  If not, see <http://www.gnu.org/licenses/>.
+ *  
+ ***************************************************************************/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
@@ -9,7 +30,7 @@ using System.IO;
 namespace NDjango.Designer.Parsing
 {
     /// <summary>
-    /// Provides ability to retrive tokens out of snapshot objects.
+    /// Manages a list of syntax nodes for a given buffer.
     /// </summary>
     class NodeProvider
     {
@@ -21,6 +42,11 @@ namespace NDjango.Designer.Parsing
         private IParser parser;
         private ITextBuffer buffer;
 
+        /// <summary>
+        /// Creates a new node provider
+        /// </summary>
+        /// <param name="parser"></param>
+        /// <param name="buffer">buffer to watch</param>
         public NodeProvider(IParser parser, ITextBuffer buffer)
         {
             this.parser = parser;
@@ -31,18 +57,29 @@ namespace NDjango.Designer.Parsing
 
         public delegate void SnapshotEvent (SnapshotSpan snapshotSpan);
 
-        void buffer_Changed(object sender, TextContentChangedEventArgs e)
+        private void buffer_Changed(object sender, TextContentChangedEventArgs e)
         {
             rebuildNodes(e.After);
         }
 
+        /// <summary>
+        /// Submits a request to rebuild the node list. The list is rebuilt in a separate thread
+        /// After the rebuilt is completed, the NodesChanged event is fired
+        /// </summary>
+        /// <param name="snapshot"></param>
         private void rebuildNodes(ITextSnapshot snapshot)
         {
             ThreadPool.QueueUserWorkItem(rebuildNodesAsynch, snapshot);
         }
 
+        /// <summary>
+        /// This event is fired when an updated node list is ready to use
+        /// </summary>
         public event SnapshotEvent NodesChanged;
 
+        /// <summary>
+        /// TextReader wrapper around text in the buffer
+        /// </summary>
         class SnapshotReader : TextReader
         {
             ITextSnapshot snapshot;
@@ -65,7 +102,7 @@ namespace NDjango.Designer.Parsing
         }
 
         /// <summary>
-        /// Retrieves sequence of tokens out of snapshot object. 
+        /// Builds a list of syntax nodes for a snapshot. This method is called on a separate thread
         /// </summary>
         private void rebuildNodesAsynch(object snapshotObject)
         {
@@ -73,7 +110,7 @@ namespace NDjango.Designer.Parsing
             List<NodeSnapshot> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
                 .ToList()
                     .ConvertAll<NodeSnapshot>
-                        (token => new NodeSnapshot(snapshot, (INode)token));
+                        (node => new NodeSnapshot(snapshot, (INode)node));
             lock (node_lock)
             {
                 this.nodes = nodes;
@@ -103,6 +140,12 @@ namespace NDjango.Designer.Parsing
             return GetNodes(snapshotSpan, nodes);
         }
 
+        /// <summary>
+        /// Traverses the node tree building a flat list of nodes intersecting with the span
+        /// </summary>
+        /// <param name="snapshotSpan"></param>
+        /// <param name="nodes"></param>
+        /// <returns></returns>
         private List<NodeSnapshot> GetNodes(SnapshotSpan snapshotSpan, IEnumerable<NodeSnapshot> nodes)
         {
             List<NodeSnapshot> result = new List<NodeSnapshot>();

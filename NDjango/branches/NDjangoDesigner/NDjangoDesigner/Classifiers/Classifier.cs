@@ -1,4 +1,25 @@
-﻿using System;
+﻿/****************************************************************************
+ * 
+ *  NDjango Parser Copyright © 2009 Hill30 Inc
+ *
+ *  This file is part of the NDjango Designer.
+ *
+ *  The NDjango Parser is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  The NDjango Parser is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with NDjango Parser.  If not, see <http://www.gnu.org/licenses/>.
+ *  
+ ***************************************************************************/
+
+using System;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text;
@@ -33,6 +54,10 @@ namespace NDjango.Designer.Classifiers
             nodeProvider.NodesChanged += new NodeProvider.SnapshotEvent(nodeProvider_TagsChanged);
         }
 
+        /// <summary>
+        /// Bubbles up the notification about buffer changes
+        /// </summary>
+        /// <param name="snapshotSpan"></param>
         private void nodeProvider_TagsChanged(SnapshotSpan snapshotSpan)
         {
             if (ClassificationChanged != null)
