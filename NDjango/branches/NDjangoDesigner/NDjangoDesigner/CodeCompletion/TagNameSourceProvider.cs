@@ -11,14 +11,16 @@ namespace NDjango.Designer.Intellisense
     [Name("NDjango Completion Source")]
     [Order(Before = "default")]
     [ContentType(Constants.NDJANGO)]
-    internal class CompletionSourceProvider : ICompletionSourceProvider
+    internal class TagNameSourceProvider : ICompletionSourceProvider
     {
         [Import]
-        internal INodeProviderBroker parser { get; set; }
+        internal INodeProviderBroker nodeProviderBroker { get; set; }
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            return new TagCompletionSource();
+            if (nodeProviderBroker.IsNDjango(textBuffer))
+                return new TagNameSource();
+            return null;
         }
     }
 }

@@ -7,9 +7,12 @@ using System.Collections.ObjectModel;
 namespace NDjango.Designer.Intellisense
 {
 
-    internal class TagCompletionSource : ICompletionSource
+    /// <summary>
+    /// Supplies a list of tag names registered with parser
+    /// </summary>
+    internal class TagNameSource : ICompletionSource
     {
-        internal static string TagCompletionSetName = "ndjango.tags";
+        internal static string TagCompletionSetName = "ndjango.tag.names";
 
         public System.Collections.ObjectModel.ReadOnlyCollection<CompletionSet> GetCompletionInformation(ICompletionSession session)
         {
@@ -20,9 +23,11 @@ namespace NDjango.Designer.Intellisense
                 int triggerPoint = session.TriggerPoint.GetPosition(snapshot);
                 ITextSnapshotLine line = snapshot.GetLineFromPosition(triggerPoint);
                 string lineString = line.GetText();
+                // position of the first non-space character before the tag name
                 int start = lineString.Substring(0, triggerPoint - line.Start.Position).
                     LastIndexOfAny(new char[] {' ', '\t', '%'})
                     + line.Start.Position + 1;
+                // length of the word currently in the tag name position in the tag
                 int length = lineString.Substring(triggerPoint - line.Start.Position).
                     IndexOfAny(new char[] {' ', '\t', '%'} );
 
