@@ -145,6 +145,12 @@ module internal If =
             | true -> {walker with parent=Some walker; nodes=node_list_true}
             | false -> {walker with parent=Some walker; nodes=node_list_false}
             
+        override this.Nodes 
+            with get() =
+                base.Nodes 
+                    |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (node_list_true |> Seq.map (fun node -> (node :?> INode)))
+                    |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (node_list_false |> Seq.map (fun node -> (node :?> INode)))
+    
     type Tag() =
         /// builds a list of FilterExpression objects for the variable components of an if statement. 
         /// The tuple returned is (not flag, FilterExpression), where not flag is true when the value
