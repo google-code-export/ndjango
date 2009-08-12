@@ -7,35 +7,35 @@ using System.Collections.ObjectModel;
 namespace NDjango.Designer.Intellisense
 {
 
-    internal class CompletionSource : ICompletionSource
+    internal class TagCompletionSource : ICompletionSource
     {
-        internal static string CompletionSetName = "ndjango.tags";
+        internal static string TagCompletionSetName = "ndjango.tags";
 
         public System.Collections.ObjectModel.ReadOnlyCollection<CompletionSet> GetCompletionInformation(ICompletionSession session)
         {
             CompletionProvider completionProvider = session.Properties[CompletionProvider.CompletionProviderSessionKey] as CompletionProvider;
-
-            int triggerPointPosition = session.TriggerPoint.GetPosition(session.SubjectBuffer.CurrentSnapshot);
-            ITrackingSpan trackingSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
-                completionProvider.Position, completionProvider.Length, SpanTrackingMode.EdgeInclusive);
-
             if (completionProvider != null)
             {
-                CompletionSet completionSet = new CompletionSet("TagCompletion", trackingSpan,
+                ITextSnapshot snapshot = session.SubjectBuffer.CurrentSnapshot;
+                int triggerPoint = session.TriggerPoint.GetPosition(snapshot);
+                ITextSnapshotLine line = snapshot.GetLineFromPosition(triggerPoint);
+                string lineString = line.GetText();
+                int start = lineString.Substring(0, triggerPoint - line.Start.Position).
+                    LastIndexOfAny(new char[] {' ', '\t', '%'})
+                    + line.Start.Position + 1;
+                int length = lineString.Substring(triggerPoint - line.Start.Position).
+                    IndexOfAny(new char[] {' ', '\t', '%'} );
+
+                CompletionSet completionSet = new CompletionSet(
+                    "TagCompletion", 
+                    session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
+                    start, length, SpanTrackingMode.EdgeInclusive),
                     completionProvider.GetCompletions(session),
                     null);
-                completionSet.SelectionStatusChanged += new EventHandler<ValueChangedEventArgs<CompletionSelectionStatus>>(completionSet_SelectionStatusChanged);
                 return new ReadOnlyCollection<CompletionSet>(new List<CompletionSet> { completionSet });
             }
 
             return null;
-        }
-
-        void completionSet_SelectionStatusChanged(object sender, ValueChangedEventArgs<CompletionSelectionStatus> e)
-        {
-//            if (e.NewValue.IsSelected)
-//                return;
-//            ((CompletionSet)sender).SelectionStatus = new CompletionSelectionStatus(e.NewValue.Completion, true, false);
         }
     }
 }

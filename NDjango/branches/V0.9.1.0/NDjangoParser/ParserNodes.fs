@@ -133,20 +133,33 @@ module internal ParserNodes =
             /// node lists
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
 
-    type TagNameNode(provider: ITemplateManagerProvider, token: BlockToken) =
-
+    type TagNameNode(provider: ITemplateManagerProvider, token: Token) =
+    
+        let position, length =
+            match token with
+            | Block b -> (b.Position + 2, b.Text.IndexOf(b.Verb) + b.Verb.Length-2)
+            | Error e -> 
+                let body = e.Text.Substring(2).TrimStart([|' ';'\t'|])
+                if body.Equals("%}") 
+                then (e.Position + 2, e.Text.Length - e.Text.Substring(2).TrimStart([|' ';'\t'|]).Length)
+                else (0,0)
+            | _ -> (0,0)
+    
         interface INode with
              /// TagNode type
             member x.NodeType = NodeType.TagName 
             
             /// Position of the first character of the node text
-            member x.Position = token.Position + token.Text.IndexOf(token.Verb)
+            member x.Position = position
             
             /// Length of the node text
-            member x.Length = token.Verb.Length
+            member x.Length = length
 
             /// a list of values allowed for the node
-            member x.Values = provider.Tags |> Map.to_list |> List.map (fun tag -> tag |> fst)
+            member x.Values = 
+                if (position > 0)
+                then provider.Tags |> Map.to_list |> List.map (fun tag -> tag |> fst)
+                else []
             
             /// message associated with the node
             member x.ErrorMessage = new Error(-1,"")
@@ -164,11 +177,17 @@ module internal ParserNodes =
         override x.node_type = NodeType.Tag   
         
         override x.elements =
-            (new TagNameNode(provider, token) :> INode) :: base.elements
+            (new TagNameNode(provider, Block token) :> INode) :: base.elements
             
-    /// Base class for all NDJango Variable nodes
-    type VariableNode(provider: ITemplateManagerProvider, token: VariableToken) =
-        inherit Node(Variable token)
+    /// Error nodes
+    type ErrorNode(provider: ITemplateManagerProvider, token: Token, error: Error) =
+        inherit Node(token)
 
+        // in some cases (like an empty tag we need this for proper colorization)
+        // if the colorization is already there it does not hurt
         override x.node_type = NodeType.Tag   
         
+        override x.ErrorMessage = error
+
+        override x.elements =
+            (new TagNameNode(provider, token) :> INode) :: base.elements
