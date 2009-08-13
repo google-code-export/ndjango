@@ -52,7 +52,7 @@ namespace NDjango.Designer.Intellisense
             bool brokerCreated = false;
             foreach (ITextBuffer subjectBuffer in subjectBuffers)
             {
-                if (nodeProviderBroker.IsNDjango(subjectBuffer))
+                if (nodeProviderBroker.IsNDjango(subjectBuffer, context))
                     brokerCreated |= (CompletionBrokerMapService.GetBrokerForTextView(textView, subjectBuffer) != null);
             }
 
@@ -60,7 +60,7 @@ namespace NDjango.Designer.Intellisense
             if (brokerCreated)
             {
                 return new Controller(nodeProviderBroker, subjectBuffers, 
-                    textView, CompletionBrokerMapService, adaptersFactory);
+                    textView, CompletionBrokerMapService, adaptersFactory, context);
             }
 
             return null;

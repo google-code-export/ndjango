@@ -34,6 +34,7 @@ open NDjango.Expressions
 module internal Misc =
 
     /// Force autoescape behavior for this block
+    [<Description("{% autoescape <on|off> %} ... {% endautoescape %}")>]
     type AutoescapeTag() =
         interface ITag with
             member this.Perform token provider tokens =

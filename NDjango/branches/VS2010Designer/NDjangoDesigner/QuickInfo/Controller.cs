@@ -30,6 +30,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using System.Windows.Input;
 using NDjango.Interfaces;
 using Microsoft.VisualStudio.Text.Projection;
+using Microsoft.VisualStudio.ApplicationModel.Environments;
 
 namespace NDjango.Designer.QuickInfo
 {
@@ -43,6 +44,7 @@ namespace NDjango.Designer.QuickInfo
         private IQuickInfoBrokerMapService brokerMapService;
         private IQuickInfoSession activeSession;
         private INodeProviderBroker nodeProviderBroker;
+        private IEnvironment context;
 
         /// <summary>
         /// Creates a new controller
@@ -51,12 +53,14 @@ namespace NDjango.Designer.QuickInfo
         /// <param name="subjectBuffers"></param>
         /// <param name="textView"></param>
         /// <param name="brokerMapService"></param>
-        public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, ITextView textView, IQuickInfoBrokerMapService brokerMapService)
+        public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, ITextView textView,
+            IQuickInfoBrokerMapService brokerMapService, IEnvironment context)
         {
             this.nodeProviderBroker = nodeProviderBroker;
             this.subjectBuffers = subjectBuffers;
             this.textView = textView;
             this.brokerMapService = brokerMapService;
+            this.context = context;
 
             textView.MouseHover += new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
 
@@ -76,7 +80,7 @@ namespace NDjango.Designer.QuickInfo
                 textBuffer => 
                     (
                         subjectBuffers.Contains(textBuffer)
-                        && nodeProviderBroker.IsNDjango(textBuffer)
+                        && nodeProviderBroker.IsNDjango(textBuffer, context)
                         && brokerMapService.GetBrokerForTextView(textView, textBuffer) != null
                         && !(textBuffer is IProjectionBuffer)
                     )
@@ -94,7 +98,7 @@ namespace NDjango.Designer.QuickInfo
                     ITrackingPoint triggerPoint = point.Value.Snapshot.CreateTrackingPoint(point.Value.Position, PointTrackingMode.Positive);
 
                     activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
-                    activeSession.Properties.AddProperty(SourceProvider.QuickInfoProviderSessionKey, quickInfoNodes);
+                    activeSession.Properties.AddProperty(typeof(SourceProvider), quickInfoNodes);
                     activeSession.Start();
                 }
             }

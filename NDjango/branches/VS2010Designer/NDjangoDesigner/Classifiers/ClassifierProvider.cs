@@ -52,7 +52,7 @@ namespace NDjango.Designer.Classifiers
         /// <returns></returns>
         public IClassifier GetClassifier(ITextBuffer textBuffer, IEnvironment context)
         {
-            if (nodeProviderBroker.IsNDjango(textBuffer))
+            if (nodeProviderBroker.IsNDjango(textBuffer, context))
                 return new Classifier(nodeProviderBroker, classificationTypeRegistry, textBuffer);
             else
                 return null;

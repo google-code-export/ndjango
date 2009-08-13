@@ -6,11 +6,11 @@
 
 
 
-{% %}
+{% autoescape   %}
 
 
 
 aaa
-{%spaceless%} cccc
+{%if%} cccc
 	aa bb {{}}
 {%endspaceless%}

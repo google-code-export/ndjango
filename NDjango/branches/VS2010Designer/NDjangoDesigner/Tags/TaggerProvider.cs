@@ -42,7 +42,7 @@ namespace NDjango.Designer.Tags
 
         public ITagger<T> CreateTagger<T>(ITextBuffer buffer, IEnvironment context) where T : ITag
         {
-            if (nodeProviderBroker.IsNDjango(buffer))
+            if (nodeProviderBroker.IsNDjango(buffer, context))
                 return (ITagger<T>)new Tagger(nodeProviderBroker, buffer);
             else
                 return null;

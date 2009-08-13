@@ -28,6 +28,7 @@ using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.ApplicationModel.Environments;
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Utilities;
+using NDjango.Designer.Parsing;
 
 namespace NDjango.Designer.QuickInfo
 {
@@ -37,11 +38,14 @@ namespace NDjango.Designer.QuickInfo
     [ContentType(Constants.NDJANGO)]
     class SourceProvider : IQuickInfoSourceProvider
     {
-        internal static string QuickInfoProviderSessionKey = "ndjango.quickInfoProvider";
+        [Import]
+        internal INodeProviderBroker nodeProviderBroker { get; set; }
 
         public IQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            return new Source();
+            if (nodeProviderBroker.IsNDjango(textBuffer, environment))
+                return new Source();
+            return null;
         }
     }
 }
