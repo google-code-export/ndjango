@@ -45,9 +45,6 @@ namespace NDjango.Designer.Parsing
         IParser parser = new NDjango.TemplateManagerProvider()
             .WithSetting(NDjango.Constants.EXCEPTION_IF_ERROR, false); // {get; set;}
 
-        [Import]
-        IParser Parser { get; set; }
-     
         /// <summary>
         /// Determines whether the buffer conatins ndjango code
         /// </summary>

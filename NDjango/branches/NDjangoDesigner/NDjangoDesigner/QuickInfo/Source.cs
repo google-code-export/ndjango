@@ -74,8 +74,8 @@ namespace NDjango.Designer.QuickInfo
                 result.AppendLine();
             }
 
-            if (nodes.Exists(someNode => someNode.NodeType == NodeType.Tag))
-                result.Append(nodes.Find(someNode => someNode.NodeType == NodeType.Tag).Description);
+            if (nodes.Exists(someNode => someNode.NodeType == NodeType.Construct))
+                result.Append(nodes.Find(someNode => someNode.NodeType == NodeType.Construct).Description);
                 
             return result.ToString();
         }
