@@ -28,31 +28,40 @@ open NDjango.Interfaces
 
 module internal ParserNodes =
 
+    /// Django construct bracket type
     type private BracketType = 
-        |Open 
+        /// Open bracket
+        |Open
+        /// Close bracket
         |Close
 
-    /// Base class of the Django AST 
+    /// Base class for all Django syntax nodes.
     [<AbstractClass>]
     type Node(token: Token) =
-    
+
+        /// Methods/Properties for the INodeImpl interface
         /// Indicates whether this node must be the first non-text node in the template
         abstract member must_be_first: bool
-        default this.must_be_first = false
-        
-        abstract member node_type: NodeType
+        default x.must_be_first = false
         
         /// The token that defined the node
-        member this.Token with get() = token
+        member x.Token with get() = token
 
-        /// Processes this node and all child nodes
+        /// Advances the walker as a part of the tag rendering process
         abstract member walk: ITemplateManager -> Walker -> Walker
-        default  this.walk manager walker = walker
-        
+        default  x.walk manager walker = walker
+
+        /// List of child nodes used by the tags with a single list of child nodes e.g. spaceless, with or escape
         abstract member nodes: INodeImpl list
         default x.nodes with get() = []
+        
+        /// Methods/Properties for the INode interface
+        /// Node type - only nodes of NodeType.Construct are important for rendering.
+        /// The rest of them are used for diagnostic
+        abstract member node_type: NodeType
 
-        /// returns a list of immediate child nodes contained within this node
+        /// A dictionary of all lists of child nodes
+        /// by iterating through the dictionary a complete list of all elements and child nodes can be retrieved
         abstract member Nodes: Map<string, IEnumerable<INode>>
         default x.Nodes 
             with get() =
@@ -60,81 +69,83 @@ module internal ParserNodes =
                     |> Map.add Constants.NODELIST_TAG_CHILDREN (x.nodes |> Seq.map (fun node -> (node :?> INode)))
                     |> Map.add Constants.NODELIST_TAG_ELEMENTS (x.elements :> IEnumerable<INode>)
         
-        /// returns a list of nodes representing tag elements
+        /// A list of nodes representing django construct elements including construct markers, tag name , variable, etc.
         abstract member elements: INode list
         default x.elements 
             with get() = 
                 [
-                    (new TagBracketNode(get_textToken token, Open) :> INode); 
-                    (new TagBracketNode(get_textToken token, Close) :> INode)
+                    (new ConstructBracketNode(get_textToken token, Open) :> INode); 
+                    (new ConstructBracketNode(get_textToken token, Close) :> INode)
                 ]
         
+        /// A list of all values allowed for the node, i.e. for the tag name node a list of all registered tags
         abstract member Values: string list
         default x.Values = []
             
+        /// Error message represented by this node
         abstract member ErrorMessage: Error
         default x.ErrorMessage = new Error(-1,"")
             
+        /// Description to be shown for this node
         abstract member Description: string
         default x.Description = ""
 
         interface INode with
 
-             /// TagNode type
-            member x.NodeType = x.node_type 
-            
-            /// Position of the first character of the node text
+            member x.NodeType = x.node_type
+            /// Position - the position of the first character of the token 
             member x.Position = (get_textToken token).Position
-            
-            /// Length of the node text
+            /// Length - length of the token
             member x.Length = (get_textToken token).Length
-
-            /// a list of values allowed for the node
             member x.Values = x.Values
-            
-            /// message associated with the node
             member x.ErrorMessage = x.ErrorMessage
-            
-            /// TagNode description (will be shown in the tooltip)
             member x.Description = x.Description
-            
-            /// node lists
             member x.Nodes = x.Nodes :> IDictionary<string, IEnumerable<INode>>
 
         interface INodeImpl with
-            member this.must_be_first = this.must_be_first
-            member this.Token = this.Token
-            member this.walk manager walker = this.walk manager walker
+            member x.must_be_first = x.must_be_first
+            member x.Token = x.Token
+            member x.walk manager walker = x.walk manager walker
             
-    and private TagBracketNode(token: TextToken, bracketType: BracketType) =
+    /// Node representing a django construct bracket
+    and private ConstructBracketNode(token: TextToken, bracketType: BracketType) =
 
         interface INode with
-             /// TagNode type
+            
+            /// TagNode type = marker
             member x.NodeType = NodeType.Marker 
             
-            /// Position of the first character of the node text
+            /// Position - start position for the open bracket, endposition - 2 for the close bracket 
             member x.Position = 
                 match bracketType with
                 | Open -> token.Position
                 | Close -> token.Position + token.Text.Length - 2
             
-            /// Length of the node text
+            /// Length of the marker = 2
             member x.Length = 2
 
-            /// a list of values allowed for the node
+            /// No values allowed for the node
             member x.Values = []
             
-            /// message associated with the node
+            /// No message associated with the node
             member x.ErrorMessage = new Error(-1,"")
             
-            /// TagNode description (will be shown in the tooltip)
+            /// No description 
             member x.Description = ""
             
-            /// node lists
+            /// node lists are empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
 
+    /// Node representing django tag name
     type TagNameNode(provider: ITemplateManagerProvider, token: Token) =
     
+        /// We play a little trick here the scope of the node here is defined as the span starting from the 
+        /// first whitespace character after the open bracket and ending with the first whitespace after the
+        /// verb, or the close bracket if there is no whitespace within the tag. This causes the span to 
+        /// cover the tag verb and the leading whitespace between the verb and the open bracket. It also 
+        /// covers the situation of empty tag. This makes the name tag applicable a character is typed inside 
+        /// the existing verb as well as in the space between the verb and open bracket, whic in turn
+        /// triggers code completion
         let position, length =
             match token with
             | Block b -> (b.Position + 2, b.Text.IndexOf(b.Verb) + b.Verb.Length-2)
@@ -146,36 +157,38 @@ module internal ParserNodes =
             | _ -> (0,0)
     
         interface INode with
-             /// TagNode type
+             /// TagNode type = TagName
             member x.NodeType = NodeType.TagName 
             
-            /// Position of the first character of the node text
+            /// Position - see above
             member x.Position = position
             
-            /// Length of the node text
+            /// Length - see above
             member x.Length = length
 
-            /// a list of values allowed for the node
+            /// a list of registered tags
             member x.Values = 
                 if (position > 0)
                 then provider.Tags |> Map.to_list |> List.map (fun tag -> tag |> fst)
                 else []
             
-            /// message associated with the node
+            /// No message associated with the node
             member x.ErrorMessage = new Error(-1,"")
             
-            /// TagNode description (will be shown in the tooltip)
+            /// No description 
             member x.Description = ""
             
-            /// node lists
+            /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
             
-    /// Base class for all NDJango Tag nodes
+    /// Base class for all syntax nodes representing django tags
     type TagNode(provider: ITemplateManagerProvider, token: BlockToken) =
         inherit Node(Block token)
 
-        override x.node_type = NodeType.Tag   
+        /// NodeType = Tag
+        override x.node_type = NodeType.Construct   
         
+        /// Add TagName node to the list of elements
         override x.elements =
             (new TagNameNode(provider, Block token) :> INode) :: base.elements
             
@@ -183,11 +196,15 @@ module internal ParserNodes =
     type ErrorNode(provider: ITemplateManagerProvider, token: Token, error: Error) =
         inherit Node(token)
 
-        // in some cases (like an empty tag we need this for proper colorization)
+        // in some cases (like an empty tag) we need this for proper colorization
         // if the colorization is already there it does not hurt
-        override x.node_type = NodeType.Tag   
+        override x.node_type = NodeType.Construct   
         
         override x.ErrorMessage = error
 
         override x.elements =
-            (new TagNameNode(provider, token) :> INode) :: base.elements
+            let text = get_textToken token
+            if (text.Text.StartsWith("{%") && text.Text.Substring(2, text.Text.Length - 4).Trim(' ','\t').Length = 0)
+            /// this is an empty tag
+            then (new TagNameNode(provider, token) :> INode) :: base.elements
+            else base.elements

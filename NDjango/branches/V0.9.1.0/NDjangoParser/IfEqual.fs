@@ -81,7 +81,11 @@ module internal IfEqual =
                                         nodes=getNodeList (fst (var1.Resolve walker.context true)) (fst (var2.Resolve walker.context true))
                                 }
                         
-                            override this.nodes with get() = node_list_true @ node_list_false
+                            override this.Nodes 
+                                with get() =
+                                    base.Nodes 
+                                        |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (node_list_true |> Seq.map (fun node -> (node :?> INode)))
+                                        |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (node_list_false |> Seq.map (fun node -> (node :?> INode)))
                     } :> INodeImpl), remaining
                 | _ -> raise (SyntaxError (sprintf "'%s' takes two arguments" tag))
 
