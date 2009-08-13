@@ -4,6 +4,7 @@ using Bistro.Controllers;
 using System.IO;
 using System.Web;
 using System;
+using NDjango.FiltersCS;
 
 namespace NDjango.BistroIntegration
 {
@@ -30,9 +31,42 @@ namespace NDjango.BistroIntegration
     }
 
     /// <summary>
+    /// Standalone class for Template loader.
+    /// </summary>
+    internal class IntegrationTemplateLoader : NDjango.Interfaces.ITemplateLoader
+    {
+
+        internal IntegrationTemplateLoader()
+        {
+
+            rootDir = HttpRuntime.AppDomainAppPath;
+        }
+
+
+        string rootDir;
+
+        #region ITemplateLoader Members
+
+        public TextReader GetTemplate(string name)
+        {
+            return File.OpenText(Path.Combine(rootDir, name));
+        }
+
+        public bool IsUpdated(string name, System.DateTime timestamp)
+        {
+            return File.GetLastWriteTime(Path.Combine(rootDir, name)) > timestamp;
+        }
+
+        #endregion
+    }
+
+
+    
+
+    /// <summary>
     /// Integration point for django into the bistro rendering framework
     /// </summary>
-    public class DjangoEngine : TemplateEngine, NDjango.Interfaces.ITemplateLoader
+    public class DjangoEngine : TemplateEngine//, NDjango.Interfaces.ITemplateLoader
     {
         readonly string errorTemplate =
 @"
@@ -48,17 +82,36 @@ namespace NDjango.BistroIntegration
 </html>
 ";
 
-        public DjangoEngine(IHttpHandler handler)
+        private static TemplateManagerProvider provider;
+
+        private static object lockObj = new object();
+
+        private static TemplateManagerProvider Provider
         {
-            NDjango.FiltersCS.FilterManager.Instance.Initialize();
-            NDjango.Template.Manager.RegisterLoader(this);
-            
-            manager = NDjango.Template.Manager.RegisterTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
-            rootDir = HttpRuntime.AppDomainAppPath;
+            get
+            {
+                // lock must be here.
+                lock (lockObj)
+                {
+                    if (provider == null)
+                    {
+                        provider = new TemplateManagerProvider().WithLoader(new IntegrationTemplateLoader()).WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
+                        provider = FilterManager.Initialize(provider);
+                    }
+                }
+                return provider;
+            }
         }
 
-        NDjango.Interfaces.ITemplateManager manager;
-        string rootDir;
+
+
+        public DjangoEngine(IHttpHandler handler)
+        {
+            manager = Provider.GetNewManager();
+        }
+        #region private members
+        private NDjango.Interfaces.ITemplateManager manager;
+        #endregion
 
         public override void Render(HttpContextBase httpContext, IContext requestContext)
         {
@@ -73,9 +126,7 @@ namespace NDjango.BistroIntegration
 
             try
             {
-                var templateTuple = manager.RenderTemplate(requestContext.Response.RenderTarget, (IDictionary<string, object>)requestContext);
-                manager = templateTuple.Item1;
-                TextReader reader = templateTuple.Item2;
+                TextReader reader = manager.RenderTemplate(requestContext.Response.RenderTarget, (IDictionary<string, object>)requestContext);
                 char[] buffer = new char[4096];
                 int count = 0;
                 while ((count = reader.ReadBlock(buffer, 0, 4096)) > 0)
@@ -94,18 +145,6 @@ namespace NDjango.BistroIntegration
         }
 
 
-        #region ITemplateLoader Members
 
-        public TextReader GetTemplate(string name)
-        {
-            return File.OpenText(Path.Combine(rootDir, name));
-        }
-
-        public bool IsUpdated(string name, System.DateTime timestamp)
-        {
-            return File.GetLastWriteTime(Path.Combine(rootDir, name)) > timestamp;
-        }
-
-        #endregion
     }
 }
