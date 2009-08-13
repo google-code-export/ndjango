@@ -58,7 +58,6 @@
   <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Constants.fs" />
-    <Compile Include="Settings.fs" />
     <Compile Include="OutputHandling.fs" />
     <Compile Include="Lexer.fs" />
     <Compile Include="Interfaces.fs" />

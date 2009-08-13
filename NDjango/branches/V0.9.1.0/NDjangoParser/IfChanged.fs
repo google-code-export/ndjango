@@ -94,5 +94,10 @@ module internal IfChanged =
                         override this.walk manager walker =
                             createWalker manager walker 
                                    
-                        override this.nodes with get() = nodes_ifchanged @ nodes_ifsame
+                        override this.Nodes 
+                            with get() =
+                                base.Nodes 
+                                    |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (nodes_ifchanged |> Seq.map (fun node -> (node :?> INode)))
+                                    |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (nodes_ifsame |> Seq.map (fun node -> (node :?> INode)))
+
                     } :> INodeImpl), remaining)

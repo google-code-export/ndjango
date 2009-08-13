@@ -32,7 +32,7 @@ type NodeType =
         /// The whole tag.
         /// <example>{% if somevalue %}</example>
         /// </summary>
-        | Tag = 0x0001
+        | Construct = 0x0001
         
         /// <summary>
         /// The markers, which frame django tag. 
@@ -70,27 +70,6 @@ type NodeType =
         /// <example>User.DoB</example>
         /// </summary>
         | Reference = 0x0007
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         /// <summary>
         /// Filter with o without a parameter. Parameter can be a constant or a reference
