@@ -30,14 +30,14 @@ namespace NDjango.Designer.QuickInfo
 {
     class Source : IQuickInfoSource
     {
-
         public object GetToolTipContent(IQuickInfoSession session, out Microsoft.VisualStudio.Text.ITrackingSpan applicableToSpan)
         {
             StringBuilder message = new StringBuilder();
             int position = session.SubjectBuffer.CurrentSnapshot.Length;
             int length = 0;
+            string errorSeparator = "\nError:";
             List<INode> nodes;
-            if (session.Properties.TryGetProperty<List<INode>>(SourceProvider.QuickInfoProviderSessionKey, out nodes))
+            if (session.Properties.TryGetProperty<List<INode>>(typeof(SourceProvider), out nodes))
             {
                 nodes.ForEach(
                     node => 
@@ -45,7 +45,10 @@ namespace NDjango.Designer.QuickInfo
                         if (!String.IsNullOrEmpty(node.Description))
                             message.Insert(0, node.Description + "\n");
                         if (node.ErrorMessage.Severity >= 0)
-                            message.Append("\n" + node.ErrorMessage.Message);
+                        {
+                            message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
+                            errorSeparator = "";
+                        }
                         if (node.Length > length)
                             length = node.Length;
                         if (node.Position < position)
@@ -63,21 +66,6 @@ namespace NDjango.Designer.QuickInfo
                 return message.ToString();
             else
                 return null;
-        }
-
-        private string GetToolTipMessage(List<INode> nodes)
-        {
-            StringBuilder result = new StringBuilder();
-            foreach (INode node in nodes)
-            {
-                result.Append(node.ErrorMessage.Message);
-                result.AppendLine();
-            }
-
-            if (nodes.Exists(someNode => someNode.NodeType == NodeType.Construct))
-                result.Append(nodes.Find(someNode => someNode.NodeType == NodeType.Construct).Description);
-                
-            return result.ToString();
         }
     }
 }

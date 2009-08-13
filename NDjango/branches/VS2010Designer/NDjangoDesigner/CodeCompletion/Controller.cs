@@ -31,6 +31,7 @@ using System;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Editor;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.ApplicationModel.Environments;
 
 namespace NDjango.Designer.Intellisense
 {
@@ -43,16 +44,18 @@ namespace NDjango.Designer.Intellisense
         private INodeProviderBroker nodeProviderBroker;
         private ICompletionSession activeSession;
         private IVsEditorAdaptersFactoryService adaptersFactory;
+        private IEnvironment context;
 
         public Controller(INodeProviderBroker nodeProviderBroker, IList<ITextBuffer> subjectBuffers, 
             ITextView subjectTextView, ICompletionBrokerMapService completionBrokerMap,
-            IVsEditorAdaptersFactoryService adaptersFactory)
+            IVsEditorAdaptersFactoryService adaptersFactory, IEnvironment context)
         {
             this.nodeProviderBroker = nodeProviderBroker;
             this.subjectBuffers = subjectBuffers;
             this.subjectTextView = subjectTextView;
             this.completionBrokerMap = completionBrokerMap;
             this.adaptersFactory = adaptersFactory;
+            this.context = context;
 
             WpfTextView = subjectTextView as IWpfTextView;
             if (WpfTextView != null)
@@ -118,7 +121,7 @@ namespace NDjango.Designer.Intellisense
                     (textBuffer => 
                         (
                             subjectBuffers.Contains(textBuffer) 
-                            && nodeProviderBroker.IsNDjango(textBuffer)
+                            && nodeProviderBroker.IsNDjango(textBuffer, context)
                             && completionBrokerMap.GetBrokerForTextView(textView, textBuffer) != null
                         ),
                         PositionAffinity.Predecessor);

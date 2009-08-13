@@ -50,7 +50,8 @@ namespace NDjango.Designer.Intellisense
                     + line.Start.Position + 1;
                 // length of the word currently in the tag name position in the tag
                 int length = lineString.Substring(triggerPoint - line.Start.Position).
-                    IndexOfAny(new char[] {' ', '\t', '%'} );
+                    IndexOfAny(new char[] {' ', '\t', '%'} )
+                    + triggerPoint - start;
 
                 CompletionSet completionSet = new CompletionSet(
                     "TagCompletion", 

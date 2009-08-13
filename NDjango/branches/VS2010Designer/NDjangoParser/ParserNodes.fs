@@ -181,6 +181,11 @@ module internal ParserNodes =
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
             
+    type DescriptionAttribute(description: string) = 
+        inherit System.Attribute()
+        
+        member x.Description = description
+
     /// Base class for all syntax nodes representing django tags
     type TagNode(provider: ITemplateManagerProvider, token: BlockToken) =
         inherit Node(Block token)
@@ -191,6 +196,13 @@ module internal ParserNodes =
         /// Add TagName node to the list of elements
         override x.elements =
             (new TagNameNode(provider, Block token) :> INode) :: base.elements
+            
+        override x.Description =
+            match provider.Tags.TryFind(token.Verb) with
+            | None -> ""
+            | Some tag -> 
+                let attrs = tag.GetType().GetCustomAttributes(typeof<DescriptionAttribute>, false)
+                attrs |> Array.fold (fun text attr -> text + (attr :?> DescriptionAttribute).Description ) ""
             
     /// Error nodes
     type ErrorNode(provider: ITemplateManagerProvider, token: Token, error: Error) =
@@ -208,3 +220,8 @@ module internal ParserNodes =
             /// this is an empty tag
             then (new TagNameNode(provider, token) :> INode) :: base.elements
             else base.elements
+
+        /// Walking an error node throws an error
+        override x.walk manager walker = 
+            raise (SyntaxErrorException(error.Message, (get_textToken x.Token)))
+

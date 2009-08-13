@@ -26,13 +26,14 @@ using System.Text;
 using Microsoft.VisualStudio.Text;
 using System.ComponentModel.Composition;
 using NDjango.Interfaces;
+using Microsoft.VisualStudio.ApplicationModel.Environments;
 
 namespace NDjango.Designer.Parsing
 {
     internal interface INodeProviderBroker
     {
         NodeProvider GetNodeProvider(ITextBuffer buffer);
-        bool IsNDjango(ITextBuffer buffer);
+        bool IsNDjango(ITextBuffer buffer, IEnvironment context);
     }
 
     /// <summary>
@@ -50,8 +51,14 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns><b>true</b> if this is a ndjango buffer</returns>
-        public bool IsNDjango(ITextBuffer buffer)
+        public bool IsNDjango(ITextBuffer buffer, IEnvironment context)
         {
+            var formatMap = new VariableDescription();
+            formatMap.Name = "FormatMap";
+            var formatMapName = context.Get(formatMap);
+            if (formatMapName.ToString() == "tooltip")
+                return false;
+
             switch (buffer.ContentType.TypeName)
             {
                 case "text":

@@ -39,7 +39,7 @@ namespace NDjango.Designer.Intellisense
 
         public ICompletionSource TryCreateCompletionSource(ITextBuffer textBuffer, IEnvironment environment)
         {
-            if (nodeProviderBroker.IsNDjango(textBuffer))
+            if (nodeProviderBroker.IsNDjango(textBuffer, environment))
                 return new TagNameSource();
             return null;
         }
