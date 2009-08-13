@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using System.IO;
 using System.Web;
 using System.Web.Routing;
+using NDjango.FiltersCS;
 
 namespace NDjango.ASPMVCIntegration
 {
@@ -45,18 +46,28 @@ namespace NDjango.ASPMVCIntegration
         /// </summary>
         string rootDir;
 
+        private TemplateManagerProvider provider;
+
+        internal TemplateManagerProvider Provider
+        {
+            get
+            {
+                return provider;
+            }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NDjangoViewEngine"/> class.
         /// </summary>
         public NDjangoViewEngine()
         {
-            NDjango.FiltersCS.FilterManager.Instance.Initialize();
+
+            provider = new TemplateManagerProvider().WithLoader(this).WithTag("url", new AspMvcUrlTag());
+            provider = FilterManager.Initialize(provider);
             base.ViewLocationFormats = new string[] { "~/Views/{1}/{0}.django" };
 
             base.PartialViewLocationFormats = base.ViewLocationFormats;
             rootDir = HttpRuntime.AppDomainAppPath;
-            NDjango.Template.Manager.RegisterTag("url", new AspMvcUrlTag()); 
-            InitialManager = NDjango.Template.Manager.RegisterLoader(this);
 
             ViewEngines.Engines.Clear();
             ViewEngines.Engines.Add(this);
@@ -66,7 +77,7 @@ namespace NDjango.ASPMVCIntegration
         /// Gets or sets the ndjango manager obtained by registering the engine as a Loader.
         /// </summary>
         /// <value>The initial manager.</value>
-        public NDjango.Interfaces.ITemplateManager InitialManager { get; private set; }
+//        public NDjango.Interfaces.ITemplateManager InitialManager { get; private set; }
 
         /// <summary>
         /// Creates the partial view.
@@ -92,13 +103,25 @@ namespace NDjango.ASPMVCIntegration
         }
 
         /// <summary>
+        /// If string contains tilde - it's a relative path, so leading tilde and slashes should be removed.
+        /// Such path can come only from ASP.MVC itself, there should be no tilde when we load templates from extends or include tags
+        /// </summary>
+        /// <param name="strWithTilde"></param>
+        /// <returns></returns>
+        private string RemoveTilde(string strWithTilde)
+        {
+            return strWithTilde.StartsWith("~/") ? strWithTilde.TrimStart('~', '/') : strWithTilde;
+        }
+
+        /// <summary>
         /// Gets the template source from the app-relative path.
         /// </summary>
         /// <param name="name">The name.</param>
         /// <returns></returns>
         public TextReader GetTemplate(string name)
         {
-            return File.OpenText(Path.Combine(rootDir, name.TrimStart('~', '/')));
+
+            return File.OpenText(Path.Combine(rootDir, RemoveTilde(name)));
         }
 
         /// <summary>
@@ -111,7 +134,7 @@ namespace NDjango.ASPMVCIntegration
         /// </returns>
         public bool IsUpdated(string name, System.DateTime timestamp)
         {
-            return File.GetLastWriteTime(Path.Combine(rootDir, name)) > timestamp;
+            return File.GetLastWriteTime(Path.Combine(rootDir, RemoveTilde(name))) > timestamp;
         }
     }
 }
