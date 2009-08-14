@@ -53,10 +53,11 @@ namespace NDjango.Designer.Parsing
         /// <returns><b>true</b> if this is a ndjango buffer</returns>
         public bool IsNDjango(ITextBuffer buffer, IEnvironment context)
         {
+            // we do not need to mess with the text buffers for tooltips
             var formatMap = new VariableDescription();
             formatMap.Name = "FormatMap";
             var formatMapName = context.Get(formatMap);
-            if (formatMapName.ToString() == "tooltip")
+            if (Convert.ToString(formatMapName) == "tooltip")
                 return false;
 
             switch (buffer.ContentType.TypeName)

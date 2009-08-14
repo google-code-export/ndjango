@@ -137,13 +137,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | (_ , :? SyntaxError ) & (Some t, e) ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
-                raise (SyntaxErrorException(e.Message, (t :> TextToken)))
+                raise (SyntaxException(e.Message, (t :> TextToken)))
             else
-                Some ({
-                        new TagNode(provider, t)
-                        with
-                            override x.ErrorMessage = new Error(2, e.Message)
-                    } :> INodeImpl)
+                Some (new ErrorNode(provider, Block t, new Error(2, e.Message)) :> INodeImpl)
         |_  -> None
         
     let generate_diag_for_var (ex: System.Exception) (token : VariableToken) (provider:TemplateManagerProvider) =
@@ -151,7 +147,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | :? SyntaxError as e ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
-                raise (SyntaxErrorException(e.Message, (token :> TextToken)))
+                raise (SyntaxException(e.Message, (token :> TextToken)))
             else
                 Some (new ErrorNode(provider, Variable token, new Error(2, e.Message)) :> INodeImpl)
         |_  -> None
@@ -207,7 +203,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         
         | Lexer.Error error ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
-                then raise (new SyntaxErrorException(error.ErrorMessage, (error :> TextToken)))
+                then raise (SyntaxException(error.ErrorMessage, (error :> TextToken)))
             (new ErrorNode(provider, token, new Error(2, error.ErrorMessage)) :> INodeImpl), tokens
 
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
@@ -321,7 +317,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         /// Repositions the token stream after the first token found from the parse_until list
         member x.Seek tokens parse_until = 
             if List.length parse_until = 0 then 
-                raise (new SyntaxError("Seek must have at least one termination tag"))
+                raise (SyntaxError("Seek must have at least one termination tag"))
             else
                 seek_internal parse_until tokens
 

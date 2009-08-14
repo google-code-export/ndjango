@@ -1,16 +1,2 @@
-{{}}
-
-
-
-
-
-
-
-{% autoescape   %}
-
-
-
-aaa
-{%if%} cccc
-	aa bb {{}}
-{%endspaceless%}
+{% autoescape on %}
+{% endautoescape %}

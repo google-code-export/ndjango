@@ -41,10 +41,10 @@ module internal Misc =
 
                 let nodelist, remaining = (provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
-                let createContext walker = 
+                let autoescape_flag =  
                     match token.Args with 
-                    | "on"::[] -> walker.context.WithAutoescape(true)
-                    | "off"::[] -> walker.context.WithAutoescape(false)
+                    | "on"::[] -> true
+                    | "off"::[] -> false
                     | _ -> raise (SyntaxError("invalid arguments for 'Autoescape' tag"))
                     
                 (({
@@ -52,7 +52,7 @@ module internal Misc =
                         override this.walk manager walker = 
                             {walker with 
                                 parent=Some walker; 
-                                context = createContext walker; 
+                                context = walker.context.WithAutoescape autoescape_flag; 
                                 nodes=nodelist}
                         override this.nodes with get() = nodelist
                    } :> INodeImpl), 
