@@ -114,7 +114,7 @@ type INode =
     abstract member Length: int
 
     /// a list of values allowed for the node
-    abstract member Values: string list
+    abstract member Values: IEnumerable<string>
     
     /// message associated with the node
     abstract member ErrorMessage: OutputHandling.Error
@@ -251,8 +251,13 @@ and ITemplateManagerProvider =
 /// A tag implementation
 and ITag = 
     /// Transforms a {% %} tag into a list of nodes and uncommited token list
-    abstract member Perform: Lexer.BlockToken -> ITemplateManagerProvider -> LazyList<Lexer.Token> -> (INodeImpl * LazyList<Lexer.Token>)
+    abstract member Perform: Lexer.BlockToken -> ParsingContext -> LazyList<Lexer.Token> -> (INodeImpl * LazyList<Lexer.Token>)
 
+and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) =
+    member x.Tags = provider.Tags |> Map.to_seq |> Seq.map (fun tag -> tag |> fst) |> 
+                        Seq.append (Seq.of_list <| extra_tags)
+    member x.Provider = provider
+    
 /// This esception is thrown if a problem encountered while rendering the template
 /// This exception will be later caught in the ASTWalker and re-thrown as the 
 /// RenderingException

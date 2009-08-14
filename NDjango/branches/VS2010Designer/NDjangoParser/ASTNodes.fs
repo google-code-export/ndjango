@@ -45,13 +45,13 @@ module internal ASTNodes =
 
     type SuperBlockPointer = {super:TagNode}
 
-    and SuperBlock (provider: ITemplateManagerProvider, token:BlockToken, parents: BlockNode list) =
-        inherit TagNode(provider, token)
+    and SuperBlock (context: ParsingContext, token:BlockToken, parents: BlockNode list) =
+        inherit TagNode(context, token)
         
         let nodelist, parent = 
             match parents with
             | h::[] -> h.Nodelist, None
-            | h::t -> h.Nodelist, Some <| new SuperBlock(provider, token,t)
+            | h::t -> h.Nodelist, Some <| new SuperBlock(context, token,t)
             | _ -> [], None
         
         override this.walk manager walker = 
@@ -62,11 +62,11 @@ module internal ASTNodes =
         member this.super = 
             match parent with
             | Some v -> v
-            | None -> new SuperBlock(provider, token,[])
+            | None -> new SuperBlock(context, token,[])
         
         
-    and BlockNode(provider: ITemplateManagerProvider, token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
-        inherit TagNode(provider, token)
+    and BlockNode(parsing_context: ParsingContext, token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
+        inherit TagNode(parsing_context, token)
 
         member this.MapNodes blocks =
             match Map.tryFind this.Name blocks with
@@ -93,15 +93,15 @@ module internal ASTNodes =
                 nodes=final_nodelist; 
                 context= 
                     if overriden && not (List.isEmpty parents) then
-                        walker.context.add("block", ({super= new SuperBlock(provider, token, parents)} :> obj))
+                        walker.context.add("block", ({super= new SuperBlock(parsing_context, token, parents)} :> obj))
                     else
                         walker.context
             }
             
         override this.nodes with get() = this.Nodelist
        
-    and ExtendsNode(provider: ITemplateManagerProvider, token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
-        inherit TagNode(provider, token)
+    and ExtendsNode(parsing_context: ParsingContext, token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
+        inherit TagNode(parsing_context, token)
             
         /// produces a flattened list of all nodes and child nodes within a node list
         let rec unfold_nodes = function

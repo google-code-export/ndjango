@@ -36,11 +36,11 @@ module internal LoaderTags =
     /// Define a block that can be overridden by child templates.
     type BlockTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 match token.Args with 
                 | name::[] -> 
-                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name]
-                    (new BlockNode(provider, token, name, node_list) :> INodeImpl), remaining
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name]
+                    (new BlockNode(context, token, name, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("block tag takes only one argument"))
 
     /// Signal that this template extends a parent template.
@@ -52,15 +52,15 @@ module internal LoaderTags =
     /// the parent tempate itelf (if it evaluates to a Template object).
     type ExtendsTag() =
         interface ITag with
-            member this.Perform token provider tokens = 
+            member this.Perform token context tokens = 
                 match token.Args with
                 | parent::[] -> 
-                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens []
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens []
                     
                     let parent_name_expr = 
-                        new FilterExpression(provider, Block token, parent)
+                        new FilterExpression(context.Provider, Block token, parent)
                         
-                    (new ExtendsNode(provider, token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
+                    (new ExtendsNode(context, token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
                 | _ -> raise (SyntaxError ("extends tag takes only one argument"))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
@@ -88,14 +88,14 @@ module internal LoaderTags =
     type IncludeTag() =
 
         interface ITag with
-            member this.Perform token provider tokens = 
+            member this.Perform token context tokens = 
                 match token.Args with
                 | name::[] -> 
                     let template_name = 
-                        new FilterExpression(provider, Block token, name)
+                        new FilterExpression(context.Provider, Block token, name)
                     ({
                         //todo: we're not producing a node list here. may have to revisit
-                        new TagNode(provider, token) 
+                        new TagNode(context, token) 
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager template_name walker.context).Nodes}
@@ -137,13 +137,13 @@ module internal LoaderTags =
     type SsiTag() =
 
         interface ITag with
-            member this.Perform token provider tokens = 
+            member this.Perform token context tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(provider, token, Path path, provider.Loader.GetTemplate) :> INodeImpl), tokens
+                | path::[] -> (new SsiNode(context, token, Path path, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
                 | path::"parsed"::[] ->
-                    let templateRef = FilterExpression (provider, Block token, "\"" + path + "\"")
+                    let templateRef = FilterExpression (context.Provider, Block token, "\"" + path + "\"")
                     ({
-                        new TagNode(provider, token) 
+                        new TagNode(context, token) 
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager templateRef walker.context).Nodes}

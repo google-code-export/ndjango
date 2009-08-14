@@ -37,9 +37,9 @@ module internal Misc =
     [<Description("{% autoescape <on|off> %} ... {% endautoescape %}")>]
     type AutoescapeTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
 
-                let nodelist, remaining = (provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
+                let nodelist, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
                 let autoescape_flag =  
                     match token.Args with 
@@ -48,7 +48,7 @@ module internal Misc =
                     | _ -> raise (SyntaxError("invalid arguments for 'Autoescape' tag"))
                     
                 (({
-                    new TagNode(provider, token) with
+                    new TagNode(context, token) with
                         override this.walk manager walker = 
                             {walker with 
                                 parent=Some walker; 
@@ -61,9 +61,9 @@ module internal Misc =
     /// Ignores everything between ``{% comment %}`` and ``{% endcomment %}``.
     type CommentTag() =
         interface ITag with
-            member this.Perform token provider tokens =
-                let remaining = (provider :?> IParser).Seek tokens ["endcomment"]
-                ((TagNode(provider, token) :> INodeImpl), remaining)
+            member this.Perform token context tokens =
+                let remaining = (context.Provider :?> IParser).Seek tokens ["endcomment"]
+                ((TagNode(context, token) :> INodeImpl), remaining)
                 
     /// Outputs a whole load of debugging information, including the current
     /// context and imported modules.
@@ -103,13 +103,13 @@ module internal Misc =
     ///     {% firstof var1 var2 var3 "fallback value" %}
     type FirstOfTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 match token.Args with
                     | [] -> raise (SyntaxError ("'firstof' tag requires at least one argument"))
                     | _ -> 
-                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(provider, Block token, name))
+                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context.Provider, Block token, name))
                         ({
-                            new TagNode(provider, token)
+                            new TagNode(context, token)
                             with 
                                 override this.walk manager walker =
                                     match variables |> List.tryPick (fun var -> var.ResolveForOutput manager walker ) with
@@ -204,10 +204,10 @@ module internal Misc =
 
     type RegroupTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 match token.Args with
                 | source::"by"::grouper::"as"::result::[] ->
-                    let value = new FilterExpression(provider, Block token, source)
+                    let value = new FilterExpression(context.Provider, Block token, source)
                     let regroup context =
                         match fst <| value.Resolve context false with
                         | Some o ->
@@ -238,7 +238,7 @@ module internal Misc =
                             | _ -> []
                         | None -> []
                     ({
-                        new TagNode(provider, token)
+                        new TagNode(context, token)
                         with 
                             override this.walk manager walker =
                                 match regroup walker.context with
@@ -269,15 +269,16 @@ module internal Misc =
 ///     </strong>
 /// {% endspaceless %}
 
+    [<Description("{% spaceless %} ... {% endspaceless %}")>]
     type SpacelessTag() =
         let spaces_re = new Regex("(?'spaces'>\s+<)", RegexOptions.Compiled)
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 match token.Args with
                 | [] ->
-                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
                     ({
-                        new TagNode(provider, token)
+                        new TagNode(context, token)
                         with 
                             override this.walk manager walker =
                                 let reader = 
@@ -308,7 +309,7 @@ module internal Misc =
 
     type TemplateTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 let buf = 
                     match token.Args with
                         | "openblock"::[] -> "{%"
@@ -320,9 +321,9 @@ module internal Misc =
                         | "opencomment"::[] -> "{#"
                         | "closecomment"::[] -> "#}"
                         | _ -> raise (SyntaxError ("invalid format for 'template' tag"))
-                let variables = token.Args |> List.map (fun (name) -> new FilterExpression(provider, Block token, name))
+                let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context.Provider, Block token, name))
                 ({
-                    new TagNode(provider, token)
+                    new TagNode(context, token)
                     with 
                         override this.walk manager walker =
                             {walker with buffer = buf}
@@ -341,7 +342,7 @@ module internal Misc =
     /// 
     type WidthRatioTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
 
                 let toFloat (v:obj option) =
                     match v with 
@@ -353,11 +354,11 @@ module internal Misc =
         
                 match token.Args with
                 | value::maxValue::maxWidth::[] ->
-                    let value = new FilterExpression(provider, Block token, value)
-                    let maxValue = new FilterExpression(provider, Block token, maxValue)
+                    let value = new FilterExpression(context.Provider, Block token, value)
+                    let maxValue = new FilterExpression(context.Provider, Block token, maxValue)
                     let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (SyntaxError ("'widthratio' 3rd argument must be integer"))
                     (({
-                        new TagNode(provider, token) with
+                        new TagNode(context, token) with
                             override this.walk manager walker = 
                                 let ratio = toFloat (fst <| value.Resolve walker.context false)
                                             / toFloat (fst <| maxValue.Resolve walker.context false) 
@@ -377,13 +378,13 @@ module internal Misc =
     ///     {% endwith %}
     type WithTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 match token.Args with
                 | var::"as"::name::[] ->
-                    let nodes, remaining = (provider :?> IParser).Parse (Some token) tokens ["endwith"]
-                    let expression = new FilterExpression(provider, Block token, var)
+                    let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endwith"]
+                    let expression = new FilterExpression(context.Provider, Block token, var)
                     (({
-                        new TagNode(provider, token) with
+                        new TagNode(context, token) with
                             override this.walk manager walker = 
                                 let context = 
                                     match fst <| expression.Resolve walker.context false with
@@ -410,31 +411,31 @@ module Abstract =
     /// This tag is not registered by default as the default implementation is abstract.
     [<AbstractClass>]    
     type UrlTag() =
-        let rec parseArgs token parser args = 
-            let instantiate arg = [new FilterExpression(parser, Block token, String.trim [' '] arg)]
+        let rec parseArgs token provider args = 
+            let instantiate arg = [new FilterExpression(provider, Block token, String.trim [' '] arg)]
             match args with
             | arg::"as"::name::[] -> instantiate arg, (Some name)
             | arg::[] -> instantiate arg, None
             | arg::tail ->  
-                let list, var = parseArgs token parser tail
+                let list, var = parseArgs token provider tail
                 instantiate arg @ list, var
             | _ -> [], None
     
         abstract member GenerateUrl: string * string array * IContext -> string
         
         interface ITag with 
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 let path, argList, var =
                     match token.Args with
                     | [] -> raise (SyntaxError ("'url' tag requires at least one parameter"))
                     | path::args -> 
-                        let argList, var = parseArgs token provider (List.fold (fun state elem -> 
+                        let argList, var = parseArgs token context.Provider (List.fold (fun state elem -> 
                                                                                                     match String.trim [','] elem with
                                                                                                     | "" -> state | _ as trimmed -> trimmed::state ) [] <| List.rev args)
-                        new FilterExpression(provider, Block token, path), argList, var
+                        new FilterExpression(context.Provider, Block token, path), argList, var
                 
                 (({
-                    new TagNode(provider, token) with
+                    new TagNode(context, token) with
                         override x.walk manager walker =
                             let shortResolve (expr: FilterExpression) = 
                                 match fst <| expr.Resolve walker.context false with

@@ -59,12 +59,12 @@ module internal Filter =
     ///     {% endfilter %}
     type FilterTag() =
         interface ITag with
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 match token.Args with
                 | filter::[] ->
-                    let filter_expr = new FilterExpression(provider, Block token, FILTER_VARIABLE_NAME + "|" + filter)
-                    let node_list, remaining = (provider :?> IParser).Parse (Some token) tokens ["endfilter"]
-                    (new FilterNode(provider, token, filter_expr, node_list) :> INodeImpl), remaining
+                    let filter_expr = new FilterExpression(context.Provider, Block token, FILTER_VARIABLE_NAME + "|" + filter)
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endfilter"]
+                    (new FilterNode(context, token, filter_expr, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("'filter' tag requires one argument"))
                 
                

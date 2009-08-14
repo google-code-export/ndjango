@@ -231,7 +231,7 @@ module internal For =
     type Tag() =
 
         interface NDjango.Interfaces.ITag with 
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
                 let enumerator, variables, reversed = 
                     match List.rev token.Args with
                         | var::"in"::syntax -> 
@@ -243,17 +243,17 @@ module internal For =
                             syntax,
                             true
                         | _ -> raise (SyntaxError ("malformed 'for' tag"))
-                let enumExpr = FilterExpression(provider, Block token, enumerator)
+                let enumExpr = FilterExpression(context.Provider, Block token, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
-                let node_list_body, remaining = (provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
+                let node_list_body, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
                 let node_list_empty, remaining2 =
                     match node_list_body.[node_list_body.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "empty" then
-                            (provider :?> IParser).Parse (Some token) remaining ["endfor"]
+                            (context.Provider :?> IParser).Parse (Some token) remaining ["endfor"]
                         else
                             [], remaining
                     | _ -> [], remaining
 
-                ((TagNode(provider, token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
+                ((TagNode(context, token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
 

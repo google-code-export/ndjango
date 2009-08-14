@@ -177,20 +177,20 @@ module internal If =
         
         
         interface ITag with 
-            member this.Perform token provider tokens =
+            member this.Perform token context tokens =
 
-                let link_type, bool_vars = build_vars token false token.Args provider (None,[])
+                let link_type, bool_vars = build_vars token false token.Args context.Provider (None,[])
                 
-                let node_list_true, remaining = (provider :?> IParser).Parse (Some token) tokens ["else"; "endif"]
+                let node_list_true, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["else"; "endif"]
                 let node_list_false, remaining2 =
                     match node_list_true.[node_list_true.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
                         if b.Verb = "else" then
-                            (provider :?> IParser).Parse (Some token) remaining ["endif"]
+                            (context.Provider :?> IParser).Parse (Some token) remaining ["endif"]
                         else
                             [], remaining
                     | _ -> [], remaining
 
-                ((new TagNode(provider, token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INodeImpl), remaining2)
+                ((new TagNode(context, token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INodeImpl), remaining2)
 
 
