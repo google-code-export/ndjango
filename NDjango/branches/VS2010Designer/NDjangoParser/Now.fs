@@ -201,7 +201,7 @@ module internal Now =
     type DateFilter() =
         interface IFilter with
             member x.DefaultValue = null
-            member x.Perform value = raise (System.Exception("Not implemented."))
+            member x.Perform value = raise (RenderingError("Not implemented."))
             member x.PerformWithParam (value, args) =
                 let format = args |> Convert.ToString |> format 
                 let dt =
@@ -215,7 +215,7 @@ module internal Now =
     type TimeFilter() = 
         interface IFilter with
             member x.DefaultValue = "t" :> obj
-            member x.Perform value = raise (System.Exception("Not implemented."))
+            member x.Perform value = raise (RenderingError("Not implemented."))
             member x.PerformWithParam (value, args) =
                 let format = args |> Convert.ToString |> format 
                 let dt =
@@ -298,7 +298,7 @@ module internal Now =
     type TimeSinceFilter() = 
         interface IFilter with
             member x.DefaultValue = DateTime.Now :> obj
-            member x.Perform value = raise (System.Exception("Not implemented."))
+            member x.Perform value = raise (RenderingError("Not implemented."))
             member x.PerformWithParam (value, args) =
                 let subtract (dateFirst:DateTime,dateSecond:DateTime) =
                     dateFirst - dateSecond
@@ -307,7 +307,7 @@ module internal Now =
     type TimeUntilFilter() = 
         interface IFilter with
             member x.DefaultValue = DateTime.Now :> obj
-            member x.Perform value = raise (System.Exception("Not implemented."))
+            member x.Perform value = raise (RenderingError("Not implemented."))
             member x.PerformWithParam (value, args) =
                 let subtract (dateFirst:DateTime,dateSecond:DateTime) =
                     dateSecond - dateFirst

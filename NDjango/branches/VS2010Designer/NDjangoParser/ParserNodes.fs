@@ -223,5 +223,5 @@ module internal ParserNodes =
 
         /// Walking an error node throws an error
         override x.walk manager walker = 
-            raise (SyntaxErrorException(error.Message, (get_textToken x.Token)))
+            raise (SyntaxException(error.Message, (get_textToken x.Token)))
 

@@ -253,12 +253,18 @@ and ITag =
     /// Transforms a {% %} tag into a list of nodes and uncommited token list
     abstract member Perform: Lexer.BlockToken -> ITemplateManagerProvider -> LazyList<Lexer.Token> -> (INodeImpl * LazyList<Lexer.Token>)
 
+/// This esception is thrown if a problem encountered while rendering the template
+/// This exception will be later caught in the ASTWalker and re-thrown as the 
+/// RenderingException
 type RenderingError (message: string, ?innerException: exn) =
         inherit System.ApplicationException(message, defaultArg innerException null)
 
-type TemplateRenderingError (message: string, token:NDjango.Lexer.TextToken, ?innerException: exn) =
-        inherit System.ApplicationException(message, defaultArg innerException null)
+type RenderingException (message: string, token:NDjango.Lexer.TextToken, ?innerException: exn) =
+        inherit System.ApplicationException(message + token.ToString(), defaultArg innerException null)
 
+/// a special type of exception thrown when the error message applies to 
+/// multiple tags i.e. missing closing tag exception. Inculdes node list as an
+/// additional parameter 
 type internal CompoundSyntaxError(message, nodes:INodeImpl list) =
     inherit OutputHandling.SyntaxError(message)
     

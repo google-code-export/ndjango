@@ -143,7 +143,9 @@ module OutputHandling =
         member x.Severity = severity
         member x.Message = message
 
-    /// Exception raised when a template syntax error is encountered
+    /// This esception is thrown if a problem encountered while parsing the template
+    /// This exception will be later caught and re-thrown as the SyntaxException
+    /// SyntaxException is defined in the Lexer.fs module
     type SyntaxError (message) = 
         inherit System.ApplicationException(message)
     

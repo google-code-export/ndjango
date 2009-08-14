@@ -41,7 +41,11 @@ module internal ASTWalker =
                         getChar() 
                     | None -> -1 // we are done - nothing more to walk
                 | node :: nodes ->
-                    walker <- node.walk manager {walker with nodes = nodes; buffer=""; bufferIndex = 0}
+                    try
+                        walker <- node.walk manager {walker with nodes = nodes; buffer=""; bufferIndex = 0}
+                    with
+                        | :? RenderingError as r -> rethrow()
+                        | _ -> rethrow() 
                     getChar()
             else
                 int walker.buffer.[walker.bufferIndex]

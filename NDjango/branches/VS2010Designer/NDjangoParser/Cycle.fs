@@ -76,10 +76,7 @@ module internal Cycle =
                 | Some v -> Some (v :?> CycleController)
                 | None -> 
                     match values with
-                    | [] -> raise (TemplateRenderingError (
-                                    sprintf "Named cycle '%s' does not exist" name, 
-                                    (token :> TextToken)
-                                    ))
+                    | [] -> raise (RenderingError(sprintf "Named cycle '%s' does not exist" name))
                     | _ -> None
             let newc =
                 match oldc with
