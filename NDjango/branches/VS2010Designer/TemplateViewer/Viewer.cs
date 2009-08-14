@@ -1,0 +1,80 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using NDjango;
+using System.IO;
+using NDjango.Interfaces;
+
+namespace TemplateViewer
+{
+    public partial class Viewer : Form
+    {
+        IParser provider;
+        public Viewer()
+        {
+            InitializeComponent();
+            provider = new TemplateManagerProvider().WithSetting(Constants.EXCEPTION_IF_ERROR, false);
+        }
+
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                templateSource.Text = File.ReadAllText(openFileDialog1.FileName);
+            }
+        }
+
+        private void parseToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            templateTree.Nodes.Clear();
+            StringReader reader = new StringReader(templateSource.Text);
+            foreach (INode node in provider.ParseTemplate(reader))
+                Process(templateTree.Nodes, node);
+        }
+
+        private void Process(TreeNodeCollection treeNodeCollection, INode node)
+        {
+            string text = node.NodeType.ToString();
+            text += ": " + templateSource.Text.Substring(node.Position, node.Length);
+            TreeNode tnode = new TreeNode(text);
+
+            if (node.ErrorMessage.Severity > -1)
+                tnode.Nodes.Add("(Error)" + node.ErrorMessage.Message);
+
+            string vlist = "";
+            foreach (string s in node.Values)
+                vlist += s + ' ';
+            if (!string.IsNullOrEmpty(vlist))
+                tnode.Nodes.Add("(Values) = " + vlist);
+
+            foreach (KeyValuePair<string, IEnumerable<INode>> item in node.Nodes)
+            {
+                TreeNode list = new TreeNode(item.Key);
+                tnode.Nodes.Add(list);
+                foreach (INode child in item.Value)
+                    Process(list.Nodes, child);
+            }
+            treeNodeCollection.Add(tnode);
+        }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (String.IsNullOrEmpty(openFileDialog1.FileName))
+                saveAsToolStripMenuItem_Click(sender, e);
+            else
+                File.WriteAllText(openFileDialog1.FileName, templateSource.Text);
+        }
+
+        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+                File.WriteAllText(saveFileDialog1.FileName, templateSource.Text);
+        }
+
+    }
+}
