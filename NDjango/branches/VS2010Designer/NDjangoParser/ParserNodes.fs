@@ -79,8 +79,8 @@ module internal ParserNodes =
                 ]
         
         /// A list of all values allowed for the node, i.e. for the tag name node a list of all registered tags
-        abstract member Values: string list
-        default x.Values = []
+        abstract member Values: IEnumerable<string>
+        default x.Values = seq []
             
         /// Error message represented by this node
         abstract member ErrorMessage: Error
@@ -125,7 +125,7 @@ module internal ParserNodes =
             member x.Length = 2
 
             /// No values allowed for the node
-            member x.Values = []
+            member x.Values = seq []
             
             /// No message associated with the node
             member x.ErrorMessage = new Error(-1,"")
@@ -135,9 +135,9 @@ module internal ParserNodes =
             
             /// node lists are empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
-
+   
     /// Node representing django tag name
-    type TagNameNode(provider: ITemplateManagerProvider, token: Token) =
+    type TagNameNode(context: ParsingContext, token: Token) =
     
         /// We play a little trick here the scope of the node here is defined as the span starting from the 
         /// first whitespace character after the open bracket and ending with the first whitespace after the
@@ -169,8 +169,8 @@ module internal ParserNodes =
             /// a list of registered tags
             member x.Values = 
                 if (position > 0)
-                then provider.Tags |> Map.to_list |> List.map (fun tag -> tag |> fst)
-                else []
+                then context.Tags
+                else seq []
             
             /// No message associated with the node
             member x.ErrorMessage = new Error(-1,"")
@@ -187,7 +187,7 @@ module internal ParserNodes =
         member x.Description = description
 
     /// Base class for all syntax nodes representing django tags
-    type TagNode(provider: ITemplateManagerProvider, token: BlockToken) =
+    type TagNode(context: ParsingContext, token: BlockToken) =
         inherit Node(Block token)
 
         /// NodeType = Tag
@@ -195,17 +195,17 @@ module internal ParserNodes =
         
         /// Add TagName node to the list of elements
         override x.elements =
-            (new TagNameNode(provider, Block token) :> INode) :: base.elements
+            (new TagNameNode(context, Block token) :> INode) :: base.elements
             
         override x.Description =
-            match provider.Tags.TryFind(token.Verb) with
+            match context.Provider.Tags.TryFind(token.Verb) with
             | None -> ""
             | Some tag -> 
                 let attrs = tag.GetType().GetCustomAttributes(typeof<DescriptionAttribute>, false)
                 attrs |> Array.fold (fun text attr -> text + (attr :?> DescriptionAttribute).Description ) ""
             
     /// Error nodes
-    type ErrorNode(provider: ITemplateManagerProvider, token: Token, error: Error) =
+    type ErrorNode(context: ParsingContext, token: Token, error: Error) =
         inherit Node(token)
 
         // in some cases (like an empty tag) we need this for proper colorization
@@ -218,7 +218,7 @@ module internal ParserNodes =
             let text = get_textToken token
             if (text.Text.StartsWith("{%") && text.Text.Substring(2, text.Text.Length - 4).Trim(' ','\t').Length = 0)
             /// this is an empty tag
-            then (new TagNameNode(provider, token) :> INode) :: base.elements
+            then (new TagNameNode(context, token) :> INode) :: base.elements
             else base.elements
 
         /// Walking an error node throws an error

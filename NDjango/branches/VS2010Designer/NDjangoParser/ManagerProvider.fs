@@ -132,30 +132,30 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
         else (fun (name,ts) -> false) 
 
-    let generate_diag_for_tag (ex: System.Exception) (token : BlockToken option) (provider:TemplateManagerProvider) =
+    let generate_diag_for_tag (ex: System.Exception) token context =
         match (token, ex) with
         | (_ , :? SyntaxError ) & (Some t, e) ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
                 raise (SyntaxException(e.Message, (t :> TextToken)))
             else
-                Some (new ErrorNode(provider, Block t, new Error(2, e.Message)) :> INodeImpl)
+                Some (new ErrorNode(context, Block t, new Error(2, e.Message)) :> INodeImpl)
         |_  -> None
         
-    let generate_diag_for_var (ex: System.Exception) (token : VariableToken) (provider:TemplateManagerProvider) =
+    let generate_diag_for_var (ex: System.Exception) token context =
         match ex with
         | :? SyntaxError as e ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
                 raise (SyntaxException(e.Message, (token :> TextToken)))
             else
-                Some (new ErrorNode(provider, Variable token, new Error(2, e.Message)) :> INodeImpl)
+                Some (new ErrorNode(context, Variable token, new Error(2, e.Message)) :> INodeImpl)
         |_  -> None
         
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
     /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
-    let parse_token (provider: TemplateManagerProvider) tokens token = 
+    let parse_token (context:ParsingContext) tokens token = 
         match token with
         | Lexer.Text textToken -> 
             ({new Node(token)
@@ -169,7 +169,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
             try 
-                let expression = new FilterExpression(provider, Lexer.Variable var, var.Expression)
+                let expression = new FilterExpression(context.Provider, Lexer.Variable var, var.Expression)
                 ({new Node(token)
                     with 
                         override x.node_type = NodeType.Reference
@@ -181,17 +181,17 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 } :> INodeImpl), tokens
             with
                 |_ as ex -> 
-                    match generate_diag_for_var ex var provider with
+                    match generate_diag_for_var ex var context with
                     | Some errorNode -> (errorNode , tokens)
                     | None -> rethrow()
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb tags with 
                 | None -> raise (SyntaxError ("Invalid block tag:" + block.Verb))
-                | Some (tag: ITag) -> tag.Perform block provider tokens
+                | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 
-                    match generate_diag_for_tag ex (Some block) provider with
+                    match generate_diag_for_tag ex (Some block) context with
                     | Some errorNode -> (errorNode , tokens)
                     | None -> rethrow()
         | Lexer.Comment comment -> 
@@ -204,31 +204,31 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | Lexer.Error error ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then raise (SyntaxException(error.ErrorMessage, (error :> TextToken)))
-            (new ErrorNode(provider, token, new Error(2, error.ErrorMessage)) :> INodeImpl), tokens
+            (new ErrorNode(context, token, new Error(2, error.ErrorMessage)) :> INodeImpl), tokens
 
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream
     /// the list is returned in the reversed order
-    let rec parse_internal provider (nodes:INodeImpl list) (tokens : LazyList<Lexer.Token>) parse_until =
+    let rec parse_internal context (nodes:INodeImpl list) (tokens : LazyList<Lexer.Token>) parse_until =
        match tokens with
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
-                raise (CompoundSyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), nodes))
+                raise (CompoundSyntaxError (sprintf "Missing closing tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), nodes))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
-                 ((new TagNode(provider, block) :> INodeImpl) :: nodes, tokens)
+                 ((new TagNode(context, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
-                let node, tokens = parse_token provider tokens token
-                parse_internal provider (node :: nodes) tokens parse_until
+                let node, tokens = parse_token context tokens token
+                parse_internal context (node :: nodes) tokens parse_until
             
     /// tries to return a list positioned just after one of the elements of parse_until. Returns None
     /// if no such element was found.
     let rec seek_internal parse_until tokens = 
         match tokens with 
         | LazyList.Nil -> 
-                raise (SyntaxError (sprintf "Unclosed tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until)))
+                raise (SyntaxError (sprintf "Missing closing tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until)))
         | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
@@ -299,12 +299,13 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         
         /// Parses the sequence of tokens until one of the given tokens is encountered
         member x.Parse parent tokens parse_until =
+            let context = ParsingContext(x,parse_until)
             try
-                let nodes, tokens = parse_internal x [] tokens parse_until
+                let nodes, tokens = parse_internal context [] tokens parse_until
                 (nodes |> List.rev, tokens)
             with
             | _ as ex -> 
-                match generate_diag_for_tag ex parent x with
+                match generate_diag_for_tag ex parent context with
                 | Some errorNode -> ([errorNode], tokens)
                 | None -> rethrow()
         
