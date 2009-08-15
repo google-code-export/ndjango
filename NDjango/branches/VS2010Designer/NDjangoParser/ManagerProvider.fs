@@ -132,14 +132,21 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
         else (fun (name,ts) -> false) 
 
-    let generate_diag_for_tag (ex: System.Exception) token context =
+    let generate_diag_for_tag (ex: System.Exception) token context tokens =
         match (token, ex) with
         | (_ , :? SyntaxError ) & (Some t, e) ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
                 raise (SyntaxException(e.Message, (t :> TextToken)))
             else
-                Some (new ErrorNode(context, Block t, new Error(2, e.Message)) :> INodeImpl)
+                let nodes, tokens = match ex with
+                | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>())
+                | _ -> ([], tokens)
+                Some (({
+                        new ErrorNode(context, Block t, new Error(2, e.Message))
+                            with
+                                override this.nodes with get() = nodes
+                        } :> INodeImpl), tokens)
         |_  -> None
         
     let generate_diag_for_var (ex: System.Exception) token context =
@@ -191,8 +198,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 
-                    match generate_diag_for_tag ex (Some block) context with
-                    | Some errorNode -> (errorNode , tokens)
+                    match generate_diag_for_tag ex (Some block) context tokens with
+                    | Some result -> result
                     | None -> rethrow()
         | Lexer.Comment comment -> 
             // include it in the output to cover all scenarios, but don't actually bring the comment across
@@ -305,8 +312,10 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 (nodes |> List.rev, tokens)
             with
             | _ as ex -> 
-                match generate_diag_for_tag ex parent context with
-                | Some errorNode -> ([errorNode], tokens)
+                match generate_diag_for_tag ex parent context tokens with
+                | Some result -> 
+                    let node, tokens = result
+                    ([node], tokens)
                 | None -> rethrow()
         
         /// Parses the template From the source in the reader into the node list
