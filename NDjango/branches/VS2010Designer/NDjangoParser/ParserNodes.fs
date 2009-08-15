@@ -216,10 +216,11 @@ module internal ParserNodes =
 
         override x.elements =
             let text = get_textToken token
-            if (text.Text.StartsWith("{%") && text.Text.Substring(2, text.Text.Length - 4).Trim(' ','\t').Length = 0)
+//            if (text.Text.StartsWith("{%") && text.Text.Substring(2, text.Text.Length - 4).Trim(' ','\t').Length = 0)
             /// this is an empty tag
-            then (new TagNameNode(context, token) :> INode) :: base.elements
-            else base.elements
+//            then 
+            (new TagNameNode(context, token) :> INode) :: base.elements
+//            else base.elements
 
         /// Walking an error node throws an error
         override x.walk manager walker = 
