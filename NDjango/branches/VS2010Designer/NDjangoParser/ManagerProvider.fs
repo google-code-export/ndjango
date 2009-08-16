@@ -150,7 +150,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 
                                 /// Add TagName node to the list of elements
                                 override x.elements =
-                                    (new TagNameNode(context, (token :> TextToken)) :> INode)
+                                    (new TagNameNode(context, (blockToken :> TextToken)) :> INode)
                                      :: base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
