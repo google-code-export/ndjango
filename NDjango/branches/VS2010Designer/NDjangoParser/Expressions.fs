@@ -190,6 +190,29 @@ module Expressions =
         
         member this.IsLiteral with get() = lookups.IsNone
 
+        interface INode with            
+                     /// TagNode type = TagName
+            member x.NodeType = NodeType.Reference 
+            
+            /// Position - see above
+            member x.Position = (Lexer.get_textToken token).Position
+            
+            /// Length - see above
+            member x.Length = (Lexer.get_textToken token).Position
+
+            /// List of available values empty
+            member x.Values =  seq []
+            
+            /// No message associated with the node
+            member x.ErrorMessage = new Error(-1,"")
+            
+            /// No description 
+            member x.Description = ""
+            
+            /// node list is empty
+            member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
+
+
     // TODO: we still need to figure out the translation piece
     // python code
     //        if self.translate:
@@ -326,9 +349,29 @@ module Expressions =
             //TODO: django language spec allows 0 or 1 arguments to be passed to a filter, however the django implementation will handle any number
             //for filter, args in filters do
                 
-        member this.Token with get() = expression
-        
-//        member this.GetVariables: string list = 
-//            let variables = variable :: (filters |> List.fold (fun list item -> (item |> snd) @ list) [])
-//            variables |> List.filter (fun item -> item.IsLiteral |> not) |> List.map (fun item -> item.ExpressionText)
+        interface INode with            
+                     /// TagNode type = TagName
+            member x.NodeType = NodeType.Expression 
             
+            /// Position - see above
+            member x.Position = (Lexer.get_textToken token).Position
+            
+            /// Length - see above
+            member x.Length = (Lexer.get_textToken token).Position
+
+            /// List of available values empty
+            member x.Values =  seq []
+            
+            /// No message associated with the node
+            member x.ErrorMessage = new Error(-1,"")
+            
+            /// No description 
+            member x.Description = ""
+            
+            /// node list is empty
+            member x.Nodes
+                with get() =
+                    let list = [(variable :> INode)] 
+                    new Map<string, IEnumerable<INode>>([]) 
+                        |> Map.add Constants.NODELIST_TAG_ELEMENTS (list :> IEnumerable<INode>) 
+                            :> IDictionary<string, IEnumerable<INode>>

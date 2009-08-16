@@ -46,6 +46,8 @@ module internal Filter =
                 with
             | Some w -> w
             | None -> walker
+            
+    // TODO: should nodelist be overridden here?
 
     /// Filters the contents of the block through variable filters.
     /// 

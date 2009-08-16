@@ -139,13 +139,14 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             then
                 raise (SyntaxException(e.Message, (t :> TextToken)))
             else
-                let nodes, tokens = match ex with
-                | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>())
-                | _ -> ([], tokens)
+                let nodes, tokens = 
+                    match ex with
+                    | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>())
+                    | _ -> (seq [], tokens)
                 Some (({
                         new ErrorNode(context, Block t, new Error(2, e.Message))
                             with
-                                override this.nodes with get() = nodes
+                                override this.nodelist with get() = List.of_seq nodes
                         } :> INodeImpl), tokens)
         |_  -> None
         
@@ -171,7 +172,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
 
                     override x.elements = []
                     
-                    override this.walk manager walker = 
+                    override x.walk manager walker = 
                         {walker with buffer = textToken.Text}
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
@@ -179,12 +180,14 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 let expression = new FilterExpression(context.Provider, Lexer.Variable var, var.Expression)
                 ({new Node(token)
                     with 
-                        override x.node_type = NodeType.Reference
+                        override x.node_type = NodeType.Expression
 
-                        override this.walk manager walker = 
+                        override x.walk manager walker = 
                             match expression.ResolveForOutput manager walker with
                             | Some w -> w
                             | None -> walker
+                            
+                        override x.elements = [(expression :> INode)]
                 } :> INodeImpl), tokens
             with
                 |_ as ex -> 
@@ -194,7 +197,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb tags with 
-                | None -> raise (SyntaxError ("Invalid block tag:" + block.Verb))
+                | None -> raise (SyntaxError ("Unknown tag:" + block.Verb))
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 
@@ -220,7 +223,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        match tokens with
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
-                raise (CompoundSyntaxError (sprintf "Missing closing tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until), nodes))
+                raise (CompoundSyntaxError (
+                        sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (fst acc) + (snd acc) + elem)) ("","") parse_until))
+                        , nodes))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
@@ -235,7 +240,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     let rec seek_internal parse_until tokens = 
         match tokens with 
         | LazyList.Nil -> 
-                raise (SyntaxError (sprintf "Missing closing tags %s " (List.fold (fun acc elem -> acc + ", " + elem) "" parse_until)))
+            raise (SyntaxError (
+                    sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (fst acc) + (snd acc) + elem)) ("","") parse_until))
+                ))
         | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
