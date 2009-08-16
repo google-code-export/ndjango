@@ -52,8 +52,8 @@ module internal ParserNodes =
         default  x.walk manager walker = walker
 
         /// List of child nodes used by the tags with a single list of child nodes e.g. spaceless, with or escape
-        abstract member nodes: INodeImpl list
-        default x.nodes with get() = []
+        abstract member nodelist: INodeImpl list
+        default x.nodelist with get() = []
         
         /// Methods/Properties for the INode interface
         /// Node type - only nodes of NodeType.Construct are important for rendering.
@@ -66,7 +66,7 @@ module internal ParserNodes =
         default x.Nodes 
             with get() =
                 new Map<string, IEnumerable<INode>>([]) 
-                    |> Map.add Constants.NODELIST_TAG_CHILDREN (x.nodes |> Seq.map (fun node -> (node :?> INode)))
+                    |> Map.add Constants.NODELIST_TAG_CHILDREN (x.nodelist |> Seq.map (fun node -> (node :?> INode)))
                     |> Map.add Constants.NODELIST_TAG_ELEMENTS (x.elements :> IEnumerable<INode>)
         
         /// A list of nodes representing django construct elements including construct markers, tag name , variable, etc.
@@ -136,41 +136,61 @@ module internal ParserNodes =
             /// node lists are empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
    
-    /// Node representing django tag name
-    type TagNameNode(context: ParsingContext, token: Token) =
-    
-        /// We play a little trick here the scope of the node here is defined as the span starting from the 
-        /// first whitespace character after the open bracket and ending with the first whitespace after the
-        /// verb, or the close bracket if there is no whitespace within the tag. This causes the span to 
-        /// cover the tag verb and the leading whitespace between the verb and the open bracket. It also 
-        /// covers the situation of empty tag. This makes the name tag applicable a character is typed inside 
-        /// the existing verb as well as in the space between the verb and open bracket, whic in turn
-        /// triggers code completion
-        let position, length =
-            match token with
-            | Block b -> (b.Position + 2, b.Text.IndexOf(b.Verb) + b.Verb.Length-2)
-            | Error e -> 
-                let body = e.Text.Substring(2).TrimStart([|' ';'\t'|])
-                if body.Equals("%}") 
-                then (e.Position + 2, e.Text.Length - e.Text.Substring(2).TrimStart([|' ';'\t'|]).Length)
-                else (0,0)
-            | _ -> (0,0)
-    
+//    /// Node representing django tag name
+//    type TagNameNode(context: ParsingContext, token: TextToken) =
+//    
+//        /// We play a little trick here: the scope of the node here is defined as the span starting from the 
+//        /// first whitespace character after the open bracket and ending with the first whitespace after the
+//        /// verb, or the close bracket if there is no whitespace within the tag. This causes the span to 
+//        /// cover the tag verb and the leading whitespace between the verb and the open bracket. It also 
+//        /// covers the situation of empty tag. This makes the name tag applicable if a character is typed inside 
+//        /// the existing verb as well as in the space between the verb and open bracket, whic in turn
+//        /// triggers code completion
+//
+//        let token_tail = token.Text.Substring(2).TrimStart([|' ';'\t'|])
+//        
+//        //let length = token.Text.(token.Position + 2, token.Text.IndexOf(token.Verb) + token.Verb.Length-2)
+//    
+//        interface INode with
+//             /// TagNode type = TagName
+//            member x.NodeType = NodeType.TagName 
+//            
+//            /// Position - the position of the first no-whitespace character after opening bracket
+//            member x.Position = token.Position + 2 + token.Length - token_tail.Length
+//            
+//            /// Length - see above
+//            member x.Length = length
+//
+//            /// a list of registered tags
+//            member x.Values = 
+//                if (position > 0)
+//                then context.Tags
+//                else seq []
+//            
+//            /// No message associated with the node
+//            member x.ErrorMessage = new Error(-1,"")
+//            
+//            /// No description 
+//            member x.Description = ""
+//            
+//            /// node list is empty
+//            member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
+
+    type ValueListNode(nodeType, position, body:string, values)  =
+        let body_tail = body.Trim([|' ';'\t'|])        
+            
         interface INode with
              /// TagNode type = TagName
-            member x.NodeType = NodeType.TagName 
+            member x.NodeType = nodeType 
             
-            /// Position - see above
-            member x.Position = position
+            /// Position - the position of the first no-whitespace character after opening bracket
+            member x.Position = position 
             
             /// Length - see above
-            member x.Length = length
+            member x.Length = body.Length - body_tail.Length + body_tail.IndexOfAny([|' ';'\t';'%';'}';'#'|])
 
             /// a list of registered tags
-            member x.Values = 
-                if (position > 0)
-                then context.Tags
-                else seq []
+            member x.Values = values
             
             /// No message associated with the node
             member x.ErrorMessage = new Error(-1,"")
@@ -195,7 +215,13 @@ module internal ParserNodes =
         
         /// Add TagName node to the list of elements
         override x.elements =
-            (new TagNameNode(context, Block token) :> INode) :: base.elements
+            (new ValueListNode (
+                NodeType.TagName,
+                token.Position + 2,
+                token.Text.Substring(2, token.Length-2),
+                context.Tags)
+//            (new TagNameNode(context, token) 
+                    :> INode) :: base.elements
             
         override x.Description =
             match context.Provider.Tags.TryFind(token.Verb) with
@@ -213,14 +239,6 @@ module internal ParserNodes =
         override x.node_type = NodeType.Construct   
         
         override x.ErrorMessage = error
-
-        override x.elements =
-            let text = get_textToken token
-//            if (text.Text.StartsWith("{%") && text.Text.Substring(2, text.Text.Length - 4).Trim(' ','\t').Length = 0)
-            /// this is an empty tag
-//            then 
-            (new TagNameNode(context, token) :> INode) :: base.elements
-//            else base.elements
 
         /// Walking an error node throws an error
         override x.walk manager walker = 

@@ -29,19 +29,19 @@ open NDjango
 type NodeType =
             
         /// <summary>
-        /// The whole tag.
-        /// <example>{% if somevalue %}</example>
+        /// The whole django construct.
+        /// <example>{% if somevalue %} {{ variable }} </example>
         /// </summary>
         | Construct = 0x0001
         
         /// <summary>
-        /// The markers, which frame django tag. 
-        /// <example>{%, %}</example>
+        /// The markers, which frame django construct. 
+        /// <example>{%, {{, %}, }}</example>
         /// </summary>
         | Marker = 0x0002
         
         /// <summary>
-        /// Django template tag.
+        /// Django tag name.
         /// <example> "with", "for", "ifequal"</example>
         /// </summary>
         | TagName = 0x0003
@@ -270,7 +270,7 @@ type RenderingException (message: string, token:NDjango.Lexer.TextToken, ?innerE
 /// a special type of exception thrown when the error message applies to 
 /// multiple tags i.e. missing closing tag exception. Inculdes node list as an
 /// additional parameter 
-type internal CompoundSyntaxError(message, nodes:INodeImpl list) =
+type internal CompoundSyntaxError(message, nodes:seq<INodeImpl>) =
     inherit OutputHandling.SyntaxError(message)
     
     member x.Nodes = nodes

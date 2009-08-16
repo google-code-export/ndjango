@@ -48,16 +48,16 @@ module internal ASTNodes =
     and SuperBlock (context: ParsingContext, token:BlockToken, parents: BlockNode list) =
         inherit TagNode(context, token)
         
-        let nodelist, parent = 
+        let nodes, parent = 
             match parents with
-            | h::[] -> h.Nodelist, None
-            | h::t -> h.Nodelist, Some <| new SuperBlock(context, token,t)
+            | h::[] -> h.nodelist, None
+            | h::t -> h.nodelist, Some <| new SuperBlock(context, token,t)
             | _ -> [], None
         
         override this.walk manager walker = 
-            {walker with parent=Some walker; nodes= nodelist}
+            {walker with parent=Some walker; nodes= nodes}
             
-        override this.nodes with get() = nodelist
+        override this.nodelist with get() = nodes
         
         member this.super = 
             match parent with
@@ -68,25 +68,25 @@ module internal ASTNodes =
     and BlockNode(parsing_context: ParsingContext, token: BlockToken, name: string, nodelist: INodeImpl list, ?parent: BlockNode) =
         inherit TagNode(parsing_context, token)
 
-        member this.MapNodes blocks =
-            match Map.tryFind this.Name blocks with
+        member x.MapNodes blocks =
+            match Map.tryFind x.Name blocks with
             | Some (children: BlockNode list) -> 
                 match children with
                 | active::parents ->
-                    active.Nodelist, (match parents with | [] -> [this] | _ -> parents), true
-                | [] -> this.Nodelist, [], true
-            | None -> this.Nodelist, [], false
+                    active.nodelist, (match parents with | [] -> [x] | _ -> parents), true
+                | [] -> x.nodelist, [], true
+            | None -> x.nodelist, [], false
         
-        member this.Name = name
-        member this.Parent = parent
-        member internal this.Nodelist = nodelist
+        member x.Name = name
+        member x.Parent = parent
+//        member internal x.Nodelist = nodelist
         
-        override this.walk manager walker =
+        override x.walk manager walker =
             let final_nodelist, parents, overriden =
                 match walker.context.tryfind "__blockmap" with
-                | None -> this.Nodelist, [], false
+                | None -> x.nodelist, [], false
                 | Some ext -> 
-                    this.MapNodes (ext :?> Map<string, BlockNode list>)
+                    x.MapNodes (ext :?> Map<string, BlockNode list>)
                     
             {walker with 
                 parent=Some walker; 
@@ -98,7 +98,7 @@ module internal ASTNodes =
                         walker.context
             }
             
-        override this.nodes with get() = this.Nodelist
+        override x.nodelist with get() = nodelist
        
     and ExtendsNode(parsing_context: ParsingContext, token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
         inherit TagNode(parsing_context, token)
@@ -106,7 +106,7 @@ module internal ASTNodes =
         /// produces a flattened list of all nodes and child nodes within a node list
         let rec unfold_nodes = function
         | (h:INodeImpl)::t -> 
-            h :: unfold_nodes (h:?>Node).nodes @ unfold_nodes t
+            h :: unfold_nodes (List.of_seq (h:?>Node).nodelist) @ unfold_nodes t
         | _ -> []
 
         let blocks = Map.of_list 

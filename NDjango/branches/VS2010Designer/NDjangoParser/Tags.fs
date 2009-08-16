@@ -39,7 +39,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
 
-                let nodelist, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
+                let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
                 let autoescape_flag =  
                     match token.Args with 
@@ -53,8 +53,8 @@ module internal Misc =
                             {walker with 
                                 parent=Some walker; 
                                 context = walker.context.WithAutoescape autoescape_flag; 
-                                nodes=nodelist}
-                        override this.nodes with get() = nodelist
+                                nodes=nodes}
+                        override this.nodelist with get() = nodes
                    } :> INodeImpl), 
                    remaining)
                         
@@ -276,16 +276,16 @@ module internal Misc =
             member this.Perform token context tokens =
                 match token.Args with
                 | [] ->
-                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
+                    let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
                     ({
                         new TagNode(context, token)
                         with 
                             override this.walk manager walker =
                                 let reader = 
-                                    new NDjango.ASTWalker.Reader(manager,{walker with parent=None; nodes=node_list; context=walker.context})
+                                    new NDjango.ASTWalker.Reader(manager,{walker with parent=None; nodes=nodes; context=walker.context})
                                 let buf = spaces_re.Replace(reader.ReadToEnd(), "><")
                                 {walker with buffer = buf}
-                            override this.nodes with get() = node_list
+                            override this.nodelist with get() = nodes
                     } :> INodeImpl), remaining
 
                 | _ -> raise (SyntaxError ("'spaceless' tag should not have any arguments"))
@@ -394,7 +394,7 @@ module internal Misc =
                                     parent=Some walker; 
                                     context = context; 
                                     nodes=nodes}
-                            override this.nodes with get() = nodes
+                            override this.nodelist with get() = nodes
                        } :> INodeImpl), 
                        remaining)
                 | _ -> raise (SyntaxError ("'with' expected format is 'value as name'"))

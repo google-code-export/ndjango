@@ -214,6 +214,9 @@ module internal For =
                 base.Nodes 
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (bodyNodes |> Seq.map (fun node -> (node :?> INode)))
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (emptyNodes |> Seq.map (fun node -> (node :?> INode)))
+                    
+        // this override is not used by the for node for rendering but is necessary for the blocks to work properly
+//        override x.nodelist = bodyNodes @ emptyNodes
  
     /// this is a for loop helper node. The real loop node <see cref="TagNode"/> places a list of nodes
     /// for the loop body into the walker, it adds the Repeater as the last one. The repeater checks for

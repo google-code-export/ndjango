@@ -140,16 +140,19 @@ module internal If =
                     | Or -> false
                     | And -> true
                 
-        override this.walk manager walker =
+        override x.walk manager walker =
             match eval_expression walker.context bool_vars with
             | true -> {walker with parent=Some walker; nodes=node_list_true}
             | false -> {walker with parent=Some walker; nodes=node_list_false}
             
-        override this.Nodes 
+        override x.Nodes 
             with get() =
                 base.Nodes 
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (node_list_true |> Seq.map (fun node -> (node :?> INode)))
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (node_list_false |> Seq.map (fun node -> (node :?> INode)))
+                    
+        // this override is not used by the if node for rendering but is necessary for the blocks to work properly
+//        override x.nodelist = node_list_true @ node_list_false
     
     type Tag() =
         /// builds a list of FilterExpression objects for the variable components of an if statement. 
