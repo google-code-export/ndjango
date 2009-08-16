@@ -134,19 +134,28 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
 
     let generate_diag_for_tag (ex: System.Exception) token context tokens =
         match (token, ex) with
-        | (_ , :? SyntaxError ) & (Some t, e) ->
+        | (_ , :? SyntaxError ) & (Some blockToken, e) ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
-                raise (SyntaxException(e.Message, (t :> TextToken)))
+                raise (SyntaxException(e.Message, (blockToken :> TextToken)))
             else
                 let nodes, tokens = 
                     match ex with
                     | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>())
                     | _ -> (seq [], tokens)
                 Some (({
-                        new ErrorNode(context, Block t, new Error(2, e.Message))
+                        new ErrorNode(context, Block blockToken, new Error(2, e.Message))
                             with
-                                override this.nodelist with get() = List.of_seq nodes
+                                override x.nodelist with get() = List.of_seq nodes
+                                
+                                /// Add TagName node to the list of elements
+                                override x.elements =
+                                    (new ValueListNode (
+                                        NodeType.TagName,
+                                        blockToken.Position + 2,
+                                        blockToken.Text.Substring(2, blockToken.Length-2),
+                                        context.Tags)
+                                            :> INode) :: base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
         
@@ -197,7 +206,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb tags with 
-                | None -> raise (SyntaxError ("Unknown tag:" + block.Verb))
+                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb))
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 
