@@ -150,12 +150,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 
                                 /// Add TagName node to the list of elements
                                 override x.elements =
-                                    (new ValueListNode (
-                                        NodeType.TagName,
-                                        blockToken.Position + 2,
-                                        blockToken.Text.Substring(2, blockToken.Length-2),
-                                        context.Tags)
-                                            :> INode) :: base.elements
+                                    (new TagNameNode(context, (token :> TextToken)) :> INode)
+                                     :: base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
         
@@ -223,8 +219,22 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | Lexer.Error error ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then raise (SyntaxException(error.ErrorMessage, (error :> TextToken)))
-            (new ErrorNode(context, token, new Error(2, error.ErrorMessage)) :> INodeImpl), tokens
-
+            ({
+                        new ErrorNode(context, token, new Error(2, error.ErrorMessage))
+                            with
+                                override x.elements =
+                                    match error.Text.[0..1] with
+                                    | "{%" ->
+                                        /// Add TagName node to the list of elements
+                                        (new ValueListNode (
+                                            NodeType.TagName,
+                                            error.Position + 2,
+                                            error.Text.[2..error.Length-2],
+                                            context.Tags)
+                                                :> INode) :: base.elements
+                                    | _ -> base.elements
+                        } :> INodeImpl), tokens
+                        
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream
     /// the list is returned in the reversed order

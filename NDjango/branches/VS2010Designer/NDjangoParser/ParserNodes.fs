@@ -146,7 +146,6 @@ module internal ParserNodes =
 //
 
     type ValueListNode(nodeType, position, body:string, values)  =
-        let body_tail = body.Trim([|' ';'\t'|])        
             
         interface INode with
              /// TagNode type = TagName
@@ -155,8 +154,13 @@ module internal ParserNodes =
             /// Position - the position of the first no-whitespace character after opening bracket
             member x.Position = position 
             
-            /// Length - see above
-            member x.Length = body.Length - body_tail.Length + body_tail.IndexOfAny([|' ';'\t';'%';'}';'#'|])
+            /// Length - covers the whitespace and the verb (if any)
+            member x.Length = 
+                let body_tail = body.Trim([|' ';'\t'|])        
+                let endpos = body_tail.IndexOfAny([|' ';'\t';'%';'}';'#'|])
+                if (endpos < 0)
+                    then body.Length 
+                    else body.Length - body_tail.Length + endpos
 
             /// a list of registered tags
             member x.Values = values
@@ -169,7 +173,16 @@ module internal ParserNodes =
             
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
-
+            
+    type TagNameNode (context: ParsingContext, token: TextToken) =
+        inherit ValueListNode
+            (
+                NodeType.TagName, 
+                token.Position+2,
+                token.Text.[2..token.Length-2],
+                context.Tags
+            )
+            
     /// For tags decorated with this attribute the string given as a parmeter for the attribute
     /// will be shown in the tooltip for the tag            
     type DescriptionAttribute(description: string) = 
@@ -186,12 +199,7 @@ module internal ParserNodes =
         
         /// Add TagName node to the list of elements
         override x.elements =
-            (new ValueListNode (
-                NodeType.TagName,
-                token.Position + 2,
-                token.Text.Substring(2, token.Length-2),
-                context.Tags)
-                    :> INode) :: base.elements
+            (new TagNameNode(context, (token :> TextToken)) :> INode) :: base.elements
             
         override x.Description =
             match context.Provider.Tags.TryFind(token.Verb) with
