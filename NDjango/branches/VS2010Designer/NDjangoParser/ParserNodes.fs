@@ -136,9 +136,6 @@ module internal ParserNodes =
             /// node lists are empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
    
-//    /// Node representing django tag name
-//    type TagNameNode(context: ParsingContext, token: TextToken) =
-//    
 //        /// We play a little trick here: the scope of the node here is defined as the span starting from the 
 //        /// first whitespace character after the open bracket and ending with the first whitespace after the
 //        /// verb, or the close bracket if there is no whitespace within the tag. This causes the span to 
@@ -147,34 +144,6 @@ module internal ParserNodes =
 //        /// the existing verb as well as in the space between the verb and open bracket, whic in turn
 //        /// triggers code completion
 //
-//        let token_tail = token.Text.Substring(2).TrimStart([|' ';'\t'|])
-//        
-//        //let length = token.Text.(token.Position + 2, token.Text.IndexOf(token.Verb) + token.Verb.Length-2)
-//    
-//        interface INode with
-//             /// TagNode type = TagName
-//            member x.NodeType = NodeType.TagName 
-//            
-//            /// Position - the position of the first no-whitespace character after opening bracket
-//            member x.Position = token.Position + 2 + token.Length - token_tail.Length
-//            
-//            /// Length - see above
-//            member x.Length = length
-//
-//            /// a list of registered tags
-//            member x.Values = 
-//                if (position > 0)
-//                then context.Tags
-//                else seq []
-//            
-//            /// No message associated with the node
-//            member x.ErrorMessage = new Error(-1,"")
-//            
-//            /// No description 
-//            member x.Description = ""
-//            
-//            /// node list is empty
-//            member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
 
     type ValueListNode(nodeType, position, body:string, values)  =
         let body_tail = body.Trim([|' ';'\t'|])        
@@ -200,7 +169,9 @@ module internal ParserNodes =
             
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
-            
+
+    /// For tags decorated with this attribute the string given as a parmeter for the attribute
+    /// will be shown in the tooltip for the tag            
     type DescriptionAttribute(description: string) = 
         inherit System.Attribute()
         
@@ -220,7 +191,6 @@ module internal ParserNodes =
                 token.Position + 2,
                 token.Text.Substring(2, token.Length-2),
                 context.Tags)
-//            (new TagNameNode(context, token) 
                     :> INode) :: base.elements
             
         override x.Description =
