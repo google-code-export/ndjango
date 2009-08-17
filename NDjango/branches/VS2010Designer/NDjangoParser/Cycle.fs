@@ -108,7 +108,9 @@ module internal Cycle =
                             
         let normalize (values: LexToken list) =
             if List.exists checkForOldSyntax values then
-                let compacted = values |> List.fold (fun status value -> status + value.string) "" 
+                let compacted = values |> List.fold (fun status value -> status + value.string) ""
+                // we are loosing mapping to the token locations, but that's ok
+                // in old cycle format there is no diag info to be given  
                 List.map (fun value -> LexToken.String ("'" + value + "'") ) (String.split [','] compacted)   
             else
                 values

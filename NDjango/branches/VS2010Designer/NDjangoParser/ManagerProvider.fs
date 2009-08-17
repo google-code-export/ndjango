@@ -183,7 +183,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
             try 
-                let expression = new FilterExpression(context.Provider, Lexer.Variable var, LexToken.String var.Expression)
+                let t = LexToken (new LexTokenObject(var.Expression, 0))
+                let expression = new FilterExpression(context.Provider, Lexer.Variable var, t)
                 ({new Node(token)
                     with 
                         override x.node_type = NodeType.Expression
