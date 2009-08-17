@@ -418,7 +418,7 @@ module Abstract =
         let rec parseArgs token provider args = 
             let instantiate arg = [new FilterExpression(provider, Block token, arg)]
             match args with
-            | arg::LexToken.String "as"::name::[] -> instantiate arg, (Some name)
+            | arg::LexerToken("as")::name::[] -> instantiate arg, (Some name)
             | arg::[] -> instantiate arg, None
             | arg::tail ->  
                 let list, var = parseArgs token provider tail
