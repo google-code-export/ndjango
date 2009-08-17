@@ -237,22 +237,22 @@ module internal For =
             member this.Perform token context tokens =
                 let enumerator, variables, reversed = 
                     match List.rev token.Args with
-                        | var::"in"::syntax -> 
+                        | var::LexToken.String "in"::syntax -> 
                             var,
                             syntax,
                             false
-                        | "reversed"::var::"in"::syntax -> 
+                        | LexToken.String "reversed"::var::LexToken.String "in"::syntax -> 
                             var,
                             syntax,
                             true
                         | _ -> raise (SyntaxError ("malformed 'for' tag"))
                 let enumExpr = FilterExpression(context.Provider, Block token, enumerator)
-                let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
+                let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.string.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
                 let node_list_body, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
                 let node_list_empty, remaining2 =
                     match node_list_body.[node_list_body.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
-                        if b.Verb = "empty" then
+                        if b.Verb.string = "empty" then
                             (context.Provider :?> IParser).Parse (Some token) remaining ["endfor"]
                         else
                             [], remaining

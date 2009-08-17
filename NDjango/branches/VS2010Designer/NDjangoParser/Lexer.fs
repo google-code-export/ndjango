@@ -40,7 +40,8 @@ module Lexer =
         override x.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text line linePos
 
     /// Exception raised when template syntax errors are encountered
-    and SyntaxException (message: string, token: TextToken) =
+    /// this exception is defined here because it its dependency on the TextToken class
+    type SyntaxException (message: string, token: TextToken) =
         inherit System.ApplicationException(message + token.ToString())
         
         member x.Token = token

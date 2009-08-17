@@ -122,8 +122,8 @@ module Expressions =
     ///     >>> Variable('article.section').resolve(c)
     ///     u'News'
     /// (The example assumes VARIABLE_ATTRIBUTE_SEPARATOR is '.')
-    type Variable(provider: ITemplateManagerProvider, token:Lexer.Token, variable:string) =
-        let (|ComponentStartsWith|_|) chr (text: string) =
+    type Variable(provider: ITemplateManagerProvider, token:Lexer.Token, variable:LexToken) =
+        let (|ComponentStartsWith|_|) chr (text: LexToken) =
             if text.StartsWith(chr) || text.Contains(Constants.VARIABLE_ATTRIBUTE_SEPARATOR + chr) then
                 Some chr
             else
@@ -132,12 +132,12 @@ module Expressions =
         let fail_syntax v = 
             raise (
                 SyntaxError (
-                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" variable v)
+                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" variable.string v)
                     )
 
         do match variable with 
             | ComponentStartsWith "-" v->
-                match variable with
+                match variable.string with
                 | Int i -> () 
                 | Float f -> ()
                 | _ -> fail_syntax v
@@ -154,7 +154,7 @@ module Expressions =
 
                 ((if not is_literal then Some var else None), (if is_literal then Some (var :> obj) else None), translate)
 
-        let var, literal, translate = find_literal variable
+        let var, literal, translate = find_literal variable.string
         
         let lookups = if var.IsSome then Some <| List.of_array (var.Value.Split(Constants.VARIABLE_ATTRIBUTE_SEPARATOR.ToCharArray())) else None
         
@@ -230,7 +230,7 @@ module Expressions =
     ///     >>> fe.var
     ///     <Variable: 'variable'>
     ///
-    type FilterExpression (provider: ITemplateManagerProvider, token:Lexer.Token, expression: string) =
+    type FilterExpression (provider: ITemplateManagerProvider, token:Lexer.Token, expression: LexToken) =
         
         /// unescapes literal quotes. takes '\"value\"' and returns '"value"'
         let flatten (text: string) = text.Replace("\\\"", "\"")
@@ -248,10 +248,10 @@ module Expressions =
             | _ -> true
         
         /// Parses a variable definition
-        let rec parse_var (filter_match: Match) upto (var: Option<string>) =
+        let rec parse_var (filter_match: Match) upto (var: LexToken option) =
             if not (filter_match.Success) then
                 if not (upto = expression.Length) 
-                then raise (SyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression.[upto..] expression))
+                then raise (SyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression.[upto..] expression.string))
                 else
                     (upto, new Variable(provider, token, var.Value), [])
             else
@@ -270,11 +270,12 @@ module Expressions =
                     match var with
                     | None ->
                         match filter_match with
-                        | Utilities.Matched "var" var_match -> fast_call (Some var_match)
-                        | _ -> raise (SyntaxError (sprintf "Could not find variable at start of %s" expression))
+                        | Utilities.Matched "var" var_match -> fast_call (Some (LexToken.String var_match))
+                        | _ -> raise (SyntaxError (sprintf "Could not find variable at start of %s" expression.string))
                     | Some s ->
                         let filter_name = filter_match.Groups.["filter_name"]
-                        let arg = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list |> List.map (fun c -> Variable(provider, token, c.ToString())) 
+                        let arg = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list 
+                                |> List.map (fun c -> Variable(provider, token, LexToken.String (c.ToString()))) 
                         let filter = Map.tryFind filter_name.Value provider.Filters 
                         
                         if filter.IsNone then raise (SyntaxError (sprintf "filter %A could not be found" filter_name.Value))
@@ -285,7 +286,7 @@ module Expressions =
                             (_upto, variable, [(filter.Value, arg)] @ filters)
 
         // list of filters along with the arguments that they expect
-        let upto, variable, filters = parse_var (Constants.filter_re.Match(expression)) 0 None
+        let upto, variable, filters = parse_var (Constants.filter_re.Match(expression.string)) 0 None
 
         /// recursively evaluates the filter list against the context and input objects.
         /// the tuple returned consists of the value as the first item in the tuple
@@ -324,7 +325,7 @@ module Expressions =
                         if ignoreFailures then
                             (None, false)
                         else
-                            raise (RenderingError((sprintf "Exception occured while processing variable '%s'" variable.ExpressionText), exc))
+                            raise (RenderingError((sprintf "Exception occured while processing variable '%s'" variable.ExpressionText.string), exc))
             
             do_resolve context resolved_value filters
             
