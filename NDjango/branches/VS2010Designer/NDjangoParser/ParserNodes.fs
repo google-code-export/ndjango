@@ -183,6 +183,15 @@ module internal ParserNodes =
                 context.Tags
             )
             
+    type KeyWordNode (token: TextToken, position:int, values:string list) =
+        inherit ValueListNode
+            (
+                NodeType.Keyword, 
+                token.Position+position,
+                token.Text.[position..token.Length-1-position],
+                values
+            )
+            
     /// For tags decorated with this attribute the string given as a parmeter for the attribute
     /// will be shown in the tooltip for the tag            
     type DescriptionAttribute(description: string) = 
@@ -202,7 +211,7 @@ module internal ParserNodes =
             (new TagNameNode(context, (token :> TextToken)) :> INode) :: base.elements
             
         override x.Description =
-            match context.Provider.Tags.TryFind(token.Verb) with
+            match context.Provider.Tags.TryFind(token.Verb.string) with
             | None -> ""
             | Some tag -> 
                 let attrs = tag.GetType().GetCustomAttributes(typeof<DescriptionAttribute>, false)
@@ -221,4 +230,8 @@ module internal ParserNodes =
         /// Walking an error node throws an error
         override x.walk manager walker = 
             raise (SyntaxException(error.Message, (get_textToken x.Token)))
-
+            
+    type TagSyntaxError(message: string, pattern:INode list) =
+        inherit SyntaxError(message)
+        
+        member x.Pattern = pattern

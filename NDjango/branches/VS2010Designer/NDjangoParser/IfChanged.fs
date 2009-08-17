@@ -58,7 +58,7 @@ module internal IfChanged =
                 let nodes_ifsame, remaining =
                     match nodes_ifchanged.[nodes_ifchanged.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
-                        if b.Verb = "else" then
+                        if b.Verb.string = "else" then
                             (context.Provider :?> IParser).Parse (Some token) remaining ["endifchanged"]
                         else
                             [], remaining

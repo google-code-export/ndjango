@@ -39,8 +39,8 @@ module internal LoaderTags =
             member this.Perform token context tokens =
                 match token.Args with 
                 | name::[] -> 
-                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name]
-                    (new BlockNode(context, token, name, node_list) :> INodeImpl), remaining
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name.string]
+                    (new BlockNode(context, token, name.string, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("block tag takes only one argument"))
 
     /// Signal that this template extends a parent template.
@@ -139,9 +139,9 @@ module internal LoaderTags =
         interface ITag with
             member this.Perform token context tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(context, token, Path path, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
-                | path::"parsed"::[] ->
-                    let templateRef = FilterExpression (context.Provider, Block token, "\"" + path + "\"")
+                | path::[] -> (new SsiNode(context, token, Path path.string, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
+                | path::LexToken.String "parsed"::[] ->
+                    let templateRef = FilterExpression (context.Provider, Block token, LexToken.String ("\"" + path.string + "\""))
                     ({
                         new TagNode(context, token) 
                         with

@@ -30,6 +30,7 @@ open NDjango.ParserNodes
 open NDjango.ASTNodes
 open NDjango.OutputHandling
 open NDjango.Expressions
+open NDjango.ParserNodes
 
 module internal Misc =
 
@@ -38,14 +39,18 @@ module internal Misc =
     type AutoescapeTag() =
         interface ITag with
             member this.Perform token context tokens =
-
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
+                let (|LexToken|_|) (value) = Some value
 
                 let autoescape_flag =  
                     match token.Args with 
-                    | "on"::[] -> true
-                    | "off"::[] -> false
-                    | _ -> raise (SyntaxError("invalid arguments for 'Autoescape' tag"))
+                    | LexToken(LexToken.String "on")::[] -> true
+                    | LexToken(LexToken.String "off")::[] -> false
+                    | _ -> raise 
+                            (TagSyntaxError(
+                                "invalid arguments for 'Autoescape' tag", 
+                                [(new KeyWordNode((token:>TextToken), 0, ["on";"off"]) :> INode)]
+                                ))
                     
                 (({
                     new TagNode(context, token) with
@@ -206,7 +211,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
                 match token.Args with
-                | source::"by"::grouper::"as"::result::[] ->
+                | source::LexToken.String "by"::grouper::LexToken.String "as"::result::[] ->
                     let value = new FilterExpression(context.Provider, Block token, source)
                     let regroup context =
                         match fst <| value.Resolve context false with
@@ -219,7 +224,7 @@ module internal Misc =
                                             // this function takes a tuple with the first element representing the grouper
                                             // currently under construction and the second the list of groupers built so far
                                             (fun (groupers:Grouper option*Grouper list) item -> 
-                                                match resolve_lookup item [grouper] with
+                                                match resolve_lookup item [grouper.string] with
                                                 | Some value ->  // this is the current value to group by
                                                     match fst groupers with
                                                     | Some group -> // group is a group currently being built
@@ -243,7 +248,7 @@ module internal Misc =
                             override this.walk manager walker =
                                 match regroup walker.context with
                                 | [] -> walker
-                                | _ as list -> {walker with context=walker.context.add(result, (list :> obj))}
+                                | _ as list -> {walker with context=walker.context.add(result.string, (list :> obj))}
                     } :> INodeImpl), tokens
 
                 | _ -> raise (SyntaxError ("malformed 'regroup' tag"))
@@ -312,14 +317,14 @@ module internal Misc =
             member this.Perform token context tokens =
                 let buf = 
                     match token.Args with
-                        | "openblock"::[] -> "{%"
-                        | "closeblock"::[] -> "%}"
-                        | "openvariable"::[] -> "{{"
-                        | "closevariable"::[] -> "}}"
-                        | "openbrace"::[] -> "{"
-                        | "closebrace"::[] -> "}"
-                        | "opencomment"::[] -> "{#"
-                        | "closecomment"::[] -> "#}"
+                        | LexToken.String "openblock"::[] -> "{%"
+                        | LexToken.String "closeblock"::[] -> "%}"
+                        | LexToken.String "openvariable"::[] -> "{{"
+                        | LexToken.String "closevariable"::[] -> "}}"
+                        | LexToken.String "openbrace"::[] -> "{"
+                        | LexToken.String "closebrace"::[] -> "}"
+                        | LexToken.String "opencomment"::[] -> "{#"
+                        | LexToken.String "closecomment"::[] -> "#}"
                         | _ -> raise (SyntaxError ("invalid format for 'template' tag"))
                 let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context.Provider, Block token, name))
                 ({
@@ -356,7 +361,7 @@ module internal Misc =
                 | value::maxValue::maxWidth::[] ->
                     let value = new FilterExpression(context.Provider, Block token, value)
                     let maxValue = new FilterExpression(context.Provider, Block token, maxValue)
-                    let width = try System.Int32.Parse(maxWidth) |> float with | _  -> raise (SyntaxError ("'widthratio' 3rd argument must be integer"))
+                    let width = try System.Int32.Parse(maxWidth.string) |> float with | _  -> raise (SyntaxError ("'widthratio' 3rd argument must be integer"))
                     (({
                         new TagNode(context, token) with
                             override this.walk manager walker = 
@@ -380,7 +385,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
                 match token.Args with
-                | var::"as"::name::[] ->
+                | var::LexToken.String "as"::name::[] ->
                     let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endwith"]
                     let expression = new FilterExpression(context.Provider, Block token, var)
                     (({
@@ -388,7 +393,7 @@ module internal Misc =
                             override this.walk manager walker = 
                                 let context = 
                                     match fst <| expression.Resolve walker.context false with
-                                    | Some v -> walker.context.add(name, v)
+                                    | Some v -> walker.context.add(name.string, v)
                                     | None -> walker.context
                                 {walker with 
                                     parent=Some walker; 
@@ -412,9 +417,9 @@ module Abstract =
     [<AbstractClass>]    
     type UrlTag() =
         let rec parseArgs token provider args = 
-            let instantiate arg = [new FilterExpression(provider, Block token, String.trim [' '] arg)]
+            let instantiate arg = [new FilterExpression(provider, Block token, arg)]
             match args with
-            | arg::"as"::name::[] -> instantiate arg, (Some name)
+            | arg::LexToken.String "as"::name::[] -> instantiate arg, (Some name)
             | arg::[] -> instantiate arg, None
             | arg::tail ->  
                 let list, var = parseArgs token provider tail
@@ -429,9 +434,16 @@ module Abstract =
                     match token.Args with
                     | [] -> raise (SyntaxError ("'url' tag requires at least one parameter"))
                     | path::args -> 
-                        let argList, var = parseArgs token context.Provider (List.fold (fun state elem -> 
-                                                                                                    match String.trim [','] elem with
-                                                                                                    | "" -> state | _ as trimmed -> trimmed::state ) [] <| List.rev args)
+                        let argList, var = 
+                            parseArgs token context.Provider 
+                                (args |> List.rev |> 
+                                    List.fold 
+                                        (fun state elem -> 
+                                            match String.trim [','] elem.string with                               
+                                            | "" -> state 
+                                            | _ as trimmed -> (LexToken.String trimmed)::state ) 
+                                        []
+                                )
                         new FilterExpression(context.Provider, Block token, path), argList, var
                 
                 (({
@@ -445,6 +457,6 @@ module Abstract =
                             let url = this.GenerateUrl((shortResolve path), List.to_array <| List.map (fun (elem: FilterExpression) -> shortResolve elem) argList, walker.context)
                             match var with 
                             | None -> { walker with buffer = url }
-                            | Some v -> { walker with context = walker.context.add(v, (url :> obj)) }
+                            | Some v -> { walker with context = walker.context.add(v.string, (url :> obj)) }
                             } :> INodeImpl),
                     tokens)

@@ -98,18 +98,18 @@ module internal Cycle =
             // CycleNode for each instance of a given named cycle tag. This implementation
             // Relies on the CycleNode instances to communicate with each other through 
             // the context object available at render time to synchronize their activities
-        let checkForOldSyntax value = 
-            if (String.IsNullOrEmpty value) then false
-            else match value.[0] with
+        let checkForOldSyntax (value:LexToken) = 
+            if (String.IsNullOrEmpty value.string) then false
+            else match value.string.[0] with
                     | '"' -> false
                     | '\'' -> false
-                    | _ when value.Contains(",") -> true
+                    | _ when value.string.Contains(",") -> true
                     | _ -> false
                             
-        let normalize values =
+        let normalize (values: LexToken list) =
             if List.exists checkForOldSyntax values then
-                let compacted = List.fold (fun status value -> status + value) "" values
-                List.map (fun value -> "'" + value + "'" ) (String.split [','] compacted)   
+                let compacted = values |> List.fold (fun status value -> status + value.string) "" 
+                List.map (fun value -> LexToken.String ("'" + value + "'") ) (String.split [','] compacted)   
             else
                 values
                 
@@ -118,11 +118,11 @@ module internal Cycle =
                 let name, values =
                     match List.rev token.Args with
                     | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
-                    | name::"as"::values ->
-                        (name, values |> List.rev |> normalize)
+                    | name::LexToken.String "as"::values ->
+                        (name.string, values |> List.rev |> normalize)
                     | _ ->
                         let values = token.Args |> normalize
-                        if values.Length = 1 then (values.[0], [])
+                        if values.Length = 1 then (values.[0].string, [])
                         else ("$Anonymous$Cycle", values)
                         
                 let values = List.map (fun v -> new Variable(context.Provider, Block token, v)) values

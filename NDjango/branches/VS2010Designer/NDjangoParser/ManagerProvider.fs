@@ -139,10 +139,11 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             then
                 raise (SyntaxException(e.Message, (blockToken :> TextToken)))
             else
-                let nodes, tokens = 
+                let nodes, tokens, elements = 
                     match ex with
-                    | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>())
-                    | _ -> (seq [], tokens)
+                    | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>(), [])
+                    | :? TagSyntaxError as tse -> (seq [], tokens, tse.Pattern)
+                    | _ -> (seq [], tokens, [])
                 Some (({
                         new ErrorNode(context, Block blockToken, new Error(2, e.Message))
                             with
@@ -151,7 +152,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 /// Add TagName node to the list of elements
                                 override x.elements =
                                     (new TagNameNode(context, (blockToken :> TextToken)) :> INode)
-                                     :: base.elements
+                                     :: elements @ base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
         
@@ -182,7 +183,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
             try 
-                let expression = new FilterExpression(context.Provider, Lexer.Variable var, var.Expression)
+                let expression = new FilterExpression(context.Provider, Lexer.Variable var, LexToken.String var.Expression)
                 ({new Node(token)
                     with 
                         override x.node_type = NodeType.Expression
@@ -201,8 +202,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                     | None -> rethrow()
         | Lexer.Block block -> 
             try
-                match Map.tryFind block.Verb tags with 
-                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb))
+                match Map.tryFind block.Verb.string tags with 
+                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb.string))
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 

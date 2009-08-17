@@ -36,6 +36,44 @@ module OutputHandling =
     let internal (|Contains|_|) (pattern: string) (v: string) = if v.Contains(pattern) then Some v else None
 
     let smart_split_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
+    
+    type LexTokenObject(text:string, index:int) =
+        member x.Text = text
+    
+    [<StructuralComparison(false)>]
+    [<StructuralEquality(false)>]
+    type LexToken =
+        | LexToken of LexTokenObject
+        | String of string
+        
+        member x.string = 
+            match x with
+                | LexToken tObject -> tObject.Text
+                | String s -> s
+
+        member x.Contains pattern = x.string.Contains pattern                
+        member x.GetSlice (f:int option, t:int option) =
+            match f,t with
+            | Some f, Some t -> x.string.[f..t]
+            | None , Some t -> x.string.[..t]
+            | Some f, None -> x.string.[f..]
+            | None, None -> x.string
+        member x.Length = x.string.Length
+        member x.StartsWith start = x.string.StartsWith start
+        
+        override x.Equals (y:obj) =
+            match y with
+            | :? LexToken as t -> t.string.Equals(x.string)
+            | :? string as s -> s.Equals(x.string)
+        
+        interface IComparable with
+            member x.CompareTo(y:obj) =
+            match y with
+            | :? LexToken as t -> t.string.CompareTo(x.string)
+            | :? string as s -> s.CompareTo(x.string)
+        
+    type LexTokenOps =
+        | Equal of LexToken * LexToken
 
     /// Generator that splits a string by spaces, leaving quoted phrases together.
     /// Supports both single and double quotes, and supports escaping quotes with
@@ -51,12 +89,17 @@ module OutputHandling =
     let smart_split text = 
         [for m in smart_split_re.Matches(text) -> 
             let bit = m.Groups.[0].Value
-            if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
-                "\"" + bit.[1..bit.Length-2].Replace("\\\"", "\"").Replace("\\\\", "\\") + "\""
-            elif bit.[0] = '\'' && bit.[bit.Length-1] = '\'' then
-                "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
-            else
-              bit
+            LexToken (
+                new LexTokenObject(
+                    (if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
+                        "\"" + bit.[1..bit.Length-2].Replace("\\\"", "\"").Replace("\\\\", "\\") + "\""
+                        elif bit.[0] = '\'' && bit.[bit.Length-1] = '\'' then
+                            "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
+                        else
+                          bit),
+                    m.Groups.[0].Index
+                    )
+            )
         ]
         
     /// smart-splits the token, also keeping intact requests for translation, e.g.
@@ -67,23 +110,23 @@ module OutputHandling =
     /// [u'Another', u"'person's'", u'test.']
     /// >>> list(split_token_contents(r'A "\"funky\" style" test.')) 
     /// [u'A', u'""funky" style"', u'test.']
-    let split_token_contents token =
-        let join_token_split = fun (acc: string list * string option) elem ->
-            let lst, sentinel = acc
-            match sentinel with
-            | Some s ->
-                match elem with
-                | EndsWith s v -> ([(List.hd lst) + " " + elem] @ (List.tl lst), None)
-                | _ -> ([(List.hd lst) + " " + elem] @ (List.tl lst), Some s)
-            | None ->
-                match elem with
-                // you can have the scenario when v is a single token, so it will contain
-                // both the _( and the )
-                | StartsWith "_(\"" v | StartsWith "_('" v when not (v.EndsWith(v.[2].ToString() + ")")) -> 
-                    ([elem] @ lst, Some (v.[2].ToString() + ")"))
-                | _ -> ([elem] @ lst, None)
-
-        fst <| List.fold join_token_split ([], None) (smart_split token) |> List.rev
+//    let split_token_contents token =
+//        let join_token_split = fun (acc: string list * string option) elem ->
+//            let lst, sentinel = acc
+//            match sentinel with
+//            | Some s ->
+//                match elem with
+//                | EndsWith s v -> ([(List.hd lst) + " " + elem] @ (List.tl lst), None)
+//                | _ -> ([(List.hd lst) + " " + elem] @ (List.tl lst), Some s)
+//            | None ->
+//                match elem with
+//                // you can have the scenario when v is a single token, so it will contain
+//                // both the _( and the )
+//                | StartsWith "_(\"" v | StartsWith "_('" v when not (v.EndsWith(v.[2].ToString() + ")")) -> 
+//                    ([elem] @ lst, Some (v.[2].ToString() + ")"))
+//                | _ -> ([elem] @ lst, None)
+//
+//        fst <| List.fold join_token_split ([], None) (smart_split token) |> List.rev
         
     /// determines whether the given string is either single or double quoted, escaped or un-escaped.
     /// returnes whether it is quoted, and the number of characters the quote string occupies
@@ -127,14 +170,6 @@ module OutputHandling =
 
     /// used to set defaults for optional parameters. retunrs o.Value if o.IsSome, v otherwise
     let internal defaultArg o v = match o with | Some o -> o | _ -> v
-
-//    /// extends a template syntax error message with token position information, if any is present
-//    let private extend_syntax_error_message msg position length = 
-//        match position with 
-//        | None -> msg
-//        | Some v ->
-//            sprintf "%s (at %s" msg ( sprintf "%d%s" v (match length with | None -> ")" | Some l -> sprintf "/%d)" l))
-
 
     /// Error message
     type Error(severity:int, message:string) =

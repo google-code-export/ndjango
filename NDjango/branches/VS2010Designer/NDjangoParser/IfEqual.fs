@@ -48,12 +48,12 @@ module internal IfEqual =
         interface ITag with
             member this.Perform token context tokens =
                 let tag = token.Verb
-                let node_list_true, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["else"; "end" + tag]
+                let node_list_true, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["else"; "end" + tag.string]
                 let node_list_false, remaining =
                     match node_list_true.[node_list_true.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
-                        if b.Verb = "else" then
-                            (context.Provider :?> IParser).Parse (Some token) remaining ["end" + tag]
+                        if b.Verb.string = "else" then
+                            (context.Provider :?> IParser).Parse (Some token) remaining ["end" + tag.string]
                         else
                             [], remaining
                     | _ -> [], remaining
@@ -90,6 +90,6 @@ module internal IfEqual =
                             // this override is not used by the ifequal node for rendering but is necessary for the blocks to work properly
 //                            override x.nodelist = node_list_true @ node_list_false
                     } :> INodeImpl), remaining
-                | _ -> raise (SyntaxError (sprintf "'%s' takes two arguments" tag))
+                | _ -> raise (SyntaxError (sprintf "'%s' takes two arguments" tag.string))
 
                 
