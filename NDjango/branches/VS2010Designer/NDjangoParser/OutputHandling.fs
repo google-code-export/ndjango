@@ -65,15 +65,15 @@ module OutputHandling =
             match y with
             | :? LexToken as t -> t.string.Equals(x.string)
             | :? string as s -> s.Equals(x.string)
+        override x.GetHashCode() = x.string.GetHashCode()
         
         interface IComparable with
             member x.CompareTo(y:obj) =
-            match y with
-            | :? LexToken as t -> t.string.CompareTo(x.string)
-            | :? string as s -> s.CompareTo(x.string)
+                match y with
+                | :? LexToken as t -> t.string.CompareTo(x.string)
+                | :? string as s -> s.CompareTo(x.string)
         
-    type LexTokenOps =
-        | Equal of LexToken * LexToken
+    let (|LexerToken|) (t:LexToken) = LexerToken(t.string)
 
     /// Generator that splits a string by spaces, leaving quoted phrases together.
     /// Supports both single and double quotes, and supports escaping quotes with

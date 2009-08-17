@@ -237,11 +237,11 @@ module internal For =
             member this.Perform token context tokens =
                 let enumerator, variables, reversed = 
                     match List.rev token.Args with
-                        | var::LexToken.String "in"::syntax -> 
+                        | var::LexerToken("in")::syntax -> 
                             var,
                             syntax,
                             false
-                        | LexToken.String "reversed"::var::LexToken.String "in"::syntax -> 
+                        | LexerToken("reversed")::var::LexerToken("in")::syntax -> 
                             var,
                             syntax,
                             true

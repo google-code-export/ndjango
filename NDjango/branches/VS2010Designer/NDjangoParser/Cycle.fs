@@ -118,7 +118,7 @@ module internal Cycle =
                 let name, values =
                     match List.rev token.Args with
                     | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
-                    | name::LexToken.String "as"::values ->
+                    | name::LexerToken("as")::values ->
                         (name.string, values |> List.rev |> normalize)
                     | _ ->
                         let values = token.Args |> normalize

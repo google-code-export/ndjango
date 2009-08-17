@@ -160,14 +160,14 @@ module internal If =
         /// is modified by the "not" keyword, and false otherwise.
         let rec build_vars token notFlag (tokens: LexToken list) parser (vars:(IfLinkType option)*(bool*FilterExpression) list) =
             match tokens with
-            | LexToken.String "not"::var::tail -> build_vars token true (var::tail) parser vars
+            | LexerToken("not")::var::tail -> build_vars token true (var::tail) parser vars
             | var::[] -> 
                 match fst vars with
                 | None -> IfLinkType.Or, [(notFlag, new FilterExpression(parser, Block token, var))]
                 | Some any -> any, snd vars @ [(notFlag, new FilterExpression(parser, Block token, var))]
-            | var::LexToken.String "and"::var2::tail -> 
+            | var::LexerToken("and")::var2::tail -> 
                 append_vars IfLinkType.And var token notFlag (var2::tail) parser vars 
-            | var::LexToken.String "or"::var2::tail -> 
+            | var::LexerToken("or")::var2::tail -> 
                 append_vars IfLinkType.Or var token notFlag (var2::tail) parser vars 
             | _ -> raise (SyntaxError ("invalid conditional expression in 'if' tag"))
             

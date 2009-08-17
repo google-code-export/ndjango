@@ -140,7 +140,7 @@ module internal LoaderTags =
             member this.Perform token context tokens = 
                 match token.Args with
                 | path::[] -> (new SsiNode(context, token, Path path.string, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
-                | path::LexToken.String "parsed"::[] ->
+                | path::LexerToken("parsed")::[] ->
                     let templateRef = FilterExpression (context.Provider, Block token, LexToken.String ("\"" + path.string + "\""))
                     ({
                         new TagNode(context, token) 
