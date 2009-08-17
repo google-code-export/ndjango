@@ -40,12 +40,11 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
-                let (|LexToken|_|) (value) = Some value
 
-                let autoescape_flag =  
+                let autoescape_flag = 
                     match token.Args with 
-                    | LexToken(LexToken.String "on")::[] -> true
-                    | LexToken(LexToken.String "off")::[] -> false
+                    | LexerToken("on")::[] -> true
+                    | LexerToken("off")::[] -> false
                     | _ -> raise 
                             (TagSyntaxError(
                                 "invalid arguments for 'Autoescape' tag", 
@@ -211,7 +210,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
                 match token.Args with
-                | source::LexToken.String "by"::grouper::LexToken.String "as"::result::[] ->
+                | source::LexerToken("by")::grouper::LexerToken("as")::result::[] ->
                     let value = new FilterExpression(context.Provider, Block token, source)
                     let regroup context =
                         match fst <| value.Resolve context false with
@@ -317,14 +316,14 @@ module internal Misc =
             member this.Perform token context tokens =
                 let buf = 
                     match token.Args with
-                        | LexToken.String "openblock"::[] -> "{%"
-                        | LexToken.String "closeblock"::[] -> "%}"
-                        | LexToken.String "openvariable"::[] -> "{{"
-                        | LexToken.String "closevariable"::[] -> "}}"
-                        | LexToken.String "openbrace"::[] -> "{"
-                        | LexToken.String "closebrace"::[] -> "}"
-                        | LexToken.String "opencomment"::[] -> "{#"
-                        | LexToken.String "closecomment"::[] -> "#}"
+                        | LexerToken("openblock")::[] -> "{%"
+                        | LexerToken("closeblock")::[] -> "%}"
+                        | LexerToken("openvariable")::[] -> "{{"
+                        | LexerToken("closevariable")::[] -> "}}"
+                        | LexerToken("openbrace")::[] -> "{"
+                        | LexerToken("closebrace")::[] -> "}"
+                        | LexerToken("opencomment")::[] -> "{#"
+                        | LexerToken("closecomment")::[] -> "#}"
                         | _ -> raise (SyntaxError ("invalid format for 'template' tag"))
                 let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context.Provider, Block token, name))
                 ({
@@ -385,7 +384,7 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
                 match token.Args with
-                | var::LexToken.String "as"::name::[] ->
+                | var::LexerToken("as")::name::[] ->
                     let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endwith"]
                     let expression = new FilterExpression(context.Provider, Block token, var)
                     (({
