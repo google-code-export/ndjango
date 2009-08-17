@@ -50,7 +50,7 @@ module Lexer =
     type BlockToken(text, pos, line, linePos) =
         inherit TextToken(text, pos, line, linePos)
         let verb, args = 
-            match smart_split (text.[Constants.BLOCK_TAG_START.Length..text.Length-Constants.BLOCK_TAG_END.Length-1].Trim()) with
+            match smart_split (text.[Constants.BLOCK_TAG_START.Length..text.Length-Constants.BLOCK_TAG_END.Length-1]) 2 with
             | verb::args -> verb, args 
             | _ -> raise (SyntaxError("Empty tag block"))
         member x.Verb = verb 

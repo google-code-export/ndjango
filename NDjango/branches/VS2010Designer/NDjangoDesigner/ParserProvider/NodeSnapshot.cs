@@ -36,7 +36,20 @@ namespace NDjango.Designer.Parsing
 
         public NodeSnapshot(ITextSnapshot snapshot, INode node)
         {
-            this.snapshotSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
+            int offset = 0;
+            if (node.Values.GetEnumerator().MoveNext())
+            {
+                // if Value list is not empty, expand the snapshotSPan
+                // to include leading whitespaces
+                  ITextSnapshotLine line = snapshot.GetLineFromPosition(node.Position);
+                for (; node.Position - offset > line.Extent.Start.Position; offset++)
+                    if (
+                        snapshot[node.Position - offset-1] != ' ' &&
+                        snapshot[node.Position - offset-1] != '\t')
+                        break;
+            }
+
+            this.snapshotSpan = new SnapshotSpan(snapshot, node.Position - offset, node.Length + offset);
             this.node = node;
             foreach (IEnumerable<INode> list in node.Nodes.Values)
                 foreach (INode child in list)

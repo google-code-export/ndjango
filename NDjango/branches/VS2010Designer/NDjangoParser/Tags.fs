@@ -40,25 +40,34 @@ module internal Misc =
         interface ITag with
             member this.Perform token context tokens =
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
+                
+                let fail pos = 
+                        raise (TagSyntaxError(
+                                "invalid arguments for 'Autoescape' tag", 
+                                [(new KeyWordNode((token:>TextToken), pos, ["on";"off"]) :> INode)]
+                                ))
 
                 let autoescape_flag = 
                     match token.Args with 
                     | LexerToken("on")::[] -> true
                     | LexerToken("off")::[] -> false
-                    | _ -> raise 
-                            (TagSyntaxError(
-                                "invalid arguments for 'Autoescape' tag", 
-                                [(new KeyWordNode((token:>TextToken), 0, ["on";"off"]) :> INode)]
-                                ))
+                    | arg::list -> fail arg.Position
+                    | _ -> fail (token.Length - 2)
                     
                 (({
                     new TagNode(context, token) with
-                        override this.walk manager walker = 
+                        override x.walk manager walker = 
                             {walker with 
                                 parent=Some walker; 
                                 context = walker.context.WithAutoescape autoescape_flag; 
                                 nodes=nodes}
-                        override this.nodelist with get() = nodes
+                        override x.nodelist with get() = nodes
+                        override x.elements =
+                            (new KeyWordNode(
+                                    (token:>TextToken), 
+                                    (List.hd token.Args).Position, 
+                                    ["on";"off"]) :> INode)
+                                ::base.elements
                    } :> INodeImpl), 
                    remaining)
                         

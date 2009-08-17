@@ -37,8 +37,10 @@ module OutputHandling =
 
     let smart_split_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
     
-    type LexTokenObject(text:string, index:int) =
+    type LexTokenObject(text:string, position:int) =
         member x.Text = text
+        member x.Position = position
+        
     
     [<StructuralComparison(false)>]
     [<StructuralEquality(false)>]
@@ -50,6 +52,11 @@ module OutputHandling =
             match x with
                 | LexToken tObject -> tObject.Text
                 | String s -> s
+        
+        member x.Position =
+            match x with
+                | LexToken tObject -> tObject.Position
+                | String s -> 0
 
         member x.Contains pattern = x.string.Contains pattern                
         member x.GetSlice (f:int option, t:int option) =
@@ -86,7 +93,7 @@ module OutputHandling =
     /// [u'Another', u"'person's'", u'test.']
     /// >>> list(smart_split(r'A "\"funky\" style" test.')) 
     /// [u'A', u'""funky" style"', u'test.']
-    let smart_split text = 
+    let smart_split text offset = 
         [for m in smart_split_re.Matches(text) -> 
             let bit = m.Groups.[0].Value
             LexToken (
@@ -97,7 +104,7 @@ module OutputHandling =
                             "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
                         else
                           bit),
-                    m.Groups.[0].Index
+                    m.Groups.[0].Index + offset
                     )
             )
         ]

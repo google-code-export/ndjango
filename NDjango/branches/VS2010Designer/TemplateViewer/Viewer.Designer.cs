@@ -35,8 +35,8 @@
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.saveAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
-            this.toolStripStatusLabel2 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.nodeInfo = new System.Windows.Forms.ToolStripStatusLabel();
+            this.textPos = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.templateTree = new System.Windows.Forms.TreeView();
             this.templateSource = new System.Windows.Forms.RichTextBox();
@@ -73,53 +73,51 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.openToolStripMenuItem.Text = "Open";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
             // parseToolStripMenuItem
             // 
             this.parseToolStripMenuItem.Name = "parseToolStripMenuItem";
-            this.parseToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.parseToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.parseToolStripMenuItem.Text = "Parse";
             this.parseToolStripMenuItem.Click += new System.EventHandler(this.parseToolStripMenuItem_Click);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.saveToolStripMenuItem.Text = "Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // saveAsToolStripMenuItem
             // 
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
             this.saveAsToolStripMenuItem.Text = "Save As";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
             // 
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripStatusLabel1,
-            this.toolStripStatusLabel2});
+            this.nodeInfo,
+            this.textPos});
             this.statusStrip1.Location = new System.Drawing.Point(0, 438);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(612, 22);
             this.statusStrip1.TabIndex = 1;
             this.statusStrip1.Text = "statusStrip1";
             // 
-            // toolStripStatusLabel1
+            // nodeInfo
             // 
-            this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(109, 17);
-            this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
+            this.nodeInfo.Name = "nodeInfo";
+            this.nodeInfo.Size = new System.Drawing.Size(0, 17);
             // 
-            // toolStripStatusLabel2
+            // textPos
             // 
-            this.toolStripStatusLabel2.Name = "toolStripStatusLabel2";
-            this.toolStripStatusLabel2.Size = new System.Drawing.Size(109, 17);
-            this.toolStripStatusLabel2.Text = "toolStripStatusLabel2";
+            this.textPos.Name = "textPos";
+            this.textPos.Size = new System.Drawing.Size(0, 17);
             // 
             // splitContainer1
             // 
@@ -145,6 +143,7 @@
             this.templateTree.Name = "templateTree";
             this.templateTree.Size = new System.Drawing.Size(204, 414);
             this.templateTree.TabIndex = 3;
+            this.templateTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.templateTree_AfterSelect);
             // 
             // templateSource
             // 
@@ -193,8 +192,8 @@
         private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
         private System.Windows.Forms.TreeView templateTree;
         private System.Windows.Forms.RichTextBox templateSource;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel2;
+        private System.Windows.Forms.ToolStripStatusLabel nodeInfo;
+        private System.Windows.Forms.ToolStripStatusLabel textPos;
         private System.Windows.Forms.ToolStripMenuItem parseToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog openFileDialog1;
         private System.Windows.Forms.SaveFileDialog saveFileDialog1;

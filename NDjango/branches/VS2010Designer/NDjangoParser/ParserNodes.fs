@@ -145,22 +145,27 @@ module internal ParserNodes =
 //        /// triggers code completion
 //
 
-    type ValueListNode(nodeType, position, body:string, values)  =
+    type ValueListNode(nodeType, token: TextToken, offset, values)  =
             
+        let body = token.Text
         interface INode with
              /// TagNode type = TagName
             member x.NodeType = nodeType 
             
-            /// Position - the position of the first no-whitespace character after opening bracket
-            member x.Position = position 
+            /// Position - starting from the first no-whitespace character and including all 
+            /// whitespaces to the left of it
+            member x.Position = 
+//                token.Position + body.Substring(0, position).TrimEnd([|' ';'\t'|]).Length
+                token.Position + offset
             
-            /// Length - covers the whitespace and the verb (if any)
+            /// Length from the "poistion" till (but excluding) the first whitespace
             member x.Length = 
-                let body_tail = body.Trim([|' ';'\t'|])        
-                let endpos = body_tail.IndexOfAny([|' ';'\t';'%';'}';'#'|])
+//                let delta = position - body.Substring(0, position).TrimEnd([|' ';'\t'|]).Length
+                let body_tail = body.[offset..].TrimStart([|' ';'\t'|])       
+                let endpos = body_tail.IndexOfAny([|' ';'\t';'%';'}';'#'|]);
                 if (endpos < 0)
-                    then body.Length 
-                    else body.Length - body_tail.Length + endpos
+                    then body.Length - offset// + delta
+                    else body.Length - offset - body_tail.Length + endpos// + delta
 
             /// a list of registered tags
             member x.Values = values
@@ -174,12 +179,12 @@ module internal ParserNodes =
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
             
-    type TagNameNode (context: ParsingContext, token: TextToken) =
+    type TagNameNode (context: ParsingContext, token: TextToken, position) =
         inherit ValueListNode
             (
                 NodeType.TagName, 
-                token.Position+2,
-                token.Text.[2..token.Length-2],
+                token,
+                position,
                 context.Tags
             )
             
@@ -187,8 +192,8 @@ module internal ParserNodes =
         inherit ValueListNode
             (
                 NodeType.Keyword, 
-                token.Position+position,
-                token.Text.[position..token.Length-1-position],
+                token,
+                position,
                 values
             )
             
@@ -208,7 +213,7 @@ module internal ParserNodes =
         
         /// Add TagName node to the list of elements
         override x.elements =
-            (new TagNameNode(context, (token :> TextToken)) :> INode) :: base.elements
+            (new TagNameNode(context, (token :> TextToken), token.Verb.Position) :> INode) :: base.elements
             
         override x.Description =
             match context.Provider.Tags.TryFind(token.Verb.string) with

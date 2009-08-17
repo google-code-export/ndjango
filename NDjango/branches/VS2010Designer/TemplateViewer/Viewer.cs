@@ -42,6 +42,7 @@ namespace TemplateViewer
             string text = node.NodeType.ToString();
             text += ": " + templateSource.Text.Substring(node.Position, node.Length);
             TreeNode tnode = new TreeNode(text);
+            tnode.Tag = node;
 
             if (node.ErrorMessage.Severity > -1)
                 tnode.Nodes.Add("(Error)" + node.ErrorMessage.Message);
@@ -74,6 +75,30 @@ namespace TemplateViewer
         {
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
                 File.WriteAllText(saveFileDialog1.FileName, templateSource.Text);
+        }
+
+        int selpos = 0;
+        int sellen = 0;
+        private void templateTree_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            if (sellen > 0)
+            {
+                templateSource.Select(selpos, sellen);
+                templateSource.SelectionBackColor = Color.White;
+            }
+            selpos = 0;
+            sellen = 0;
+
+            INode node = e.Node.Tag as INode;
+            nodeInfo.Text = "";
+            if (node != null)
+            {
+                selpos = node.Position;
+                sellen = node.Length;
+                templateSource.Select(selpos, sellen);
+                templateSource.SelectionBackColor = Color.Wheat;
+                nodeInfo.Text = String.Format("Node: Pos = {0}, Length = {1}", node.Position, node.Length);
+            }
         }
 
     }

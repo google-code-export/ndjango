@@ -151,7 +151,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 
                                 /// Add TagName node to the list of elements
                                 override x.elements =
-                                    (new TagNameNode(context, (blockToken :> TextToken)) :> INode)
+                                    (new TagNameNode(context, (blockToken :> TextToken), blockToken.Verb.Position) :> INode)
                                      :: elements @ base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
@@ -228,11 +228,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                     match error.Text.[0..1] with
                                     | "{%" ->
                                         /// Add TagName node to the list of elements
-                                        (new ValueListNode (
-                                            NodeType.TagName,
-                                            error.Position + 2,
-                                            error.Text.[2..error.Length-2],
-                                            context.Tags)
+                                        (new TagNameNode(context, (error :> TextToken), 2)
                                                 :> INode) :: base.elements
                                     | _ -> base.elements
                         } :> INodeImpl), tokens
