@@ -26,6 +26,7 @@ using Microsoft.VisualStudio.Text;
 using System.Threading;
 using NDjango.Interfaces;
 using System.IO;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace NDjango.Designer.Parsing
 {
@@ -41,16 +42,20 @@ namespace NDjango.Designer.Parsing
         private object node_lock = new object();
         private IParser parser;
         private ITextBuffer buffer;
+        private IVsOutputWindowPane djangoDiagnostics;
+        string filePath;
 
         /// <summary>
         /// Creates a new node provider
         /// </summary>
         /// <param name="parser"></param>
         /// <param name="buffer">buffer to watch</param>
-        public NodeProvider(IParser parser, ITextBuffer buffer)
+        public NodeProvider(IVsOutputWindowPane djangoDiagnostics, IParser parser, ITextBuffer buffer)
         {
+            this.djangoDiagnostics = djangoDiagnostics;
             this.parser = parser;
             this.buffer = buffer;
+            filePath = ((ITextDocument)buffer.Properties[typeof(ITextDocument)]).FilePath;
             rebuildNodes(buffer.CurrentSnapshot);
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
         }
@@ -115,8 +120,21 @@ namespace NDjango.Designer.Parsing
             {
                 this.nodes = nodes;
             }
+            ShowDiagnostics();
             if (NodesChanged != null)
                 NodesChanged(new SnapshotSpan(snapshot, 0, snapshot.Length));
+        }
+
+        internal void ShowDiagnostics()
+        {
+            List<NodeSnapshot> nodes;
+            lock (node_lock)
+            {
+                nodes = this.nodes;
+            }
+            djangoDiagnostics.Clear();
+            nodes.ForEach(node=>node.ShowDiagnostics(djangoDiagnostics, filePath));
+            djangoDiagnostics.FlushToTaskList();
         }
 
         /// <summary>

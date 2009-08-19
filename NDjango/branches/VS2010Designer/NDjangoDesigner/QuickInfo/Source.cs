@@ -25,12 +25,26 @@ using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.Language.Intellisense;
 using NDjango.Interfaces;
+using Microsoft.VisualStudio.Text;
 
 namespace NDjango.Designer.QuickInfo
 {
+    /// <summary>
+    /// Provides the tooltip content
+    /// </summary>
     class Source : IQuickInfoSource
     {
-        public object GetToolTipContent(IQuickInfoSession session, out Microsoft.VisualStudio.Text.ITrackingSpan applicableToSpan)
+        /// <summary>
+        /// Generates the tooltip text 
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="applicableToSpan"></param>
+        /// <returns></returns>
+        /// <remarks>the quick info session will be automatically dismissed
+        /// when mouse cursor leaves the 'applicable to' span. The size of the span is
+        /// calculated based on the size of the nodes supplying the info to be shown
+        /// </remarks>
+        public object GetToolTipContent(IQuickInfoSession session, out ITrackingSpan applicableToSpan)
         {
             StringBuilder message = new StringBuilder();
             int position = session.SubjectBuffer.CurrentSnapshot.Length;
@@ -42,10 +56,12 @@ namespace NDjango.Designer.QuickInfo
                 nodes.ForEach(
                     node => 
                     {
+                        // include the node description at the top of the list
                         if (!String.IsNullOrEmpty(node.Description))
                             message.Insert(0, node.Description + "\n");
                         if (node.ErrorMessage.Severity >= 0)
                         {
+                            // include the error message text at the bottom
                             message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
                             errorSeparator = "";
                         }

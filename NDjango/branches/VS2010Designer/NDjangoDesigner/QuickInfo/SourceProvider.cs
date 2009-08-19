@@ -19,14 +19,10 @@
  *  
  ***************************************************************************/
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel.Composition;
+using Microsoft.VisualStudio.ApplicationModel.Environments;
 using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.ApplicationModel.Environments;
-using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Utilities;
 using NDjango.Designer.Parsing;
 
@@ -47,5 +43,6 @@ namespace NDjango.Designer.QuickInfo
                 return new Source();
             return null;
         }
+
     }
 }

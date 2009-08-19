@@ -29,22 +29,22 @@ using Microsoft.VisualStudio.ApplicationModel.Environments;
 using NDjango.Designer.Parsing;
 using Microsoft.VisualStudio.Editor;
 
-namespace NDjango.Designer.Intellisense
+namespace NDjango.Designer.CodeCompletion
 {
     [Export(typeof(IIntellisenseControllerProvider))]
     [Name("NDjango Completion Controller")]
     [Order(Before = "Default Completion Controller")]
     [ContentType(Constants.NDJANGO)]
-    internal class CompletionControllerProvider : IIntellisenseControllerProvider
+    internal class ControllerProvider : IIntellisenseControllerProvider
     {
         [Import]
-        private ICompletionBrokerMapService CompletionBrokerMapService { get; set; }
+        internal ICompletionBrokerMapService CompletionBrokerMapService { get; set; }
 
         [Import]
         internal INodeProviderBroker nodeProviderBroker { get; set; }
 
         [Import]
-        internal IVsEditorAdaptersFactoryService adaptersFactory;
+        internal IVsEditorAdaptersFactoryService adaptersFactory { get; set; }
         
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers, IEnvironment context)
         {
@@ -59,8 +59,7 @@ namespace NDjango.Designer.Intellisense
             // There may not be a broker for any of the subject buffers for this text view.  This can happen if there are no providers available.
             if (brokerCreated)
             {
-                return new Controller(nodeProviderBroker, subjectBuffers, 
-                    textView, CompletionBrokerMapService, adaptersFactory, context);
+                return new Controller(this, subjectBuffers, textView, context);
             }
 
             return null;

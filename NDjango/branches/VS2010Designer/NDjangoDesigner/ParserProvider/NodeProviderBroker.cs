@@ -27,6 +27,11 @@ using Microsoft.VisualStudio.Text;
 using System.ComponentModel.Composition;
 using NDjango.Interfaces;
 using Microsoft.VisualStudio.ApplicationModel.Environments;
+using Microsoft.VisualStudio.Editor;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.OLE.Interop;
+using System.Runtime.InteropServices;
 
 namespace NDjango.Designer.Parsing
 {
@@ -45,6 +50,9 @@ namespace NDjango.Designer.Parsing
 
         IParser parser = new NDjango.TemplateManagerProvider()
             .WithSetting(NDjango.Constants.EXCEPTION_IF_ERROR, false); // {get; set;}
+
+        [Import]
+        internal IVsEditorAdaptersFactoryService adaptersFactory { get; set; }
 
         /// <summary>
         /// Determines whether the buffer conatins ndjango code
@@ -76,11 +84,64 @@ namespace NDjango.Designer.Parsing
         /// <returns></returns>
         public NodeProvider GetNodeProvider(ITextBuffer buffer)
         {
+            if (djangoDiagnostics == null)
+                djangoDiagnostics = GetOutputPane(buffer);
+
             NodeProvider provider;
             if (!buffer.Properties.TryGetProperty(typeof(NodeProvider), out provider))
-                buffer.Properties.AddProperty(typeof(NodeProvider), provider = new NodeProvider(parser, buffer));
+                buffer.Properties.AddProperty(typeof(NodeProvider), provider 
+                    = new NodeProvider(djangoDiagnostics, parser, buffer));
             return provider;
         }
+        IVsOutputWindowPane djangoDiagnostics = null;
 
+
+        public IVsOutputWindowPane GetOutputPane(ITextBuffer textBuffer)
+        {
+            Guid page = this.GetType().GUID;
+            string caption = "Django Templates";
+
+            IVsOutputWindow service = GetService(textBuffer, typeof(SVsOutputWindow)) as IVsOutputWindow;
+
+            IVsOutputWindowPane ppPane = null;
+            if ((ErrorHandler.Failed(service.GetPane(ref page, out ppPane)) && (caption != null)) 
+                && ErrorHandler.Succeeded(service.CreatePane(ref page, caption, 1, 1)))
+            {
+                service.GetPane(ref page, out ppPane);
+            }
+            if (ppPane != null)
+            {
+                ErrorHandler.ThrowOnFailure(ppPane.Activate());
+            }
+            return ppPane;
+        }
+
+        private object GetService(ITextBuffer textBuffer, Type type)
+        {
+            var vsBuffer = adaptersFactory.GetBufferAdapter(textBuffer);
+            if (vsBuffer == null)
+                return null;
+
+            Guid guidServiceProvider = VSConstants.IID_IUnknown;
+            IObjectWithSite objectWithSite = vsBuffer as IObjectWithSite;
+            IntPtr ptrServiceProvider = IntPtr.Zero;
+            objectWithSite.GetSite(ref guidServiceProvider, out ptrServiceProvider);
+            Microsoft.VisualStudio.OLE.Interop.IServiceProvider serviceProvider =
+                (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)Marshal.GetObjectForIUnknown(ptrServiceProvider);
+
+            Guid guidService = typeof(SVsOutputWindow).GUID;
+            Guid guidInterface = typeof(IVsOutputWindow).GUID;
+            IntPtr ptrObject = IntPtr.Zero;
+
+            int hr = serviceProvider.QueryService(ref guidService, ref guidInterface, out ptrObject);
+            if (ErrorHandler.Failed(hr) || ptrObject == IntPtr.Zero)
+                return null;
+
+
+            IVsOutputWindow taskList = (IVsOutputWindow)Marshal.GetObjectForIUnknown(ptrObject);
+            Marshal.Release(ptrObject);
+
+            return taskList;
+        }
     }
 }
