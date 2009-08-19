@@ -101,13 +101,10 @@
     <Compile Include="Classifiers\ClassifierProvider.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CodeCompletion\CompletionProvider.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="CodeCompletion\Controller.cs" />
     <Compile Include="CodeCompletion\ControllerProvider.cs" />
-    <Compile Include="CodeCompletion\TagNameSource.cs" />
-    <Compile Include="CodeCompletion\TagNameSourceProvider.cs" />
+    <Compile Include="CodeCompletion\Source.cs" />
+    <Compile Include="CodeCompletion\SourceProvider.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="ParserProvider\NodeProviderBroker.cs" />
     <Compile Include="ParserProvider\NodeProvider.cs" />

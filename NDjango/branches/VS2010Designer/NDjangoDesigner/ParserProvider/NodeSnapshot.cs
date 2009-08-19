@@ -22,6 +22,7 @@
 using Microsoft.VisualStudio.Text;
 using NDjango.Interfaces;
 using System.Collections.Generic;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace NDjango.Designer.Parsing
 {
@@ -36,12 +37,14 @@ namespace NDjango.Designer.Parsing
 
         public NodeSnapshot(ITextSnapshot snapshot, INode node)
         {
+
             int offset = 0;
             if (node.Values.GetEnumerator().MoveNext())
             {
-                // if Value list is not empty, expand the snapshotSPan
-                // to include leading whitespaces
-                  ITextSnapshotLine line = snapshot.GetLineFromPosition(node.Position);
+                ITextSnapshotLine line = snapshot.GetLineFromPosition(node.Position);
+                // if the Value list is not empty, expand the snapshotSPan
+                // to include leading whitespaces, so that when a user
+                // types smth in this space he will get the dropdown
                 for (; node.Position - offset > line.Extent.Start.Position; offset++)
                     if (
                         snapshot[node.Position - offset-1] != ' ' &&
@@ -90,6 +93,26 @@ namespace NDjango.Designer.Parsing
             snapshotSpan = snapshotSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
             foreach (NodeSnapshot child in children)
                 child.TranslateTo(snapshot);
+        }
+
+        internal void ShowDiagnostics(IVsOutputWindowPane djangoDiagnostics, string filePath)
+        {
+            if (node.ErrorMessage.Severity > 0)
+            {
+                ITextSnapshotLine line = snapshotSpan.Snapshot.GetLineFromPosition(node.Position);
+                djangoDiagnostics.OutputTaskItemString(
+                    node.ErrorMessage.Message + "\n",
+                    VSTASKPRIORITY.TP_HIGH,
+                    VSTASKCATEGORY.CAT_BUILDCOMPILE,
+                    "",
+                    (int)_vstaskbitmap.BMP_COMPILE,
+                    filePath,
+                    (uint)line.LineNumber,
+                    node.ErrorMessage.Message + "\n"
+                    );
+            }
+            foreach (NodeSnapshot child in children)
+                child.ShowDiagnostics(djangoDiagnostics, filePath);
         }
     }
 }
