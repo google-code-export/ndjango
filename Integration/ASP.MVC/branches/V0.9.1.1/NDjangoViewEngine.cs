@@ -7,6 +7,11 @@ using System.IO;
 using System.Web;
 using System.Web.Routing;
 using NDjango.FiltersCS;
+using System.Configuration;
+using System.Web.Configuration;
+using System.Reflection;
+using NDjango.TagSimpleTests;
+using NDjango.Interfaces;
 
 namespace NDjango.ASPMVCIntegration
 {
@@ -64,6 +69,11 @@ namespace NDjango.ASPMVCIntegration
 
             provider = new TemplateManagerProvider().WithLoader(this).WithTag("url", new AspMvcUrlTag());
             provider = FilterManager.Initialize(provider);
+
+            NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate(this);
+            NDjangoRegisterTemplate.Provider = provider;
+            NDjangoRegisterTemplate.RegisterTemplates();
+            
             base.ViewLocationFormats = new string[] { "~/Views/{1}/{0}.django" };
 
             base.PartialViewLocationFormats = base.ViewLocationFormats;
@@ -136,5 +146,141 @@ namespace NDjango.ASPMVCIntegration
         {
             return File.GetLastWriteTime(Path.Combine(rootDir, RemoveTilde(name))) > timestamp;
         }
+    }
+
+    public class NDjangoRegisterTemplate
+    {
+        const string NDJangoTagSection = "NDJangoGroup/NDJangoTagSection";
+        const string NDJangoFilterSection = "NDJangoGroup/NDJangoFilterSection";
+        const string NDJangoSettingsSection = "NDJangoGroup/NDJangoSettingsSection";
+        string[] Sections = new string[] { NDJangoTagSection, NDJangoFilterSection, NDJangoSettingsSection };
+        private TemplateManagerProvider provider;
+        private NDjangoViewEngine templateLoader;
+        internal TemplateManagerProvider Provider
+        {
+            get
+            {
+                return provider;
+            }
+            set
+            {
+                provider = value;
+            }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NDjangoRegisterTemplate"/> class.
+        /// </summary>
+        public NDjangoRegisterTemplate(NDjangoViewEngine NDjangoViewEngine)
+        {
+            templateLoader = NDjangoViewEngine;
+        }
+
+        public void RegisterTemplates()
+        {
+            foreach (string item in Sections)
+            {
+                RegisterCurrentTemplate(GetCurrentSectionName(item), GetCollectionOfSectionByPath(item));
+            }
+        }
+
+        private NameValueConfigurationCollection GetCollectionOfSectionByPath(string path)
+        {
+            NDjangoSectionHandler nameValueSection = new NDjangoSectionHandler();
+            try
+            {
+                nameValueSection = ConfigurationManager.GetSection(path) as NDjangoSectionHandler;
+            }
+            catch (ConfigurationException cfgEx) {
+                //TODO Exception
+            }
+
+            if (nameValueSection != null)
+            {
+                return nameValueSection.NDJangoSectionCollection;
+            }
+            return null; 
+        }
+
+        private void RegisterCurrentTemplate(TypeOfSection type, NameValueConfigurationCollection nVConfCollection)
+        {
+            if (nVConfCollection != null)
+            {
+                foreach (string key in nVConfCollection.AllKeys)
+                {
+                    string name = nVConfCollection[key].Name;
+                    string value = nVConfCollection[key].Value;
+                    Type myType = Type.GetType(value.ToString());
+                    if (myType != null || type == TypeOfSection.NDJangoSettingsSection)
+                    {
+                        switch (type)
+                        {
+                            case TypeOfSection.NDJangoTagSection:
+                                ITag tag = (ITag)System.Activator.CreateInstance(myType);
+                                RegisterITag(name, tag);
+                                break;
+                            case TypeOfSection.NDJangoFilterSection:
+                                ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
+                                RegisterISimpleFilter(name, filter);
+                                break;
+                            case TypeOfSection.NDJangoSettingsSection:
+                                ValidateSettings(name, value);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RegisterITag(string name,ITag tag) {
+            provider = provider.WithLoader(templateLoader).WithTag(name, tag);
+        }
+
+        private void RegisterISimpleFilter(string name, ISimpleFilter filter) {
+            provider = provider.WithLoader(templateLoader).WithFilter(name, filter);
+        }
+
+        private void ValidateSettings(string name, string value) {
+            object result = null;
+            bool r1;
+            if (Boolean.TryParse(value, out r1)) {
+                result = r1;
+            }
+            int r2;
+            if (int.TryParse(value, out r2)) {
+                result = r2;
+            }
+
+            Type type = result.GetType();
+            foreach (var item in ((ITemplateManagerProvider)provider).Settings)
+            {
+            }
+        }
+
+        private  TypeOfSection GetCurrentSectionName(string value) {
+            TypeOfSection type = TypeOfSection.NDJangoNothing;
+            if (value.Contains(NDJangoTagSection)) {
+                type = TypeOfSection.NDJangoTagSection;
+            }
+            else if (value.Contains(NDJangoFilterSection)) { 
+                type = TypeOfSection.NDJangoFilterSection;
+            }
+            else if(value.Contains(NDJangoSettingsSection)){
+                 type = TypeOfSection.NDJangoSettingsSection;
+           }
+            return type;   
+        }
+
+        private enum TypeOfSection
+        {
+            NDJangoTagSection = 0,
+            NDJangoFilterSection = 1,
+            NDJangoSettingsSection = 2,
+            NDJangoNothing = 3,
+        }
+
+
     }
 }
