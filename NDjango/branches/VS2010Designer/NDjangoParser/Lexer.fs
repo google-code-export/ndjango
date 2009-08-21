@@ -64,7 +64,9 @@ module Lexer =
     type VariableToken(text:string, pos, line, linePos) =
         inherit TextToken(text, pos, line, linePos)
         let expression = text.[Constants.VARIABLE_TAG_START.Length..text.Length-Constants.VARIABLE_TAG_END.Length-1].Trim()
-            
+        
+        /// raw string represnting the expression in the template source
+        /// the string as is before any parsing or substitution
         member this.Expression = 
             if expression.Equals("") then
                 raise (SyntaxError("Empty variable block"))

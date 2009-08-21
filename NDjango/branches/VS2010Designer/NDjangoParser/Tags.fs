@@ -41,18 +41,18 @@ module internal Misc =
             member this.Perform token context tokens =
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
                 
-                let fail pos = 
+                let fail location = 
                         raise (TagSyntaxError(
                                 "invalid arguments for 'Autoescape' tag", 
-                                [(new KeyWordNode((token:>TextToken), pos, ["on";"off"]) :> INode)]
+                                [(new KeyWordNode((token:>TextToken), location, ["on";"off"]) :> INode)]
                                 ))
 
                 let autoescape_flag = 
                     match token.Args with 
                     | LexerToken("on")::[] -> true
                     | LexerToken("off")::[] -> false
-                    | arg::list -> fail arg.Position
-                    | _ -> fail (token.Length - 2)
+                    | arg::list -> fail arg.Location
+                    | _ -> fail (token.Length - 2,0)
                     
                 (({
                     new TagNode(context, token) with
@@ -65,7 +65,7 @@ module internal Misc =
                         override x.elements =
                             (new KeyWordNode(
                                     (token:>TextToken), 
-                                    (List.hd token.Args).Position, 
+                                    (List.hd token.Args).Location, 
                                     ["on";"off"]) :> INode)
                                 ::base.elements
                    } :> INodeImpl), 

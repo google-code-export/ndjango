@@ -151,7 +151,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 
                                 /// Add TagName node to the list of elements
                                 override x.elements =
-                                    (new TagNameNode(context, (blockToken :> TextToken), blockToken.Verb.Position) :> INode)
+                                    (new TagNameNode(context, (blockToken :> TextToken), blockToken.Verb.Location) :> INode)
                                      :: elements @ base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
@@ -182,8 +182,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         {walker with buffer = textToken.Text}
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
-            try 
-                let t = LexToken (new LexTokenObject(var.Expression, 0))
+            try
+                // var.Expression is a raw string - the string as is on the template before any parsing or substitution
+                let t = LexToken (var.Expression, (0, var.Expression.Length))
                 let expression = new FilterExpression(context.Provider, Lexer.Variable var, t)
                 ({new Node(token)
                     with 
@@ -227,8 +228,10 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 override x.elements =
                                     match error.Text.[0..1] with
                                     | "{%" ->
-                                        /// Add TagName node to the list of elements
-                                        (new TagNameNode(context, (error :> TextToken), 2)
+                                        /// this is a tag node - add a TagName node to the list of elements
+                                        /// so that tag name code completion can be triggered
+                                        let offset = error.Text.Length - error.Text.[2..].TrimStart([|' ';'\t'|]).Length
+                                        (new TagNameNode(context, (error :> TextToken), (offset, error.Text.Length-offset))
                                                 :> INode) :: base.elements
                                     | _ -> base.elements
                         } :> INodeImpl), tokens
@@ -246,7 +249,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
-            | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
+            | Lexer.Block block when parse_until |> List.exists block.Verb.Compare ->
                  ((new TagNode(context, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
                 let node, tokens = parse_token context tokens token
@@ -262,7 +265,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 ))
         | LazyList.Cons(token, tokens) -> 
             match token with 
-            | Lexer.Block block when parse_until |> List.exists block.Verb.Equals ->
+            | Lexer.Block block when parse_until |> List.exists block.Verb.Compare ->
                  tokens
             | _ ->
                 seek_internal parse_until tokens
