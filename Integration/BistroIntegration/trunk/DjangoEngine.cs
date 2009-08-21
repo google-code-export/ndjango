@@ -86,7 +86,7 @@ namespace NDjango.BistroIntegration
 
         private static object lockObj = new object();
 
-        private static TemplateManagerProvider Provider
+        public static TemplateManagerProvider Provider
         {
             get
             {
@@ -100,6 +100,13 @@ namespace NDjango.BistroIntegration
                     }
                 }
                 return provider;
+            }
+            set
+            {
+                lock (lockObj)
+                {
+                    provider = value;
+                }
             }
         }
 
