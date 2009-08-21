@@ -10,7 +10,7 @@ using NDjango.FiltersCS;
 using System.Configuration;
 using System.Web.Configuration;
 using System.Reflection;
-using NDjango.TagSimpleTests;
+//using NDjango.TagSimpleTests;
 using NDjango.Interfaces;
 
 namespace NDjango.ASPMVCIntegration
@@ -211,6 +211,11 @@ namespace NDjango.ASPMVCIntegration
                     string name = nVConfCollection[key].Name;
                     string value = nVConfCollection[key].Value;
                     Type myType = Type.GetType(value.ToString());
+                    
+                    if (myType == null) { 
+                        RegisterGroupOfTemplates(value);
+                    }
+
                     if (myType != null || type == TypeOfSection.NDJangoSettingsSection)
                     {
                         switch (type)
@@ -288,6 +293,87 @@ namespace NDjango.ASPMVCIntegration
                  type = TypeOfSection.NDJangoSettingsSection;
            }
             return type;   
+        }
+
+        //TODO
+
+        private void RegisterGroupOfTemplates(string value)
+        {
+            string assemblyPath = String.Empty;
+            assemblyPath = GetAssemblyPath(value);
+
+            try
+            {
+                LoadAssembly(assemblyPath);
+            }
+            catch (Exception e)
+            {
+            }
+
+        }
+
+        private void LoadAssembly(string assemblyPath)
+        {
+            try
+            {
+                Assembly assembly = Assembly.LoadFrom(assemblyPath);
+                foreach (Type myType in assembly.GetTypes())
+                {
+                    if (myType.GetInterface(typeof(ITag).Name) != null)
+                    {
+                        ITag tag = (ITag)System.Activator.CreateInstance(myType);
+                        RegisterITag(GetTagName(myType), tag);
+                    }
+
+                    if (myType.GetInterface(typeof(ISimpleFilter).Name) != null)
+                    {
+                        ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
+                        RegisterISimpleFilter(GetTagName(myType), filter);
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(ex.Message);
+                for (int i = 0; i < ex.Types.Length; i++)
+                    if (ex.Types[i] != null)
+                        sb.AppendFormat("\t{0} loaded\r\n", ex.Types[i].Name);
+
+                for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    if (ex.LoaderExceptions[i] != null)
+                        sb.AppendFormat("\texception {0}\r\n", ex.LoaderExceptions[i].Message);
+            }
+        }
+
+        private string GetTagName(Type type) {
+            string name = String.Empty;
+            object[] tagName = type.GetCustomAttributes(typeof(NDjango.Interfaces.NameAttribute), false);
+            foreach (NDjango.Interfaces.NameAttribute item in tagName)
+            {
+                name = item.Name;
+            }
+            return name;
+        }
+        
+        private string GetAssemblyPath(string value) {
+            StringBuilder baseBaseDirectory = new StringBuilder(AppDomain.CurrentDomain.BaseDirectory);
+            baseBaseDirectory.Append("bin");
+            return CombinePaths(baseBaseDirectory.ToString(), value);
+        }
+
+        private string CombinePaths(string p1, string p2)
+        {
+            string combination = String.Empty;
+            try
+            {
+                combination = Path.Combine(p1, p2);
+            }
+            catch (Exception e)
+            {
+                //TODO EXCEPTION
+            }
+            return combination;
         }
 
         private enum TypeOfSection
