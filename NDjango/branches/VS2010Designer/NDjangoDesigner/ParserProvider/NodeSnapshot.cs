@@ -42,14 +42,24 @@ namespace NDjango.Designer.Parsing
             if (node.Values.GetEnumerator().MoveNext())
             {
                 ITextSnapshotLine line = snapshot.GetLineFromPosition(node.Position);
-                // if the Value list is not empty, expand the snapshotSPan
+
+                // if the Value list is not empty, expand the snapshotSpan
                 // to include leading whitespaces, so that when a user
                 // types smth in this space he will get the dropdown
                 for (; node.Position - offset > line.Extent.Start.Position; offset++)
+                {
+                    if (snapshot[node.Position - offset] == ' ')
+                        continue;
+                    if (snapshot[node.Position - offset] == '\t')
+                        continue;
                     if (
-                        snapshot[node.Position - offset-1] != ' ' &&
-                        snapshot[node.Position - offset-1] != '\t')
-                        break;
+                        snapshot[node.Position - offset] == '%' ||
+                        snapshot[node.Position - offset] == '{' ||
+                        snapshot[node.Position - offset] == '|'
+                        )
+                        offset++;
+                    break;
+                }
             }
 
             this.snapshotSpan = new SnapshotSpan(snapshot, node.Position - offset, node.Length + offset);
