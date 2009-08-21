@@ -253,9 +253,26 @@ namespace NDjango.ASPMVCIntegration
                 result = r2;
             }
 
+            if (result == null)
+            {
+                result = value.ToString();
+            }
+
             Type type = result.GetType();
+            bool isNewSetting = true;
             foreach (var item in ((ITemplateManagerProvider)provider).Settings)
             {
+                if (name.Contains(item.Key)) {
+                    Type setType = item.Value.GetType();
+                    if (type.Equals(setType)) {
+                        provider = provider.WithLoader(templateLoader).WithSetting(name, result);
+                        isNewSetting = false;
+                    }
+                }
+            }
+            if (isNewSetting)
+            {
+                provider = provider.WithLoader(templateLoader).WithSetting(name, result);
             }
         }
 
