@@ -36,27 +36,25 @@ module OutputHandling =
     let internal (|Contains|_|) (pattern: string) (v: string) = if v.Contains(pattern) then Some v else None
 
     let smart_split_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
-    
-    type LexTokenObject(text:string, position:int) =
-        member x.Text = text
-        member x.Position = position
-        
-    
-    [<StructuralComparison(false)>]
-    [<StructuralEquality(false)>]
+
     type LexToken =
-        | LexToken of LexTokenObject
+        | LexToken of (string * (int * int))
         | String of string
         
         member x.string = 
             match x with
-                | LexToken tObject -> tObject.Text
-                | String s -> s
+            | LexToken tObject -> fst tObject
+            | String s -> s
         
-        member x.Position =
+        member x.Compare (y:obj) =
+            match y with
+            | :? LexToken as t -> t.string.Equals(x.string)
+            | :? string as s -> s.Equals(x.string)
+
+        member x.Location =
             match x with
-                | LexToken tObject -> tObject.Position
-                | String s -> 0
+                | LexToken tObject -> snd tObject
+                | String s -> (0, s.Length)
 
         member x.Contains pattern = x.string.Contains pattern                
         member x.GetSlice (f:int option, t:int option) =
@@ -67,18 +65,6 @@ module OutputHandling =
             | None, None -> x.string
         member x.Length = x.string.Length
         member x.StartsWith start = x.string.StartsWith start
-        
-        override x.Equals (y:obj) =
-            match y with
-            | :? LexToken as t -> t.string.Equals(x.string)
-            | :? string as s -> s.Equals(x.string)
-        override x.GetHashCode() = x.string.GetHashCode()
-        
-        interface IComparable with
-            member x.CompareTo(y:obj) =
-                match y with
-                | :? LexToken as t -> t.string.CompareTo(x.string)
-                | :? string as s -> s.CompareTo(x.string)
         
     let (|LexerToken|) (t:LexToken) = LexerToken(t.string)
 
@@ -96,17 +82,15 @@ module OutputHandling =
     let smart_split text offset = 
         [for m in smart_split_re.Matches(text) -> 
             let bit = m.Groups.[0].Value
-            LexToken (
-                new LexTokenObject(
+            LexToken(
                     (if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
                         "\"" + bit.[1..bit.Length-2].Replace("\\\"", "\"").Replace("\\\\", "\\") + "\""
                         elif bit.[0] = '\'' && bit.[bit.Length-1] = '\'' then
                             "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
                         else
                           bit),
-                    m.Groups.[0].Index + offset
+                    (m.Groups.[0].Index + offset, m.Groups.[0].Length)
                     )
-            )
         ]
         
     /// smart-splits the token, also keeping intact requests for translation, e.g.
