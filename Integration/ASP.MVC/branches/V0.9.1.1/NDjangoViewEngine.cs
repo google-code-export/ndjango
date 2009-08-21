@@ -10,7 +10,6 @@ using NDjango.FiltersCS;
 using System.Configuration;
 using System.Web.Configuration;
 using System.Reflection;
-//using NDjango.TagSimpleTests;
 using NDjango.Interfaces;
 
 namespace NDjango.ASPMVCIntegration
@@ -73,7 +72,8 @@ namespace NDjango.ASPMVCIntegration
             NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate(this);
             NDjangoRegisterTemplate.Provider = provider;
             NDjangoRegisterTemplate.RegisterTemplates();
-            
+            provider = NDjangoRegisterTemplate.Provider;
+
             base.ViewLocationFormats = new string[] { "~/Views/{1}/{0}.django" };
 
             base.PartialViewLocationFormats = base.ViewLocationFormats;
@@ -150,13 +150,12 @@ namespace NDjango.ASPMVCIntegration
 
     public class NDjangoRegisterTemplate
     {
-        const string NDJangoTagSection = "NDJangoGroup/NDJangoTagSection";
-        const string NDJangoFilterSection = "NDJangoGroup/NDJangoFilterSection";
-        const string NDJangoSettingsSection = "NDJangoGroup/NDJangoSettingsSection";
-        string[] Sections = new string[] { NDJangoTagSection, NDJangoFilterSection, NDJangoSettingsSection };
+        const string NDJangoCommonSection = "NDJangoCommonSection";
+
+        string[] Sections = new string[] { NDJangoCommonSection };
         private TemplateManagerProvider provider;
         private NDjangoViewEngine templateLoader;
-        internal TemplateManagerProvider Provider
+        public TemplateManagerProvider Provider
         {
             get
             {
@@ -178,13 +177,13 @@ namespace NDjango.ASPMVCIntegration
 
         public void RegisterTemplates()
         {
-            foreach (string item in Sections)
-            {
-                RegisterCurrentTemplate(GetCurrentSectionName(item), GetCollectionOfSectionByPath(item));
-            }
+            //foreach (string item in Sections)
+            //{
+                RegisterCurrentTemplate(GetCollectionOfSectionByPath(NDJangoCommonSection));
+            //}
         }
 
-        private NameValueConfigurationCollection GetCollectionOfSectionByPath(string path)
+        private NDjangoSectionHandler GetCollectionOfSectionByPath(string path)
         {
             NDjangoSectionHandler nameValueSection = new NDjangoSectionHandler();
             try
@@ -197,47 +196,50 @@ namespace NDjango.ASPMVCIntegration
 
             if (nameValueSection != null)
             {
-                return nameValueSection.NDJangoSectionCollection;
+                return nameValueSection;
             }
             return null; 
         }
 
-        private void RegisterCurrentTemplate(TypeOfSection type, NameValueConfigurationCollection nVConfCollection)
+        private void RegisterCurrentTemplate(NDjangoSectionHandler nameValueSection)
         {
-            if (nVConfCollection != null)
+            foreach (NameValueElement item in nameValueSection.NDJangoTagSectionCollection)
             {
-                foreach (string key in nVConfCollection.AllKeys)
+                string name = item.Name;
+                string value = item.Value;
+                Type myType = Type.GetType(value.ToString());
+                if (myType == null)
                 {
-                    string name = nVConfCollection[key].Name;
-                    string value = nVConfCollection[key].Value;
-                    Type myType = Type.GetType(value.ToString());
-                    
-                    if (myType == null) { 
-                        RegisterGroupOfTemplates(value);
-                    }
-
-                    if (myType != null || type == TypeOfSection.NDJangoSettingsSection)
-                    {
-                        switch (type)
-                        {
-                            case TypeOfSection.NDJangoTagSection:
-                                ITag tag = (ITag)System.Activator.CreateInstance(myType);
-                                RegisterITag(name, tag);
-                                break;
-                            case TypeOfSection.NDJangoFilterSection:
-                                ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
-                                RegisterISimpleFilter(name, filter);
-                                break;
-                            case TypeOfSection.NDJangoSettingsSection:
-                                ValidateSettings(name, value);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
+                    RegisterGroupOfTemplates(value);
+                    break;
                 }
+                ITag tag = (ITag)System.Activator.CreateInstance(myType);
+                RegisterITag(name, tag);
+                
             }
-        }
+            
+            foreach (NameValueElement item in nameValueSection.NDJangoFilterSectionCollection)
+            {
+                string name = item.Name;
+                string value = item.Value;
+                Type myType = Type.GetType(value.ToString());
+                if (myType == null)
+                {
+                    RegisterGroupOfTemplates(value);
+                    break;
+                }
+                ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
+                RegisterISimpleFilter(name, filter);
+            }
+
+            foreach (NameValueElement item in nameValueSection.NDJangoSettingsSectionCollection)
+            {
+                string name = item.Name;
+                string value = item.Value;
+                ValidateSettings(name, value);
+            }
+
+             }
 
         private void RegisterITag(string name,ITag tag) {
             provider = provider.WithLoader(templateLoader).WithTag(name, tag);
@@ -248,6 +250,7 @@ namespace NDjango.ASPMVCIntegration
         }
 
         private void ValidateSettings(string name, string value) {
+            //TODO
             object result = null;
             bool r1;
             if (Boolean.TryParse(value, out r1)) {
@@ -281,21 +284,7 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
-        private  TypeOfSection GetCurrentSectionName(string value) {
-            TypeOfSection type = TypeOfSection.NDJangoNothing;
-            if (value.Contains(NDJangoTagSection)) {
-                type = TypeOfSection.NDJangoTagSection;
-            }
-            else if (value.Contains(NDJangoFilterSection)) { 
-                type = TypeOfSection.NDJangoFilterSection;
-            }
-            else if(value.Contains(NDJangoSettingsSection)){
-                 type = TypeOfSection.NDJangoSettingsSection;
-           }
-            return type;   
-        }
-
-        //TODO
+       //TODO
 
         private void RegisterGroupOfTemplates(string value)
         {
