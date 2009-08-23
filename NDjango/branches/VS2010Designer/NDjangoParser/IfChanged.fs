@@ -25,6 +25,7 @@ namespace NDjango.Tags
 open NDjango.Lexer
 open NDjango.Interfaces
 open NDjango.ParserNodes
+open NDjango.Variables
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -65,7 +66,7 @@ module internal IfChanged =
                     | _ -> [], remaining
 
                 let createWalker manager =
-                    match token.Args |> List.map (fun var -> new Variable(context.Provider, Block token, var)) with
+                    match token.Args |> List.map (fun var -> new Variable(context, Block token, var)) with
                     | [] ->
                         fun walker ->
                             let reader = 

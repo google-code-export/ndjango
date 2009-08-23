@@ -29,6 +29,7 @@ open NDjango.Interfaces
 open NDjango.ParserNodes
 open NDjango.ASTNodes
 open NDjango.OutputHandling
+open NDjango.Variables
 open NDjango.Expressions
 open NDjango.ParserNodes
 
@@ -120,7 +121,7 @@ module internal Misc =
                 match token.Args with
                     | [] -> raise (SyntaxError ("'firstof' tag requires at least one argument"))
                     | _ -> 
-                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context.Provider, Block token, name))
+                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context, Block token, name))
                         ({
                             new TagNode(context, token)
                             with 
@@ -220,7 +221,7 @@ module internal Misc =
             member this.Perform token context tokens =
                 match token.Args with
                 | source::LexerToken("by")::grouper::LexerToken("as")::result::[] ->
-                    let value = new FilterExpression(context.Provider, Block token, source)
+                    let value = new FilterExpression(context, Block token, source)
                     let regroup context =
                         match fst <| value.Resolve context false with
                         | Some o ->
@@ -334,7 +335,7 @@ module internal Misc =
                         | LexerToken("opencomment")::[] -> "{#"
                         | LexerToken("closecomment")::[] -> "#}"
                         | _ -> raise (SyntaxError ("invalid format for 'template' tag"))
-                let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context.Provider, Block token, name))
+                let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context, Block token, name))
                 ({
                     new TagNode(context, token)
                     with 
@@ -367,8 +368,8 @@ module internal Misc =
         
                 match token.Args with
                 | value::maxValue::maxWidth::[] ->
-                    let value = new FilterExpression(context.Provider, Block token, value)
-                    let maxValue = new FilterExpression(context.Provider, Block token, maxValue)
+                    let value = new FilterExpression(context, Block token, value)
+                    let maxValue = new FilterExpression(context, Block token, maxValue)
                     let width = try System.Int32.Parse(maxWidth.string) |> float with | _  -> raise (SyntaxError ("'widthratio' 3rd argument must be integer"))
                     (({
                         new TagNode(context, token) with
@@ -395,7 +396,7 @@ module internal Misc =
                 match token.Args with
                 | var::LexerToken("as")::name::[] ->
                     let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endwith"]
-                    let expression = new FilterExpression(context.Provider, Block token, var)
+                    let expression = new FilterExpression(context, Block token, var)
                     (({
                         new TagNode(context, token) with
                             override this.walk manager walker = 
@@ -443,7 +444,7 @@ module Abstract =
                     | [] -> raise (SyntaxError ("'url' tag requires at least one parameter"))
                     | path::args -> 
                         let argList, var = 
-                            parseArgs token context.Provider 
+                            parseArgs token context 
                                 (args |> List.rev |> 
                                     List.fold 
                                         (fun state elem -> 
@@ -452,7 +453,7 @@ module Abstract =
                                             | _ as trimmed -> (LexToken.String trimmed)::state ) 
                                         []
                                 )
-                        new FilterExpression(context.Provider, Block token, path), argList, var
+                        new FilterExpression(context, Block token, path), argList, var
                 
                 (({
                     new TagNode(context, token) with

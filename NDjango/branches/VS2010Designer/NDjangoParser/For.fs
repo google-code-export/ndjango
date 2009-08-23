@@ -28,6 +28,7 @@ open System.Linq;
 
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.Variables
 open NDjango.Expressions
 open NDjango.OutputHandling
 
@@ -246,7 +247,7 @@ module internal For =
                             syntax,
                             true
                         | _ -> raise (SyntaxError ("malformed 'for' tag"))
-                let enumExpr = FilterExpression(context.Provider, Block token, enumerator)
+                let enumExpr = FilterExpression(context, Block token, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.string.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
                 let node_list_body, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
                 let node_list_empty, remaining2 =

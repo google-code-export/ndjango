@@ -69,7 +69,7 @@ type public SimpleTag(nested:bool, name:string, num_params:int) =
         member x.Perform token context tokens = 
             let parms = 
                 token.Args |>
-                List.map (fun elem -> new FilterExpression(context.Provider, Block token, elem))
+                List.map (fun elem -> new FilterExpression(context, Block token, elem))
             
             if not (parms.Length = num_params || num_params = -1) then
                 raise (SyntaxError(sprintf "%s expects %d parameters, but was given %d." name num_params (parms.Length)))
