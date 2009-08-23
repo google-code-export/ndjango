@@ -68,8 +68,8 @@ module internal IfEqual =
 
                 match token.Args with
                 | var1::var2::[] ->
-                    let var1 = new FilterExpression(context.Provider, Block token, var1)
-                    let var2 = new FilterExpression(context.Provider, Block token, var2)
+                    let var1 = new FilterExpression(context, Block token, var1)
+                    let var2 = new FilterExpression(context, Block token, var2)
                     ({
                         new TagNode(context, token)
                         with 

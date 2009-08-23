@@ -49,7 +49,7 @@ module OutputHandling =
         member x.Compare (y:obj) =
             match y with
             | :? LexToken as t -> t.string.Equals(x.string)
-            | :? string as s -> s.Equals(x.string)
+            | _ -> y.Equals(x.string)
 
         member x.Location =
             match x with
@@ -63,7 +63,7 @@ module OutputHandling =
             | None , Some t -> x.string.[..t]
             | Some f, None -> x.string.[f..]
             | None, None -> x.string
-        member x.Length = x.string.Length
+
         member x.StartsWith start = x.string.StartsWith start
         
     let (|LexerToken|) (t:LexToken) = LexerToken(t.string)
@@ -81,16 +81,17 @@ module OutputHandling =
     /// [u'A', u'""funky" style"', u'test.']
     let smart_split text offset = 
         [for m in smart_split_re.Matches(text) -> 
-            let bit = m.Groups.[0].Value
-            LexToken(
-                    (if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
-                        "\"" + bit.[1..bit.Length-2].Replace("\\\"", "\"").Replace("\\\\", "\\") + "\""
-                        elif bit.[0] = '\'' && bit.[bit.Length-1] = '\'' then
-                            "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
-                        else
-                          bit),
-                    (m.Groups.[0].Index + offset, m.Groups.[0].Length)
-                    )
+            LexToken(m.Groups.[0].Value,(m.Groups.[0].Index + offset, m.Groups.[0].Length))
+//            let bit = m.Groups.[0].Value
+//            LexToken(
+//                    (if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
+//                        "\"" + bit.[1..bit.Length-2].Replace("\\\"", "\"").Replace("\\\\", "\\") + "\""
+//                        elif bit.[0] = '\'' && bit.[bit.Length-1] = '\'' then
+//                            "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
+//                        else
+//                          bit),
+//                    (m.Groups.[0].Index + offset, m.Groups.[0].Length)
+//                    )
         ]
         
     /// smart-splits the token, also keeping intact requests for translation, e.g.

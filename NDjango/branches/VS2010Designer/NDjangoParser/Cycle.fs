@@ -27,6 +27,7 @@ open System
 open NDjango.OutputHandling
 open NDjango.Lexer
 open NDjango.Interfaces
+open NDjango.Variables
 open NDjango.Expressions
 
 module internal Cycle =
@@ -127,6 +128,6 @@ module internal Cycle =
                         if values.Length = 1 then (values.[0].string, [])
                         else ("$Anonymous$Cycle", values)
                         
-                let values = List.map (fun v -> new Variable(context.Provider, Block token, v)) values
+                let values = List.map (fun v -> new Variable(context, Block token, v)) values
                 ((new TagNode(context, token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)
 

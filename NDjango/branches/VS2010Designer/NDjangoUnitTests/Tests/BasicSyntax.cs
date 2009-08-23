@@ -39,6 +39,9 @@ namespace NDjango.UnitTests
             // A variable may not contain more than one word
             lst.Add(new TestDescriptor("basic-syntax06", "{{ multi word variable }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxException))));
 
+            // A variable may has to have a reference variable first
+            lst.Add(new TestDescriptor("basic-syntax06-1", "{{ |filter }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxException))));
+
             // Raise TemplateSyntaxError for ContextObjects.empty variable tags
             lst.Add(new TestDescriptor("basic-syntax07", "{{ }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxException))));
             lst.Add(new TestDescriptor("basic-syntax08", "{{        }}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxException))));

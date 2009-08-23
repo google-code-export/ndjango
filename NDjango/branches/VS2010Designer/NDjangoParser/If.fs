@@ -182,7 +182,7 @@ module internal If =
         interface ITag with 
             member this.Perform token context tokens =
 
-                let link_type, bool_vars = build_vars token false token.Args context.Provider (None,[])
+                let link_type, bool_vars = build_vars token false token.Args context (None,[])
                 
                 let node_list_true, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["else"; "endif"]
                 let node_list_false, remaining2 =

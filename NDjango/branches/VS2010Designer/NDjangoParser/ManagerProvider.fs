@@ -156,20 +156,11 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         } :> INodeImpl), tokens)
         |_  -> None
         
-    let generate_diag_for_var (ex: System.Exception) token context =
-        match ex with
-        | :? SyntaxError as e ->
-            if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
-            then
-                raise (SyntaxException(e.Message, (token :> TextToken)))
-            else
-                Some (new ErrorNode(context, Variable token, new Error(2, e.Message)) :> INodeImpl)
-        |_  -> None
-        
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
     /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
     let parse_token (context:ParsingContext) tokens token = 
+
         match token with
         | Lexer.Text textToken -> 
             ({new Node(token)
@@ -185,7 +176,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             try
                 // var.Expression is a raw string - the string as is on the template before any parsing or substitution
                 let t = LexToken (var.Expression, (0, var.Expression.Length))
-                let expression = new FilterExpression(context.Provider, Lexer.Variable var, t)
+                let expression = new FilterExpression(context, Lexer.Variable var, t)
                 ({new Node(token)
                     with 
                         override x.node_type = NodeType.Expression
@@ -198,10 +189,13 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         override x.elements = [(expression :> INode)]
                 } :> INodeImpl), tokens
             with
-                |_ as ex -> 
-                    match generate_diag_for_var ex var context with
-                    | Some errorNode -> (errorNode , tokens)
-                    | None -> rethrow()
+            | :? SyntaxError as e ->
+                if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+                then
+                    raise (SyntaxException(e.Message, (get_textToken token)))
+                else
+                    ((new ErrorNode(context, token, new Error(2, e.Message)) :> INodeImpl), tokens)
+            |_  -> rethrow()
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb.string tags with 
