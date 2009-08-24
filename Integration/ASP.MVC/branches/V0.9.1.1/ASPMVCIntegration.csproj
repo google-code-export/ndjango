@@ -36,10 +36,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\NDjango\branches\v0.9.1.1\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NDjango.Filters, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\NDjango\branches\v0.9.1.1\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core">

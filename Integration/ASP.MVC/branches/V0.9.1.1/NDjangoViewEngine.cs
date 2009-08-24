@@ -6,7 +6,6 @@ using System.Web.Mvc;
 using System.IO;
 using System.Web;
 using System.Web.Routing;
-using NDjango.FiltersCS;
 using System.Configuration;
 using System.Web.Configuration;
 using System.Reflection;
@@ -67,7 +66,7 @@ namespace NDjango.ASPMVCIntegration
         {
 
             provider = new TemplateManagerProvider().WithLoader(this).WithTag("url", new AspMvcUrlTag());
-            NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate(this);
+            NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate();
             NDjangoRegisterTemplate.Provider = provider;
             NDjangoRegisterTemplate.RegisterTemplates();
             provider = NDjangoRegisterTemplate.Provider;
@@ -152,7 +151,6 @@ namespace NDjango.ASPMVCIntegration
 
         string[] Sections = new string[] { NDJangoCommonSection };
         private TemplateManagerProvider provider;
-        private NDjangoViewEngine templateLoader;
         public TemplateManagerProvider Provider
         {
             get
@@ -168,9 +166,8 @@ namespace NDjango.ASPMVCIntegration
         /// <summary>
         /// Initializes a new instance of the <see cref="NDjangoRegisterTemplate"/> class.
         /// </summary>
-        public NDjangoRegisterTemplate(NDjangoViewEngine NDjangoViewEngine)
+        public NDjangoRegisterTemplate()
         {
-            templateLoader = NDjangoViewEngine;
         }
 
         public void RegisterTemplates()
