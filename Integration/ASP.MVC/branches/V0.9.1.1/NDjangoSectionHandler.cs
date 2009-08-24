@@ -25,6 +25,16 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
+        [ConfigurationCollection(typeof(NameValueElementCollection<NameValueClassElement>), AddItemName = "import", ClearItemsName = "clearadd-tag", RemoveItemName = "removeadd-tag")]
+        [ConfigurationProperty("NDJangoTagFilterCollection", IsDefaultCollection = true)]
+        public NameValueElementCollection<NameValueClassElement> NDJangoTagFilterSectionCollection
+        {
+            get
+            {
+                return (NameValueElementCollection<NameValueClassElement>)base["NDJangoTagFilterCollection"];
+            }
+
+        }
 
         [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElement>), AddItemName = "add-tag", ClearItemsName = "clearadd-tag", RemoveItemName = "removeadd-tag")]
         [ConfigurationProperty("NDJangoTagCollection", IsDefaultCollection = true)]
@@ -156,6 +166,24 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
+    }
+
+    public class NameValueClassElement : ConfigurationElement, INameElement
+    {
+        public NameValueClassElement() { }
+
+
+        public NameValueClassElement(string classtype)
+        {
+            this.Name = classtype;
+        }
+
+        [ConfigurationProperty("classtype", IsRequired = true, DefaultValue = "ALL")]
+        public string Name
+        {
+            get { return (string)this["classtype"]; }
+            set { this["classtype"] = value; }
+        }
     }
 
     public class NameValueElement : ConfigurationElement, INameElement
