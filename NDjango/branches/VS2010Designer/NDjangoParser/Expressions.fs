@@ -37,57 +37,77 @@ open Utilities
 module Expressions =
 
 
-    type private Filter =
-        |Escape 
-        |Filter of FilterWrapper
-
-    and private FilterWrapper(filter:ISimpleFilter, args:Variable list)=
-        
+    type private FilterWrapper(token:TextToken, filter:ISimpleFilter, filter_name:FilterNameNode, args:Variable list)=
         member x.Perform (context, input) =
             match filter with
             | :? IFilter as std ->
                 let param = 
                     match args with
-                    // we don't have to check for the presence of a default value here, as an earlier
+                    // we don't have to check for the presence of a default value here, as parse time
                     // check enforces that filters without defaults do not get called without parameters
                     | [] -> std.DefaultValue
                     | _ -> (args |> List.hd).Resolve context |> fst
                 std.PerformWithParam(input, param)
-                 
             | _ as simple -> simple.Perform input
+        member x.Token = token
+        member x.elements = seq [(filter_name :> INode)]
                 
-    type FilterExpression (context:ParsingContext, token:Lexer.Token, expression: LexToken) =
+    type private Filter =
+        |Escape of FilterNameNode*TextToken 
+        |Filter of FilterWrapper
+        member private x.Token =
+            match x with
+            | Escape(_,token) -> token
+            | Filter(filter) -> filter.Token
+            
+        member private x.elements =
+            match x with
+            | Escape(filter_name,token) -> seq [(filter_name :> INode)]
+            | Filter(filter) -> filter.elements
+
+        interface INode with
+            member x.NodeType = NodeType.Filter
+            member x.Position = x.Token.Location.Position
+            member x.Length = x.Token.Location.Length
+            member x.Values = seq []
+            member x.ErrorMessage = new Error(-1,"")
+            member x.Description = ""
+            member x.Nodes = 
+                Map.of_list[(Constants.NODELIST_TAG_ELEMENTS,x.elements)] 
+                    :> IDictionary<string, IEnumerable<INode>>
+
+
+    type FilterExpression (context:ParsingContext, expression: TextToken) =
         
-        let wrap_filter (filter:ISimpleFilter) (args:Variable list) =
+        let wrap_filter filter_name (filter:ISimpleFilter) args =
             Some  
                <| match filter with
-                    | :? NDjango.Filters.IEscapeFilter -> Escape
+                    | :? NDjango.Filters.IEscapeFilter -> Escape (filter_name, expression)
                     | :? IFilter as f ->
                         match args with
                         | [] -> if (f.DefaultValue = null) 
                                 then raise (SyntaxError ("filter requires argument, none provided"))
-                                Filter (new FilterWrapper(filter, []))
-                        | _ -> Filter (new FilterWrapper(filter, args))
-                    | _ -> Filter (new FilterWrapper(filter, args))
+                                Filter (new FilterWrapper(expression, filter, filter_name, []))
+                        | _ -> Filter (new FilterWrapper(expression, filter, filter_name, args))
+                    | _ -> Filter (new FilterWrapper(expression, filter, filter_name, args))
 
         /// unescapes literal quotes. takes '\"value\"' and returns '"value"'
-        let flatten (text: string) = text.Replace("\\\"", "\"")
+        //let flatten (text: string) = text.Replace("\\\"", "\"")
         
         /// unescapes literal quotes. takes '\"value\"' and returns '"value"'
-        let flatten_group (group: Group) = flatten group.Value
+        //let flatten_group (group: Group) = flatten group.Value
 
-        let lex_token (capture:#System.Text.RegularExpressions.Capture) offset =
-            LexToken (capture.Value,(capture.Index + offset + (fst expression.Location), capture.Length))
-            
         let generate_diag_for_filter (ex:System.Exception) variable =
             match ex with
             | :? SyntaxError as e ->
                 if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then
-                    raise (SyntaxException(e.Message, get_textToken token))
+                    raise (SyntaxException(e.Message, expression))
                 else
                     Some (new Error(2, e.Message), variable, [])
             |_  -> None
+        
+        let expression_text = expression.RawText
         
         /// Helper function for parsing filter expressions
         /// Parses a variable token and its optional filters (all as a single string),
@@ -101,12 +121,12 @@ module Expressions =
         ///     >>> fe.var
         ///     <Variable: 'variable'>
         ///
-        let rec parse_var (filter_match: Match) upto (var: LexToken option) (filters: 'a list)=
+        let rec parse_var (filter_match: Match) upto (var: TextToken option) (filters: 'a list)=
             if not (filter_match.Success) then
-                if not (upto = expression.string.Length) 
-                then raise (SyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression.[upto..] expression.string))
+                if not (upto = expression.RawText.Length) 
+                then raise (SyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression_text.[upto..] expression_text))
                 else
-                    (upto, new Variable(context, token, var.Value), filters)
+                    (upto, new Variable(context, var.Value), filters)
             else
                 // short-hand for the recursive call. the values for match and upto are always computed the same way
                 let fast_call variable filter = 
@@ -124,9 +144,9 @@ module Expressions =
                     raise 
                         (SyntaxError 
                             (sprintf "Could not parse some characters %s|%s|%s" 
-                                expression.[..upto] 
-                                expression.[upto..filter_match.Index] 
-                                expression.[filter_match.Index..]
+                                expression_text.[..upto] 
+                                expression_text.[upto..filter_match.Index] 
+                                expression_text.[filter_match.Index..]
                             ))
                 else
                     // when called from FilterExpression constructor, var = None
@@ -135,27 +155,32 @@ module Expressions =
                         // process the first element - which is the variable reference
                         let var_match = filter_match.Groups.["var"]
                         if var_match.Success then
-                            fast_call (Some (LexToken(var_match.Value, (var_match.Index, var_match.Length)))) None
+                            fast_call (Some (expression.CreateToken var_match)) None
                         else
-                            raise (SyntaxError (sprintf "Could not find variable at start of %s" expression.string))
+                            raise (SyntaxError (sprintf "Could not find variable at start of %s" expression.RawText))
                     | Some s ->
                         // all subsequent elements are filters
                         let filter_name = filter_match.Groups.["filter_name"]
+                        let filter_name_node = 
+                            new FilterNameNode(
+                                expression.CreateToken(filter_name), 
+                                context.Provider.Filters |> Map.to_list |> List.map (fun f -> fst f)
+                            )
                         let arg = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list 
                                 |> List.map 
-                                    (fun (c:System.Text.RegularExpressions.Capture) ->
-                                        new Variable(context, token, lex_token c 0)
+                                    (fun (c) ->
+                                        new Variable(context, expression.CreateToken(c))
                                     ) 
                         match Map.tryFind filter_name.Value context.Provider.Filters with
                         | None -> raise (SyntaxError (sprintf "filter %A could not be found" filter_name.Value))
                         | Some filter ->
-                            wrap_filter filter arg |> fast_call var 
+                            wrap_filter filter_name_node filter arg |> fast_call var 
 
         // list of filters along with the arguments that they expect
         let error, variable, filters =
             try
                 let _, variable, filters =
-                        parse_var (Constants.filter_re.Match expression.string) 0 None []
+                        parse_var (Constants.filter_re.Match expression.RawText) 0 None []
                 (new Error(-1, ""), Some variable, filters)
             with
                 | _ as ex -> 
@@ -179,9 +204,9 @@ module Expressions =
                             if ignoreFailures then
                                 (None, false)
                             else
-                                raise (RenderingError((sprintf "Exception occured while processing variable '%s'" v.ExpressionText.string), exc))
+                                raise (RenderingError((sprintf "Exception occured while processing variable '%s'" v.ExpressionText), exc))
                  | None ->
-                    raise (SyntaxException(error.Message, get_textToken token))
+                    raise (SyntaxException(error.Message, expression))
             
             filters |> List.fold 
                 (fun input f ->
@@ -189,7 +214,7 @@ module Expressions =
                     | None -> (None, false)
                     | Some value ->
                         match f with
-                        | Escape -> (fst input, true)
+                        | Escape(_, _) -> (fst input, true)
                         | Filter(filter) -> (Some (filter.Perform(context, value)), snd input)
                 ) 
                 resolved_value
@@ -216,14 +241,15 @@ module Expressions =
             //for filter, args in filters do
                 
         interface INode with            
-                     /// TagNode type = TagName
+                     
+            /// TagNode type = Expression
             member x.NodeType = NodeType.Expression 
             
-            /// Position - see above
-            member x.Position = (Lexer.get_textToken token).Position
+            /// Position - the position of the first character of the expression
+            member x.Position = expression.Location.Position
             
-            /// Length - see above
-            member x.Length = (Lexer.get_textToken token).Position
+            /// Length - the expression length
+            member x.Length = expression.Location.Length
 
             /// List of available values empty
             member x.Values =  seq []
@@ -237,11 +263,12 @@ module Expressions =
             /// node list consists of the variable node and the list of the filter nodes
             member x.Nodes =
                 let list = 
+                    (filters |> List.map (fun f -> f:>INode)) @
                     match variable with
-                    | Some v -> [(v :> INode)]
+                    | Some v -> [(v :> INode)] 
                     | None -> [] 
                 new Map<string, IEnumerable<INode>>([]) 
-                    |> Map.add Constants.NODELIST_TAG_ELEMENTS (list :> IEnumerable<INode>) 
+                    |> Map.add Constants.NODELIST_TAG_ELEMENTS (list  :> IEnumerable<INode>) 
                         :> IDictionary<string, IEnumerable<INode>>
 
 

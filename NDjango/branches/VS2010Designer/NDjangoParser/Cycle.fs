@@ -92,42 +92,44 @@ module internal Cycle =
                 buffer = buffer;
                 context = (walker.context.add ("$cycle" + name, (newc :> obj))).add (name, (buffer :> obj)) 
                 }
-     
+
+    /// Note that the original django implementation returned the same instance of the 
+    /// CycleNode for each instance of a given named cycle tag. This implementation
+    /// Relies on the CycleNode instances to communicate with each other through 
+    /// the context object available at render time to synchronize their activities
     type Tag() = 
 
-            // Note that the django implementation returned the same instance of the 
-            // CycleNode for each instance of a given named cycle tag. This implementation
-            // Relies on the CycleNode instances to communicate with each other through 
-            // the context object available at render time to synchronize their activities
-        let checkForOldSyntax (value:LexToken) = 
-            if (String.IsNullOrEmpty value.string) then false
-            else match value.string.[0] with
+        let checkForOldSyntax (value:TextToken) = 
+            if (String.IsNullOrEmpty value.RawText) then false
+            else match value.RawText.[0] with
                     | '"' -> false
                     | '\'' -> false
-                    | _ when value.string.Contains(",") -> true
+                    | _ when value.RawText.Contains(",") -> true
                     | _ -> false
                             
-        let normalize (values: LexToken list) =
-            if List.exists checkForOldSyntax values then
-                let compacted = values |> List.fold (fun status value -> status + value.string) ""
-                // we are loosing mapping to the token locations, but that's ok
-                // in old cycle format there is no diag info to be given  
-                List.map (fun value -> LexToken.String ("'" + value + "'") ) (String.split [','] compacted)   
-            else
-                values
                 
         interface NDjango.Interfaces.ITag with
             member this.Perform token context tokens =
+
+                let normalize (values: TextToken list) =
+//                    if List.exists checkForOldSyntax values then
+//                        let compacted = values |> List.fold (fun status value -> status + value.RawText) ""
+//                        // we are loosing mapping to the token locations, but that's ok
+//                        // in old cycle format there is no diag info to be given  
+//                        List.map (fun value -> Lex Token.String ("'" + value + "'") ) (String.split [','] compacted)   
+//                    else
+                        values
+
                 let name, values =
                     match List.rev token.Args with
                     | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
-                    | name::LexerToken("as")::values ->
-                        (name.string, values |> List.rev |> normalize)
+                    | name::MatchToken("as")::values ->
+                        (name.RawText, values |> List.rev |> normalize)
                     | _ ->
                         let values = token.Args |> normalize
-                        if values.Length = 1 then (values.[0].string, [])
+                        if values.Length = 1 then (values.[0].RawText, [])
                         else ("$Anonymous$Cycle", values)
                         
-                let values = List.map (fun v -> new Variable(context, Block token, v)) values
+                let values = List.map (fun v -> new Variable(context, v)) values
                 ((new TagNode(context, token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)
 

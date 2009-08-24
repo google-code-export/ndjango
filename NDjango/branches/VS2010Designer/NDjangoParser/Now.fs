@@ -185,7 +185,7 @@ module internal Now =
                             new TagNode(provider, token)
                             with
                                 override this.walk manager walker = 
-                                    {walker with buffer = f.string |> format |> System.DateTime.Now.ToString }
+                                    {walker with buffer = f.RawText |> format |> System.DateTime.Now.ToString }
                         } :> INodeImpl), tokens
                     | _ -> raise (SyntaxError ("malformed 'now' tag"))
                         

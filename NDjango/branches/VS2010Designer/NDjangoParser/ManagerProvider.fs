@@ -151,7 +151,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 
                                 /// Add TagName node to the list of elements
                                 override x.elements =
-                                    (new TagNameNode(context, (blockToken :> TextToken), blockToken.Verb.Location) :> INode)
+                                    (new TagNameNode(context, Text blockToken.Verb) :> INode)
                                      :: elements @ base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
@@ -170,13 +170,14 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                     override x.elements = []
                     
                     override x.walk manager walker = 
-                        {walker with buffer = textToken.Text}
+                        {walker with buffer = textToken.RawText}
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
             try
                 // var.Expression is a raw string - the string as is on the template before any parsing or substitution
-                let t = LexToken (var.Expression, (0, var.Expression.Length))
-                let expression = new FilterExpression(context, Lexer.Variable var, t)
+                
+                let expression = new FilterExpression(context, var.Expression)
+
                 ({new Node(token)
                     with 
                         override x.node_type = NodeType.Expression
@@ -198,8 +199,8 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             |_  -> rethrow()
         | Lexer.Block block -> 
             try
-                match Map.tryFind block.Verb.string tags with 
-                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb.string))
+                match Map.tryFind block.Verb.RawText tags with 
+                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb.RawText))
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 
@@ -220,12 +221,13 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         new ErrorNode(context, token, new Error(2, error.ErrorMessage))
                             with
                                 override x.elements =
-                                    match error.Text.[0..1] with
+                                    match error.RawText.[0..1] with
                                     | "{%" ->
                                         /// this is a tag node - add a TagName node to the list of elements
                                         /// so that tag name code completion can be triggered
-                                        let offset = error.Text.Length - error.Text.[2..].TrimStart([|' ';'\t'|]).Length
-                                        (new TagNameNode(context, (error :> TextToken), (offset, error.Text.Length-offset))
+                                        let offset = error.RawText.Length - error.RawText.[2..].TrimStart([|' ';'\t'|]).Length
+                                        let name_token = error.CreateToken(offset, error.RawText.Length-offset)
+                                        (new TagNameNode(context, Text name_token )
                                                 :> INode) :: base.elements
                                     | _ -> base.elements
                         } :> INodeImpl), tokens
@@ -243,7 +245,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
-            | Lexer.Block block when parse_until |> List.exists block.Verb.Compare ->
+            | Lexer.Block block when parse_until |> List.exists block.Verb.Value.Equals ->
                  ((new TagNode(context, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
                 let node, tokens = parse_token context tokens token
@@ -259,7 +261,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 ))
         | LazyList.Cons(token, tokens) -> 
             match token with 
-            | Lexer.Block block when parse_until |> List.exists block.Verb.Compare ->
+            | Lexer.Block block when parse_until |> List.exists block.Verb.Value.Equals ->
                  tokens
             | _ ->
                 seek_internal parse_until tokens

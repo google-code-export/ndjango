@@ -122,28 +122,28 @@ module Variables =
     ///     >>> Variable('article.section').resolve(c)
     ///     u'News'
     /// (The example assumes VARIABLE_ATTRIBUTE_SEPARATOR is '.')
-    type Variable(context: ParsingContext, token:Lexer.Token, variable:LexToken) =
-        let (|ComponentStartsWith|_|) chr (text: LexToken) =
-            if text.StartsWith(chr) || text.Contains(Constants.VARIABLE_ATTRIBUTE_SEPARATOR + chr) then
-                Some chr
-            else
-                None
-        
+    type Variable(context: ParsingContext, token:Lexer.TextToken) =
+//        let (|ComponentStartsWith|_|) chr (text: LexToken) =
+//            if text.StartsWith(chr) || text.Contains(Constants.VARIABLE_ATTRIBUTE_SEPARATOR + chr) then
+//                Some chr
+//            else
+//                None
+//        
         let fail_syntax v = 
             raise (
                 SyntaxError (
-                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" variable.string v)
+                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" token.RawText v)
                     )
-
-        do match variable with 
-            | ComponentStartsWith "-" v->
-                match variable.string with
-                | Int i -> () 
-                | Float f -> ()
-                | _ -> fail_syntax v
-            | ComponentStartsWith "_" v when not <| variable.StartsWith(Constants.I18N_OPEN) ->
-                fail_syntax v
-            | _ -> () // need this to show the compiler that all cases are covered. 
+//
+//        do match variable with 
+//            | ComponentStartsWith "-" v->
+//                match variable.string with
+//                | Int i -> () 
+//                | Float f -> ()
+//                | _ -> fail_syntax v
+//            | ComponentStartsWith "_" v when not <| variable.StartsWith(Constants.I18N_OPEN) ->
+//                fail_syntax v
+//            | _ -> () // need this to show the compiler that all cases are covered. 
 
         /// Returns a tuple of (var * value * needs translation)
         let find_literal = function
@@ -151,10 +151,9 @@ module Variables =
             | Utilities.Float f -> (None, Some (f :> obj), false)
             | _ as v ->
                 let var, is_literal, translate = OutputHandling.strip_markers v
-
                 ((if not is_literal then Some var else None), (if is_literal then Some (var :> obj) else None), translate)
 
-        let var, literal, translate = find_literal variable.string
+        let var, literal, translate = find_literal token.RawText
         
         let lookups = if var.IsSome then Some <| List.of_array (var.Value.Split(Constants.VARIABLE_ATTRIBUTE_SEPARATOR.ToCharArray())) else None
         
@@ -164,6 +163,8 @@ module Variables =
         
         let template_string_if_invalid = context.Provider.Settings.TryFind(Constants.TEMPLATE_STRING_IF_INVALID)
 
+        member x.ExpressionText = token.RawText
+        
         /// Resolves this variable against a given context
         member this.Resolve (context: IContext) =
             match lookups with
@@ -188,8 +189,6 @@ module Variables =
 
                 (result, context.Autoescape)
         
-        member this.ExpressionText with get() = variable
-        
         member this.IsLiteral with get() = lookups.IsNone
 
         interface INode with            
@@ -197,10 +196,10 @@ module Variables =
             member x.NodeType = NodeType.Reference 
             
             /// Position - see above
-            member x.Position = (Lexer.get_textToken token).Position
+            member x.Position = token.Location.Position
             
             /// Length - see above
-            member x.Length = (Lexer.get_textToken token).Position
+            member x.Length = token.Location.Length
 
             /// List of available values empty
             member x.Values =  seq []
