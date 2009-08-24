@@ -66,6 +66,8 @@ namespace NDjango.ASPMVCIntegration
         {
 
             provider = new TemplateManagerProvider().WithLoader(this).WithTag("url", new AspMvcUrlTag());
+            provider = NDjango.FiltersCS.FilterManager.Initialize(provider);
+
             NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate();
             NDjangoRegisterTemplate.Provider = provider;
             NDjangoRegisterTemplate.RegisterTemplates();
