@@ -205,7 +205,7 @@ namespace NDjango.ASPMVCIntegration
 
             foreach (NameValueClassElement item in nameValueSection.NDJangoTagFilterSectionCollection)
             {
-                RegisterGroupOfTemplatesByFullAssemblyName(item.Name);
+                CreateInstanceByAssemblyName(item.Name);
             }
 
             foreach (NameValueElementAssembly item in nameValueSection.NDJangoSectionCollection)
@@ -307,7 +307,7 @@ namespace NDjango.ASPMVCIntegration
         }
 
         //Register Group of filters and tags By Full Assembly Name
-        private void RegisterGroupOfTemplatesByFullAssemblyName(string value)
+        private void RegisterGroupOfTagFilterByFullAssemblyName(string value)
         {
             try
             {
@@ -335,7 +335,37 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
-        
+        //Create instance by full assembly name
+        private void CreateInstanceByAssemblyName(string AssemblyName)
+        {
+            try
+            {
+                Type type = Type.GetType(AssemblyName);
+                if (type.GetInterface(typeof(ITag).Name) != null)
+                {
+                    ITag tag = (ITag)Activator.CreateInstance(type);
+                    RegisterITag(GetTagName(type), tag);
+                }
+                else if (type.GetInterface(typeof(ISimpleFilter).Name) != null)
+                {
+                    ISimpleFilter filter = (ISimpleFilter)Activator.CreateInstance(type);
+                    RegisterISimpleFilter(GetTagName(type), filter);
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(ex.Message);
+                for (int i = 0; i < ex.Types.Length; i++)
+                    if (ex.Types[i] != null)
+                        sb.AppendFormat("\t{0} loaded\r\n", ex.Types[i].Name);
+
+                for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    if (ex.LoaderExceptions[i] != null)
+                        sb.AppendFormat("\texception {0}\r\n", ex.LoaderExceptions[i].Message);
+            }
+        }
+
         //Load only assemblies by name
         private void LoadAssembly(string name, string assemblyPath)
         {
