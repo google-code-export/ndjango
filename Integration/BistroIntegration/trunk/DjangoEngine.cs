@@ -100,6 +100,8 @@ namespace NDjango.BistroIntegration
                     {
                         ITemplateLoader loader = new IntegrationTemplateLoader();
                         provider = new TemplateManagerProvider().WithLoader(loader).WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
+                        provider = NDjango.FiltersCS.FilterManager.Initialize(provider);
+
 
                         NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate();
                         NDjangoRegisterTemplate.Provider = provider;
