@@ -203,12 +203,18 @@ namespace NDjango.ASPMVCIntegration
                 return;
             }
 
+            foreach (NameValueClassElement item in nameValueSection.NDJangoTagFilterSectionCollection)
+            {
+                RegisterGroupOfTemplatesByFullAssemblyName(item.Name);
+            }
+
             foreach (NameValueElementAssembly item in nameValueSection.NDJangoSectionCollection)
             {
                 if (item.ImportCollection.Count == 0)
                 {
                     //register all tag and filter
-                    RegisterGroupOfTemplates(item.Name);
+                    //RegisterGroupOfTemplates(item.Name);
+                    LoadByAssemblyName(item.Name);
                 }
                 else
                 {
@@ -300,6 +306,19 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
+        //Register Group of filters and tags By Full Assembly Name
+        private void RegisterGroupOfTemplatesByFullAssemblyName(string value)
+        {
+            try
+            {
+                LoadAssembly(String.Empty, value);
+            }
+            catch (Exception e)
+            {
+            }
+
+        }
+
         //Register Group of filters and tags
         private void RegisterGroupOfTemplates(string value)
         {
@@ -316,6 +335,7 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
+        
         //Load only assemblies by name
         private void LoadAssembly(string name, string assemblyPath)
         {
@@ -343,6 +363,41 @@ namespace NDjango.ASPMVCIntegration
                         {
                             RegisterISimpleFilter(GetTagName(myType), filter);
                         }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(ex.Message);
+                for (int i = 0; i < ex.Types.Length; i++)
+                    if (ex.Types[i] != null)
+                        sb.AppendFormat("\t{0} loaded\r\n", ex.Types[i].Name);
+
+                for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    if (ex.LoaderExceptions[i] != null)
+                        sb.AppendFormat("\texception {0}\r\n", ex.LoaderExceptions[i].Message);
+            }
+        }
+
+        //Load assemblies by assembly name
+        private void LoadByAssemblyName(string assemblyName)
+        {
+            try
+            {
+                Assembly assembly = Assembly.Load(assemblyName);
+                foreach (Type myType in assembly.GetTypes())
+                {
+                    if (myType.GetInterface(typeof(ITag).Name) != null)
+                    {
+                        ITag tag = (ITag)System.Activator.CreateInstance(myType);
+                        RegisterITag(GetTagName(myType), tag);
+                    }
+
+                    if (myType.GetInterface(typeof(ISimpleFilter).Name) != null)
+                    {
+                        ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
+                        RegisterISimpleFilter(GetTagName(myType), filter);
                     }
                 }
             }
