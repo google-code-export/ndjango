@@ -38,13 +38,14 @@
     <Reference Include="FSharp.Core, Version=1.9.6.16, Culture=neutral, PublicKeyToken=a19089b1c74d0809, processorArchitecture=MSIL" />
     <Reference Include="NDjango.Core, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\NDjango\branches\V0.9.1.0\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
+      <HintPath>..\..\..\..\NDjango\branches\v0.9.1.1\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
     </Reference>
     <Reference Include="NDjango.Filters, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\NDjango\branches\V0.9.1.0\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
+      <HintPath>..\..\..\..\NDjango\branches\v0.9.1.1\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -64,6 +65,7 @@
   <ItemGroup>
     <Compile Include="DjangoEngine.cs" />
     <Compile Include="DjangoController.cs" />
+    <Compile Include="NDjangoSectionHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
