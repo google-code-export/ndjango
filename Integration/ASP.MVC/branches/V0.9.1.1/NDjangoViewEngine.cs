@@ -177,10 +177,7 @@ namespace NDjango.ASPMVCIntegration
 
         public void RegisterTemplates()
         {
-            //foreach (string item in Sections)
-            //{
-                RegisterCurrentTemplate(GetCollectionOfSectionByPath(NDJangoCommonSection));
-            //}
+            RegisterCurrentTemplate(GetCollectionOfSectionByPath(NDJangoCommonSection));
         }
 
         private NDjangoSectionHandler GetCollectionOfSectionByPath(string path)
@@ -203,33 +200,20 @@ namespace NDjango.ASPMVCIntegration
 
         private void RegisterCurrentTemplate(NDjangoSectionHandler nameValueSection)
         {
-            foreach (NameValueElement item in nameValueSection.NDJangoTagSectionCollection)
+            foreach (NameValueElementAssembly item in nameValueSection.NDJangoSectionCollection)
             {
-                string name = item.Name;
-                string value = item.Value;
-                Type myType = Type.GetType(value.ToString());
-                if (myType == null)
+                if (item.ImportCollection.Count == 0)
                 {
-                    RegisterGroupOfTemplates(value);
-                    break;
+                    //register all tag and filter
+                    RegisterGroupOfTemplates(item.Name);
                 }
-                ITag tag = (ITag)System.Activator.CreateInstance(myType);
-                RegisterITag(name, tag);
-                
-            }
-            
-            foreach (NameValueElement item in nameValueSection.NDJangoFilterSectionCollection)
-            {
-                string name = item.Name;
-                string value = item.Value;
-                Type myType = Type.GetType(value.ToString());
-                if (myType == null)
-                {
-                    RegisterGroupOfTemplates(value);
-                    break;
+                else {
+                    //register only defined tag and filter
+                    foreach (NameValueElementImport impItem in item.ImportCollection)
+                    {
+                        RegisterGroupOfTemplates(impItem.Name, item.Name);
+                    }
                 }
-                ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
-                RegisterISimpleFilter(name, filter);
             }
 
             foreach (NameValueElement item in nameValueSection.NDJangoSettingsSectionCollection)
@@ -239,7 +223,7 @@ namespace NDjango.ASPMVCIntegration
                 ValidateSettings(name, value);
             }
 
-             }
+        }
 
         private void RegisterITag(string name,ITag tag) {
             provider = provider.WithLoader(templateLoader).WithTag(name, tag);
@@ -250,29 +234,38 @@ namespace NDjango.ASPMVCIntegration
         }
 
         private void ValidateSettings(string name, string value) {
-            //TODO
             object result = null;
             bool r1;
-            if (Boolean.TryParse(value, out r1)) {
-                result = r1;
-            }
-            int r2;
-            if (int.TryParse(value, out r2)) {
-                result = r2;
-            }
-
-            if (result == null)
-            {
-                result = value.ToString();
-            }
-
-            Type type = result.GetType();
+   
             bool isNewSetting = true;
             foreach (var item in ((ITemplateManagerProvider)provider).Settings)
             {
-                if (name.Contains(item.Key)) {
+                if (name.Contains(item.Key))
+                {
                     Type setType = item.Value.GetType();
-                    if (type.Equals(setType)) {
+                    if (setType == typeof(Boolean))
+                    {
+                        if (Boolean.TryParse(value, out r1))
+                        {
+                            result = r1;
+                        }
+
+                    }
+                    else if (setType == typeof(int))
+                    {
+                        int r2;
+                        if (int.TryParse(value, out r2))
+                        {
+                            result = r2;
+                        }
+                    }
+                    else if (setType == typeof(string))
+                    {
+                        if (result == null)
+                        {
+                            result = value.ToString();
+                        }
+
                         provider = provider.WithLoader(templateLoader).WithSetting(name, result);
                         isNewSetting = false;
                     }
@@ -284,7 +277,20 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
-       //TODO
+        private void RegisterGroupOfTemplates(string name, string value)
+        {
+            string assemblyPath = String.Empty;
+            assemblyPath = GetAssemblyPath(value);
+
+            try
+            {
+                LoadAssembly(name, assemblyPath);
+            }
+            catch (Exception e)
+            {
+            }
+
+        }
 
         private void RegisterGroupOfTemplates(string value)
         {
@@ -300,6 +306,50 @@ namespace NDjango.ASPMVCIntegration
             }
 
         }
+
+        private void LoadAssembly(string name, string assemblyPath)
+        {
+            try
+            {
+                AssemblyName assemblyName = new AssemblyName();
+                assemblyName.CodeBase = assemblyPath;
+
+                Assembly assembly = Assembly.Load(assemblyName);
+                foreach (Type myType in assembly.GetTypes())
+                {
+                    if (myType.GetInterface(typeof(ITag).Name) != null)
+                    {
+                        ITag tag = (ITag)System.Activator.CreateInstance(myType);
+                        if (GetTagName(myType) == name)
+                        {
+                            RegisterITag(name, tag);
+                        }
+                    }
+
+                    if (myType.GetInterface(typeof(ISimpleFilter).Name) != null)
+                    {
+                        ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
+                        if (GetTagName(myType) == name)
+                        {
+                            RegisterISimpleFilter(GetTagName(myType), filter);
+                        }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(ex.Message);
+                for (int i = 0; i < ex.Types.Length; i++)
+                    if (ex.Types[i] != null)
+                        sb.AppendFormat("\t{0} loaded\r\n", ex.Types[i].Name);
+
+                for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    if (ex.LoaderExceptions[i] != null)
+                        sb.AppendFormat("\texception {0}\r\n", ex.LoaderExceptions[i].Message);
+            }
+        }
+
 
         private void LoadAssembly(string assemblyPath)
         {

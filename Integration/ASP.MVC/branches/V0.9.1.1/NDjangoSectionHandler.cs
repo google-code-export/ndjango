@@ -13,42 +13,55 @@ namespace NDjango.ASPMVCIntegration
         /// </summary>
         public NDjangoSectionHandler() { }
 
-        [ConfigurationCollection(typeof(NameValueElementCollection), AddItemName = "add-tag", ClearItemsName = "clearadd-tag", RemoveItemName = "removeadd-tag")]
+        [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElementAssembly>), AddItemName = "NDJangoImport")]
+        [ConfigurationProperty("NDJangoCollection", IsDefaultCollection = true)]
+        public NameValueElementCollection<NameValueElementAssembly> NDJangoSectionCollection
+        {
+            get
+            {
+                return (NameValueElementCollection<NameValueElementAssembly>)base["NDJangoCollection"];
+            }
+
+        }
+
+
+        [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElement>), AddItemName = "add-tag", ClearItemsName = "clearadd-tag", RemoveItemName = "removeadd-tag")]
         [ConfigurationProperty("NDJangoTagCollection", IsDefaultCollection = true)]
-        public NameValueElementCollection NDJangoTagSectionCollection
+        public NameValueElementCollection<NameValueElement> NDJangoTagSectionCollection
         {
             get
             {
-                return (NameValueElementCollection)base["NDJangoTagCollection"];
+                return (NameValueElementCollection<NameValueElement>)base["NDJangoTagCollection"];
             }
 
         }
 
 
-        [ConfigurationCollection(typeof(NameValueElementCollection), AddItemName = "add-filter", ClearItemsName = "clearadd-filter", RemoveItemName = "removeadd-filter")]
+        [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElement>), AddItemName = "add-filter", ClearItemsName = "clearadd-filter", RemoveItemName = "removeadd-filter")]
         [ConfigurationProperty("NDJangoFilterCollection", IsDefaultCollection = true)]
-        public NameValueElementCollection NDJangoFilterSectionCollection
+        public NameValueElementCollection<NameValueElement> NDJangoFilterSectionCollection
         {
             get
             {
-                return (NameValueElementCollection)base["NDJangoFilterCollection"];
+                return (NameValueElementCollection<NameValueElement>)base["NDJangoFilterCollection"];
             }
 
         }
-        [ConfigurationCollection(typeof(NameValueElementCollection), AddItemName = "add-setting", ClearItemsName = "clearsetting", RemoveItemName = "removesetting")]
+        [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElement>), AddItemName = "add-setting", ClearItemsName = "clearsetting", RemoveItemName = "removesetting")]
         [ConfigurationProperty("NDJangoSettingsCollection", IsDefaultCollection = true)]
-        public NameValueElementCollection NDJangoSettingsSectionCollection
+        public NameValueElementCollection<NameValueElement> NDJangoSettingsSectionCollection
         {
             get
             {
-                return (NameValueElementCollection)base["NDJangoSettingsCollection"];
+                return (NameValueElementCollection<NameValueElement>)base["NDJangoSettingsCollection"];
             }
 
         }
-           
+
     }
 
-    public class NameValueElementCollection : ConfigurationElementCollection
+    #region generic
+    public class NameValueElementCollection<T>  : ConfigurationElementCollection where T : ConfigurationElement,INameElement
     {
         public override ConfigurationElementCollectionType CollectionType
         {
@@ -58,9 +71,9 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
-        public NameValueElement this[int index]
+        public T this[int index]
         {
-            get { return (NameValueElement)BaseGet(index); }
+            get { return (T)BaseGet(index); }
             set
             {
                 if (BaseGet(index) != null)
@@ -69,7 +82,7 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
-        public void Add(NameValueElement element)
+        public void Add(T element)
         {
             BaseAdd(element);
         }
@@ -81,15 +94,15 @@ namespace NDjango.ASPMVCIntegration
 
         protected override ConfigurationElement CreateNewElement()
         {
-            return new NameValueElement();
+            return Activator.CreateInstance<T>();
         }
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((NameValueElement)element).Name;
+            return ((T)element).Name;
         }
 
-        public void Remove(NameValueElement element)
+        public void Remove(T element)
         {
             BaseRemove(element.Name);
         }
@@ -105,9 +118,50 @@ namespace NDjango.ASPMVCIntegration
         }
     }
 
-    public class NameValueElement : ConfigurationElement
+    public interface INameElement 
+    {
+        string Name {get;set;}
+    }
+
+
+
+    #endregion
+
+    public class NameValueElementAssembly : ConfigurationElement,INameElement
+    {
+        public NameValueElementAssembly() { }
+
+        public NameValueElementAssembly(string assembly)
+        {
+            this.Name = assembly;
+        }
+
+
+
+        [ConfigurationProperty("assembly", IsRequired = true)]
+        public string Name
+        {
+            get { return (string)this["assembly"]; }
+            set { this["assembly"] = value; }
+        }
+
+        [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElementAssembly>), AddItemName = "import")]
+        [ConfigurationProperty("", IsDefaultCollection=true , IsRequired = true)]
+        public NameValueElementCollection<NameValueElementImport> ImportCollection
+        {
+            get
+            {
+                return (NameValueElementCollection<NameValueElementImport>)base[""];
+            }
+
+        }
+
+    }
+
+    public class NameValueElement : ConfigurationElement,INameElement
     {
         public NameValueElement() { }
+
 
         public NameValueElement(string name, string value)
         {
@@ -115,7 +169,7 @@ namespace NDjango.ASPMVCIntegration
             this.Value = value;
         }
 
-        [ConfigurationProperty("name", IsRequired = true, DefaultValue="ALL")]
+        [ConfigurationProperty("name", IsRequired = true, DefaultValue = "ALL")]
         public string Name
         {
             get { return (string)this["name"]; }
@@ -129,18 +183,24 @@ namespace NDjango.ASPMVCIntegration
             set { this["value"] = value; }
         }
 
-        //[ConfigurationProperty("NDJangoTagSection", IsDefaultCollection = true)]
-        //[ConfigurationCollection(typeof(NameValueElementCollection), AddItemName = "add-tag")]
-        //public NameValueElementCollection NameValues
-        //{
-        //    get { return (NameValueElementCollection)base["NDJangoTagSection"]; }
-        //}
-        
-        //[ConfigurationProperty("NDJangoTagSection", IsDefaultCollection = true)]
-        //[ConfigurationCollection(typeof(NameValueElementCollection), AddItemName = "add-tag")]
-        //public NameValueElementCollection Value
-        //{
-        //    get { return (NameValueElementCollection)base["NDJangoTagSection"]; }
-        //}
     }
+    public class NameValueElementImport : ConfigurationElement,INameElement
+    {
+        public NameValueElementImport() { }
+
+
+        public NameValueElementImport(string name)
+        {
+            this.Name = name;
+        }
+
+        [ConfigurationProperty("name", IsRequired = true, DefaultValue = "ALL")]
+        public string Name
+        {
+            get { return (string)this["name"]; }
+            set { this["name"] = value; }
+        }
+
+    }
+
 }
