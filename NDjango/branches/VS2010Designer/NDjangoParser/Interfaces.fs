@@ -263,9 +263,18 @@ and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) 
 /// RenderingException
 type RenderingError (message: string, ?innerException: exn) =
         inherit System.ApplicationException(message, defaultArg innerException null)
-
+        
+/// The actaual redering exception. The original RenderingError exceptions are caught and re-thrown
+/// as RenderingExceptions
 type RenderingException (message: string, token:NDjango.Lexer.Token, ?innerException: exn) =
-        inherit System.ApplicationException(message + (NDjango.Lexer.get_textToken token).ToString(), defaultArg innerException null)
+        inherit System.ApplicationException(message + token.DiagInfo, defaultArg innerException null)
+       
+/// Exception raised when template syntax errors are encountered
+/// this exception is defined here because it its dependency on the TextToken class
+type SyntaxException (message: string, token: NDjango.Lexer.Token) =
+    inherit System.ApplicationException(message + token.DiagInfo)
+    member x.Token = token
+    member x.ErrorMessage = message  
 
 /// a special type of exception thrown when the error message applies to 
 /// multiple tags i.e. missing closing tag exception. Inculdes node list as an

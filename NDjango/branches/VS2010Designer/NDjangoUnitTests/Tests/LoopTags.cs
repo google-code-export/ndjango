@@ -27,7 +27,7 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("cycle02", "{% cycle a,b,c as abc %}{% cycle abc %}", ContextObjects.empty, ContextObjects.p("ab")));
             lst.Add(new TestDescriptor("cycle03", "{% cycle a,b,c as abc %}{% cycle abc %}{% cycle abc %}", ContextObjects.empty, ContextObjects.p("abc")));
             lst.Add(new TestDescriptor("cycle04", "{% cycle a,b,c as abc %}{% cycle abc %}{% cycle abc %}{% cycle abc %}", ContextObjects.empty, ContextObjects.p("abca")));
-            lst.Add(new TestDescriptor("cycle05", "{% cycle %}", ContextObjects.empty, ContextObjects.p(typeof(Lexer.SyntaxException))));
+            lst.Add(new TestDescriptor("cycle05", "{% cycle %}", ContextObjects.empty, ContextObjects.p(typeof(SyntaxException))));
             lst.Add(new TestDescriptor("cycle06", "{% cycle a %}", ContextObjects.empty, ContextObjects.p(typeof(RenderingException))));
             lst.Add(new TestDescriptor("cycle07", "{% cycle a,b,c as foo %}{% cycle bar %}", ContextObjects.empty, ContextObjects.p(typeof(RenderingException))));
             lst.Add(new TestDescriptor("cycle08", "{% cycle a,b,c as foo %}{% cycle foo %}{{ foo }}{{ foo }}{% cycle foo %}{{ foo }}", ContextObjects.empty, ContextObjects.p("abbbcc")));

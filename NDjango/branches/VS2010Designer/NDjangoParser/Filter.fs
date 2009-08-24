@@ -65,6 +65,7 @@ module internal Filter =
             member this.Perform token context tokens =
                 match token.Args with
                 | filter::[] ->
+// TODO: ExpressionToken
                     let filter_expr = new FilterExpression(context, filter.WithValue(FILTER_VARIABLE_NAME + "|" + filter.Value))
                     let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endfilter"]
                     (new FilterNode(context, token, filter_expr, node_list) :> INodeImpl), remaining

@@ -65,7 +65,7 @@ module Lexer =
                         Position = location.Position + m.Groups.[0].Index;
                 }
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
-
+            
         /// The original, unmodified text as it is in the source
         member x.RawText = text
         
@@ -92,18 +92,6 @@ module Lexer =
         /// Creates a new token bound to the same location in the source, but with a different value
         /// Use this method when you need to modify the token value but keep its binding to the source                
         member x.WithValue new_value = new TextToken(text, new_value, location)
-
-        /// This override is used in the exception handling to provide additional diag info 
-        override x.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text location.Line location.Position
-        
-    /// Exception raised when template syntax errors are encountered
-    /// this exception is defined here because it its dependency on the TextToken class
-    type SyntaxException (message: string, token: TextToken) =
-        inherit System.ApplicationException(message + token.ToString())
-        
-        member x.Token = token
-        member x.ErrorMessage = message  
-    
 
     /// Represents a tag block 
     type BlockToken(text, location) =
@@ -146,6 +134,9 @@ module Lexer =
     
     type CommentToken(text, location) =
         inherit TextToken(text, location) 
+        
+    type ExpressionToken(text, value, location) = 
+        inherit TextToken(text, value, location)
     
     /// A lexer token produced through the tokenize function
     type Token =
@@ -154,32 +145,28 @@ module Lexer =
         | Comment of CommentToken
         | Error of ErrorToken
         | Text of TextToken
+        | Expression of ExpressionToken
         
         member private x.TextToken = 
             match x with
             | Block b -> b :> TextToken
             | Error e -> e :> TextToken
+            | Expression e -> e :> TextToken
             | Variable v -> v :> TextToken
             | Comment c -> c :> TextToken
             | Text t -> t
 
         member x.Position = x.TextToken.Location.Position
         member x.Length = x.TextToken.Location.Length
-        member x.CreateToken location = x.TextToken.CreateToken location
-//        member x.CreateToken (capture:Capture) = x.TextToken.CreateTokenAt capture.Index capture.Length
-//        member x.Value = x.TextToken.Text
             
-    /// Active Pattern matching the Token to a string constant. Uses the Token.RawText to do the match
-    let (|MatchToken|) (t:TextToken) = t.RawText
-                   
+        /// provides additional diagnostic information for the token 
+        member x.DiagInfo = 
+            sprintf " in token: \"%s\" at line %d pos %d " 
+                x.TextToken.RawText x.TextToken.Location.Line x.TextToken.Location.Position
 
-    let get_textToken = function
-    | Block b -> b :> TextToken
-    | Error e -> e :> TextToken
-    | Variable v -> v :> TextToken
-    | Comment c -> c :> TextToken
-    | Text t -> t
-        
+   /// Active Pattern matching the Token to a string constant. Uses the Token.RawText to do the match
+    let (|MatchToken|) (t:TextToken) = t.RawText
+    
     /// <summary> generates sequence of tokens out of template TextReader </summary>
     /// <remarks>the type implements the IEnumerable interface (sequence) of templates
     /// It reads the template text from the text reader one buffer at a time and 

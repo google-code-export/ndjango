@@ -220,7 +220,7 @@ module internal ParserNodes =
 
         /// Walking an error node throws an error
         override x.walk manager walker = 
-            raise (SyntaxException(error.Message, (get_textToken token)))
+            raise (SyntaxException(error.Message, token))
             
     type TagSyntaxError(message: string, pattern:INode list) =
         inherit SyntaxError(message)
