@@ -87,5 +87,6 @@ type public SimpleTag(nested:bool, name:string, num_params:int) =
                             else
                                 {walker with buffer = (x.ProcessTag walker.context (read_walker manager walker nodelist) resolved_parms)}
                                 
-// TODO: should the nodelist member be overridden here?
+                        override this.nodelist = nodelist
+
                 } :> INodeImpl), tokens

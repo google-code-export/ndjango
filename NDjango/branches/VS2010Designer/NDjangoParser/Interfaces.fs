@@ -264,8 +264,8 @@ and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) 
 type RenderingError (message: string, ?innerException: exn) =
         inherit System.ApplicationException(message, defaultArg innerException null)
 
-type RenderingException (message: string, token:NDjango.Lexer.TextToken, ?innerException: exn) =
-        inherit System.ApplicationException(message + token.ToString(), defaultArg innerException null)
+type RenderingException (message: string, token:NDjango.Lexer.Token, ?innerException: exn) =
+        inherit System.ApplicationException(message + (NDjango.Lexer.get_textToken token).ToString(), defaultArg innerException null)
 
 /// a special type of exception thrown when the error message applies to 
 /// multiple tags i.e. missing closing tag exception. Inculdes node list as an

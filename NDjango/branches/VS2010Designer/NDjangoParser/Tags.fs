@@ -405,7 +405,7 @@ module internal Misc =
                                     parent=Some walker; 
                                     context = context; 
                                     nodes=nodes}
-                            override this.nodelist with get() = nodes
+                            override this.nodelist = nodes
                        } :> INodeImpl), 
                        remaining)
                 | _ -> raise (SyntaxError ("'with' expected format is 'value as name'"))

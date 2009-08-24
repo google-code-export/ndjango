@@ -79,6 +79,8 @@ module Expressions =
 
     type FilterExpression (context:ParsingContext, expression: TextToken) =
         
+        let expression_text = expression.Value
+        
         let wrap_filter filter_name (filter:ISimpleFilter) args =
             Some  
                <| match filter with
@@ -107,8 +109,6 @@ module Expressions =
                     Some (new Error(2, e.Message), variable, [])
             |_  -> None
         
-        let expression_text = expression.RawText
-        
         /// Helper function for parsing filter expressions
         /// Parses a variable token and its optional filters (all as a single string),
         /// and return a list of tuples of the filter name and arguments.
@@ -123,7 +123,7 @@ module Expressions =
         ///
         let rec parse_var (filter_match: Match) upto (var: TextToken option) (filters: 'a list)=
             if not (filter_match.Success) then
-                if not (upto = expression.RawText.Length) 
+                if not (upto = expression_text.Length) 
                 then raise (SyntaxError (sprintf "Could not parse the remainder: '%s' from '%s'" expression_text.[upto..] expression_text))
                 else
                     (upto, new Variable(context, var.Value), filters)
@@ -157,7 +157,7 @@ module Expressions =
                         if var_match.Success then
                             fast_call (Some (expression.CreateToken var_match)) None
                         else
-                            raise (SyntaxError (sprintf "Could not find variable at start of %s" expression.RawText))
+                            raise (SyntaxError (sprintf "Could not find variable at start of %s" expression_text))
                     | Some s ->
                         // all subsequent elements are filters
                         let filter_name = filter_match.Groups.["filter_name"]
@@ -180,7 +180,7 @@ module Expressions =
         let error, variable, filters =
             try
                 let _, variable, filters =
-                        parse_var (Constants.filter_re.Match expression.RawText) 0 None []
+                        parse_var (Constants.filter_re.Match expression_text) 0 None []
                 (new Error(-1, ""), Some variable, filters)
             with
                 | _ as ex -> 
@@ -204,7 +204,7 @@ module Expressions =
                             if ignoreFailures then
                                 (None, false)
                             else
-                                raise (RenderingError((sprintf "Exception occured while processing variable '%s'" v.ExpressionText), exc))
+                                rethrow()
                  | None ->
                     raise (SyntaxException(error.Message, expression))
             
