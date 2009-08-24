@@ -238,13 +238,13 @@ namespace NDjango.ASPMVCIntegration
         //Register Tag by Name
         private void RegisterITag(string name, ITag tag)
         {
-            provider = provider.WithLoader(templateLoader).WithTag(name, tag);
+            provider = provider.WithTag(name, tag);
         }
 
         //Register Filter by Name
         private void RegisterISimpleFilter(string name, ISimpleFilter filter)
         {
-            provider = provider.WithLoader(templateLoader).WithFilter(name, filter);
+            provider = provider.WithFilter(name, filter);
         }
 
         //Validate Settings by Type of provider and current Name
@@ -279,14 +279,14 @@ namespace NDjango.ASPMVCIntegration
                     {
                         result = value.ToString();
 
-                        provider = provider.WithLoader(templateLoader).WithSetting(name, result);
+                        provider = provider.WithSetting(name, result);
                         isNewSetting = false;
                     }
                 }
             }
             if (isNewSetting)
             {
-                provider = provider.WithLoader(templateLoader).WithSetting(name, result);
+                provider = provider.WithSetting(name, result);
             }
         }
 
