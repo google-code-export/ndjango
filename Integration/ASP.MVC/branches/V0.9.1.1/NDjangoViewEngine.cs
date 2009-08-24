@@ -198,6 +198,11 @@ namespace NDjango.ASPMVCIntegration
 
         private void RegisterCurrentTemplate(NDjangoSectionHandler nameValueSection)
         {
+            //NDjangoSectionHandler section isn't exist
+            if (nameValueSection == null) {
+                return;
+            }
+
             foreach (NameValueElementAssembly item in nameValueSection.NDJangoSectionCollection)
             {
                 if (item.ImportCollection.Count == 0)
