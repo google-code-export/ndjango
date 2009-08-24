@@ -79,7 +79,6 @@ module internal ASTNodes =
         
         member x.Name = name
         member x.Parent = parent
-//        member internal x.Nodelist = nodelist
         
         override x.walk manager walker =
             let final_nodelist, parents, overriden =
@@ -109,10 +108,10 @@ module internal ASTNodes =
             h :: unfold_nodes (List.of_seq (h:?>Node).nodelist) @ unfold_nodes t
         | _ -> []
 
-        let blocks = Map.of_list 
-                     <| List.choose 
-                             (fun (node: INodeImpl) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
-                              (unfold_nodes nodelist)
+        // even though the extends filters its node list, we still need to filter the flattened list because of nested blocks
+        let blocks = Map.of_list <| List.choose 
+                        (fun (node: INodeImpl) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
+                        (unfold_nodes nodelist)
                               
 
         let add_if_missing key value map = 

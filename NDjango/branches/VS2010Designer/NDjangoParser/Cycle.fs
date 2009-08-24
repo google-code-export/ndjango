@@ -110,25 +110,37 @@ module internal Cycle =
                 
         interface NDjango.Interfaces.ITag with
             member this.Perform token context tokens =
+            
+                let oldstyle_re 
+                    = new System.Text.RegularExpressions
+                        .Regex("[^,]")
 
                 let normalize (values: TextToken list) =
-//                    if List.exists checkForOldSyntax values then
-//                        let compacted = values |> List.fold (fun status value -> status + value.RawText) ""
+                    if List.exists checkForOldSyntax values then
+                        let start = values.Head.Location.Offset
+                        let end_location = values.[values.Length-1].Location
+                        token.CreateToken(start - token.Location.Offset, end_location.Offset + end_location.Length - start).Tokenize(oldstyle_re) |>
+                        List.map (fun t -> t.WithValue("'" + t.RawText + "'"))
+//                        values
+//                        let compacted = values |> List.fold (fun status value -> status + value.Raw_Text) ""
 //                        // we are loosing mapping to the token locations, but that's ok
 //                        // in old cycle format there is no diag info to be given  
 //                        List.map (fun value -> Lex Token.String ("'" + value + "'") ) (String.split [','] compacted)   
-//                    else
+                    else
                         values
 
                 let name, values =
                     match List.rev token.Args with
-                    | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
-                    | name::MatchToken("as")::values ->
-                        (name.RawText, values |> List.rev |> normalize)
+                    | name::MatchToken("as")::values1 ->
+                        name.RawText, values1 |> List.rev |> normalize
                     | _ ->
-                        let values = token.Args |> normalize
-                        if values.Length = 1 then (values.[0].RawText, [])
-                        else ("$Anonymous$Cycle", values)
+                        match token.Args |> normalize with
+                        | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
+                        | name::[] -> name.RawText, []
+                        | _ as values -> "$Anonymous$Cycle", values
+//                        let values1 = token.Args |> normalize
+//                        if values1.Length = 1 then (values1.[0].RawText, [])
+//                        else "$Anonymous$Cycle", values1
                         
                 let values = List.map (fun v -> new Variable(context, v)) values
                 ((new TagNode(context, token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)

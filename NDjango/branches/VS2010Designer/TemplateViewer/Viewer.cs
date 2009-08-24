@@ -26,6 +26,7 @@ namespace TemplateViewer
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 templateSource.Text = File.ReadAllText(openFileDialog1.FileName);
+                parseToolStripMenuItem_Click(sender, e);
             }
         }
 
@@ -33,8 +34,13 @@ namespace TemplateViewer
         {
             templateTree.Nodes.Clear();
             StringReader reader = new StringReader(templateSource.Text);
-            foreach (INode node in provider.ParseTemplate(reader))
-                Process(templateTree.Nodes, node);
+            try
+            {
+                foreach (INode node in provider.ParseTemplate(reader))
+                    Process(templateTree.Nodes, node);
+            }
+            catch
+            { }
         }
 
         private void Process(TreeNodeCollection treeNodeCollection, INode node)

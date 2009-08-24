@@ -60,7 +60,24 @@ module internal LoaderTags =
                     let parent_name_expr = 
                         new FilterExpression(context, parent)
                         
-                    (new ExtendsNode(context, token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
+                    let node_list = 
+                        node_list |> List.choose 
+                            (fun node ->
+                                match node with
+                                | :? BlockNode -> Some node
+                                | _ -> 
+                                    if (context.Provider.Settings.[NDjango.Constants.EXCEPTION_IF_ERROR] :?> bool)
+                                    then None
+                                    else
+                                        Some ({
+                                                new ErrorNode(context, node.Token, 
+                                                    new Error(1, "All tags except 'block' tag inside inherited template are ignored"))
+                                                with 
+                                                    override x.nodelist = [node]
+                                            } :> INodeImpl)
+                            )   
+                    
+                    (new ExtendsNode(context, token, node_list, parent_name_expr) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("extends tag takes only one argument"))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
@@ -139,9 +156,9 @@ module internal LoaderTags =
         interface ITag with
             member this.Perform token context tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(context, token, Path path.RawText, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
+                | path::[] -> (new SsiNode(context, token, Path path.Value, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
                 | path::MatchToken("parsed")::[] ->
-                    let templateRef = FilterExpression (context, path.WithValue("\"" + path.RawText + "\""))
+                    let templateRef = FilterExpression (context, path.WithValue("\"" + path.Value + "\""))
                     ({
                         new TagNode(context, token) 
                         with

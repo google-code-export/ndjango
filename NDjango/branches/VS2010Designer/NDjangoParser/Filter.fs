@@ -41,13 +41,14 @@ module internal Filter =
         override this.walk manager walker = 
             let reader = 
                 new NDjango.ASTWalker.Reader (manager, {walker with parent=None; nodes=node_list; context=walker.context}) 
+
             match filter.ResolveForOutput manager
                      {walker with context=walker.context.add(FILTER_VARIABLE_NAME, (reader.ReadToEnd():>obj))}
                 with
             | Some w -> w
             | None -> walker
             
-    // TODO: should nodelist be overridden here?
+        override x.nodelist = node_list
 
     /// Filters the contents of the block through variable filters.
     /// 

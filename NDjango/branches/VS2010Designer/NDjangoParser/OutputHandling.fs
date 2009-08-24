@@ -26,48 +26,6 @@ open System.Text.RegularExpressions
 
 module OutputHandling =
 
-    /// Matches strings that start with the pattern
-    let internal (|StartsWith|_|) (pattern: string) (v: string) = if v.StartsWith(pattern) then Some v else None
-
-    /// Matches strings that end with the pattern
-    let internal (|EndsWith|_|) (pattern: string) (v: string) = if v.EndsWith(pattern) then Some v else None
-
-    /// Matches strings that contain the pattern
-    let internal (|Contains|_|) (pattern: string) (v: string) = if v.Contains(pattern) then Some v else None
-
-    let smart_split_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
-
-    type LexToken =
-        | LexToken of (string * (int * int))
-        | String of string
-        
-        member x.string = 
-            match x with
-            | LexToken tObject -> fst tObject
-            | String s -> s
-        
-        member x.Compare (y:obj) =
-            match y with
-            | :? LexToken as t -> t.string.Equals(x.string)
-            | _ -> y.Equals(x.string)
-
-        member x.Location =
-            match x with
-                | LexToken tObject -> snd tObject
-                | String s -> (0, s.Length)
-
-        member x.Contains pattern = x.string.Contains pattern                
-        member x.GetSlice (f:int option, t:int option) =
-            match f,t with
-            | Some f, Some t -> x.string.[f..t]
-            | None , Some t -> x.string.[..t]
-            | Some f, None -> x.string.[f..]
-            | None, None -> x.string
-
-        member x.StartsWith start = x.string.StartsWith start
-        
-    let (|LexerToken|) (t:LexToken) = LexerToken(t.string)
-    
     /// Generator that splits a string by spaces, leaving quoted phrases together.
     /// Supports both single and double quotes, and supports escaping quotes with
     /// backslashes. In the output, strings will keep their initial and trailing
@@ -79,9 +37,12 @@ module OutputHandling =
     /// [u'Another', u"'person's'", u'test.']
     /// >>> list(smart_split(r'A "\"funky\" style" test.')) 
     /// [u'A', u'""funky" style"', u'test.']
-    let smart_split text offset = 
-        [for m in smart_split_re.Matches(text) -> 
-            LexToken(m.Groups.[0].Value,(m.Groups.[0].Index + offset, m.Groups.[0].Length))
+    //
+    // Moved to the Lexer
+    //
+//    let smart_split text offset = 
+//        [for m in smart_split_re.Matches(text) -> 
+//            LexToken(m.Groups.[0].Value,(m.Groups.[0].Index + offset, m.Groups.[0].Length))
 //            let bit = m.Groups.[0].Value
 //            LexToken(
 //                    (if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
@@ -92,7 +53,7 @@ module OutputHandling =
 //                          bit),
 //                    (m.Groups.[0].Index + offset, m.Groups.[0].Length)
 //                    )
-        ]
+//        ]
         
     /// smart-splits the token, also keeping intact requests for translation, e.g.
     ///
@@ -120,6 +81,12 @@ module OutputHandling =
 //
 //        fst <| List.fold join_token_split ([], None) (smart_split token) |> List.rev
         
+    /// This esception is thrown if a problem encountered while parsing the template
+    /// This exception will be later caught and re-thrown as the SyntaxException
+    /// SyntaxException is defined in the Lexer.fs module
+    type SyntaxError (message) = 
+        inherit System.ApplicationException(message)
+
     /// determines whether the given string is either single or double quoted, escaped or un-escaped.
     /// returnes whether it is quoted, and the number of characters the quote string occupies
     let internal is_quoted (text: string) = 
@@ -142,14 +109,20 @@ module OutputHandling =
             
     /// strips off translation and outer quote characters. returns the stripped string,
     /// was the string quoted and was it marked for internationalization
-    let internal strip_markers text = 
+    let internal strip_markers (text:string) = 
         let v, was_i18n = if is_i18n text then text.[2..text.Length-2], true else text, false
         let quoted, count = is_quoted v
-        
-        if quoted then
-            (unescape_quotes v.[count..v.Length-2*count]), quoted, was_i18n
+
+        if quoted 
+        then None, Some (unescape_quotes v.[count..v.Length-2*count] :> obj), was_i18n
         else
-            (unescape_quotes v), quoted, was_i18n
+//            if v = "" || v.Chars.[0] = '-' || v.Chars.[0] = '_' 
+            if v = "" || v.StartsWith("-") || v.StartsWith("_") 
+            then 
+                raise (SyntaxError 
+                            (sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s'" v))
+                    
+            Some v, None , was_i18n
 
     /// escapes html sensitive elements from the string
     let internal escape text = 
@@ -169,11 +142,3 @@ module OutputHandling =
         /// negative severity is used to mark a dummy message ("No messages" message) 
         member x.Severity = severity
         member x.Message = message
-
-    /// This esception is thrown if a problem encountered while parsing the template
-    /// This exception will be later caught and re-thrown as the SyntaxException
-    /// SyntaxException is defined in the Lexer.fs module
-    type SyntaxError (message) = 
-        inherit System.ApplicationException(message)
-    
-

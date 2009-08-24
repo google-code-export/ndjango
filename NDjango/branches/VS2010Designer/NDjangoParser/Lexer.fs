@@ -46,45 +46,56 @@ module Lexer =
             Line: int
         }
 
-    /// base class for text tokens
+    /// Base class for text tokens. Its main purpose is to keep track of bits of text
+    /// participating in the template parsing in their relationship with the original 
+    /// location of the text in the template. As the text is going through various 
+    /// stages of parsing it may or may not differ from the original text in the source
     type TextToken(text:string, value:string, location: Location) =
   
-        let location_ofMatch (m:Match) =
-            {location 
-                with 
-                    Offset = location.Offset + m.Groups.[0].Index;
-                    Length = m.Groups.[0].Length;
-                    Position = location.Position + m.Groups.[0].Index;
-            }
-              
         new (text:string, location: Location) =
             new TextToken(text, text, location)
             
+        /// generates a list of tokens by applying the regexp
         member x.Tokenize (regex:Regex) =
+            let location_ofMatch (m:Match) =
+                {location 
+                    with 
+                        Offset = location.Offset + m.Groups.[0].Index;
+                        Length = m.Groups.[0].Length;
+                        Position = location.Position + m.Groups.[0].Index;
+                }
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
 
+        /// The original, unmodified text as it is in the source
         member x.RawText = text
         
+        /// The escaped, unescaped, internationalized, in other the value of the text with all modifications applied
+        member x.Value = value
+
         member x.BlockBody = 
-            let body = x.RawText.[2..x.RawText.Length-4].Trim()
-            if body = "" then
-                raise (SyntaxError("Empty block"))
+            let body = x.RawText.[2..x.RawText.Length-3].Trim()
             x.CreateToken(x.RawText.IndexOf(body), body.Length)
 
-        override x.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text location.Line location.Position
-        
+        /// Token location
         member x.Location = location
         
+        /// Creates a new token from the existing one 
+        /// Use this method when you need to create a new token from a part of the text of an existing one                 
         member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index,capture.Length)
         
+        /// Creates a new token from the existing one 
+        /// Use this method when you need to create a new token from a part of the text of an existing one                 
         member x.CreateToken (offset,length) = 
             new TextToken(x.RawText.Substring(offset,length)
                 , {location with Offset = location.Offset + offset; Length = length; Position = location.Position + offset}) 
-                
-        member x.WithValue new_value = new TextToken(text, new_value, location)
         
-        member x.Value = value
+        /// Creates a new token bound to the same location in the source, but with a different value
+        /// Use this method when you need to modify the token value but keep its binding to the source                
+        member x.WithValue new_value = new TextToken(text, new_value, location)
 
+        /// This override is used in the exception handling to provide additional diag info 
+        override x.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text location.Line location.Position
+        
     /// Exception raised when template syntax errors are encountered
     /// this exception is defined here because it its dependency on the TextToken class
     type SyntaxException (message: string, token: TextToken) =
@@ -93,12 +104,15 @@ module Lexer =
         member x.Token = token
         member x.ErrorMessage = message  
     
-    let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
 
+    /// Represents a tag block 
     type BlockToken(text, location) =
         inherit TextToken(text, location)
-        let mutable fragments = None
         
+        let mutable fragments = None
+        /// Locates the tag fragments the tag name and tag arguments by splitting the text into pieces by whitespaces
+        /// Whitespaces inside strings in double- or single quotes remain unaffected
+        let split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
         member private x.Tokenize =
             match fragments with
             | Some _ -> ()
@@ -109,17 +123,26 @@ module Lexer =
                     | _ as tokens -> Some tokens
             fragments.Value
             
+        /// A.K.A. tag name
         member x.Verb = List.hd x.Tokenize
+        /// List of arguments - can be empty
         member x.Args = List.tl x.Tokenize 
     
+    /// Represents an syntax error in the syntax node tree. These tokens are generated in response
+    /// to exceptions thrown during lexing of the template, so that the actual exception throwing can be delayed
+    /// till parsing stage
     type ErrorToken(text, error:string, location) =
         inherit TextToken(text, location)
           
         member x.ErrorMessage = error
 
+    /// Represents a variable block
     type VariableToken(text:string, location) =
         inherit TextToken(text, location)
-            member x.Expression = x.BlockBody
+            member x.Expression = 
+                let body = x.BlockBody
+                if (body.RawText = "") then raise (SyntaxError("Empty variable block"))
+                body
     
     type CommentToken(text, location) =
         inherit TextToken(text, location) 
@@ -146,6 +169,7 @@ module Lexer =
 //        member x.CreateToken (capture:Capture) = x.TextToken.CreateTokenAt capture.Index capture.Length
 //        member x.Value = x.TextToken.Text
             
+    /// Active Pattern matching the Token to a string constant. Uses the Token.RawText to do the match
     let (|MatchToken|) (t:TextToken) = t.RawText
                    
 

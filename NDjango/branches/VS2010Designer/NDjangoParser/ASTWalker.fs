@@ -45,7 +45,7 @@ module internal ASTWalker =
                         walker <- node.walk manager {walker with nodes = nodes; buffer=""; bufferIndex = 0}
                     with
                         | :? RenderingError as r -> 
-                            raise (new RenderingException(r.Message, Lexer.get_textToken node.Token, r.InnerException)) 
+                            raise (new RenderingException(r.Message, node.Token, r.InnerException)) 
                         | _ -> rethrow() 
                     getChar()
             else

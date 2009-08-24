@@ -149,11 +149,9 @@ module Variables =
         let find_literal = function
             | Utilities.Int i -> (None, Some (i :> obj), false)
             | Utilities.Float f -> (None, Some (f :> obj), false)
-            | _ as v ->
-                let var, is_literal, translate = OutputHandling.strip_markers v
-                ((if not is_literal then Some var else None), (if is_literal then Some (var :> obj) else None), translate)
+            | _ as v -> OutputHandling.strip_markers v
 
-        let var, literal, translate = find_literal token.RawText
+        let var, literal, translate = find_literal token.Value
         
         let lookups = if var.IsSome then Some <| List.of_array (var.Value.Split(Constants.VARIABLE_ATTRIBUTE_SEPARATOR.ToCharArray())) else None
         
@@ -163,32 +161,34 @@ module Variables =
         
         let template_string_if_invalid = context.Provider.Settings.TryFind(Constants.TEMPLATE_STRING_IF_INVALID)
 
-        member x.ExpressionText = token.RawText
-        
         /// Resolves this variable against a given context
         member this.Resolve (context: IContext) =
             match lookups with
             | None -> (literal.Value, false)
             | Some lkp ->
-                let result =
-                    match 
-                        match context.tryfind (List.hd <| lkp) with
-                        | Some v -> 
-                            match lkp |> List.tl with
-                            | h::t -> 
-                                // make sure we don't end up with a 'Some null'
-                                resolve_lookup v (h::t) |> clean_nulls
-                            | _ -> Some v |> clean_nulls
-                        | None -> None
-                        with
-                        | Some v1 -> v1
-                        | None -> 
-                            match template_string_if_invalid with
-                            | Some o -> o
-                            | None -> "" :> obj
+                try
+                    let result =
+                        match 
+                            match context.tryfind (List.hd <| lkp) with
+                            | Some v -> 
+                                match lkp |> List.tl with
+                                | h::t -> 
+                                    // make sure we don't end up with a 'Some null'
+                                    resolve_lookup v (h::t) |> clean_nulls
+                                | _ -> Some v |> clean_nulls
+                            | None -> None
+                            with
+                            | Some v1 -> v1
+                            | None -> 
+                                match template_string_if_invalid with
+                                | Some o -> o
+                                | None -> "" :> obj
 
-                (result, context.Autoescape)
-        
+                    (result, context.Autoescape)
+                with
+                    | _ as exc -> 
+                        raise (RenderingError((sprintf "Exception occured while processing variable '%s'" token.RawText), exc))
+
         member this.IsLiteral with get() = lookups.IsNone
 
         interface INode with            
