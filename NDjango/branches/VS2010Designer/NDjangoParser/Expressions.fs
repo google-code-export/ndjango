@@ -104,7 +104,7 @@ module Expressions =
             | :? SyntaxError as e ->
                 if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then
-                    raise (SyntaxException(e.Message, expression))
+                    raise (SyntaxException(e.Message, Text expression))
                 else
                     Some (new Error(2, e.Message), variable, [])
             |_  -> None
@@ -206,7 +206,7 @@ module Expressions =
                             else
                                 rethrow()
                  | None ->
-                    raise (SyntaxException(error.Message, expression))
+                    raise (SyntaxException(error.Message, Text expression))
             
             filters |> List.fold 
                 (fun input f ->

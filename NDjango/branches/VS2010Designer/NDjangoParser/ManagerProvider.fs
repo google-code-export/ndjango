@@ -137,7 +137,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | (_ , :? SyntaxError ) & (Some blockToken, e) ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
-                raise (SyntaxException(e.Message, (blockToken :> TextToken)))
+                raise (SyntaxException(e.Message, Block blockToken))
             else
                 let nodes, tokens, elements = 
                     match ex with
@@ -193,7 +193,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             | :? SyntaxError as e ->
                 if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then
-                    raise (SyntaxException(e.Message, (get_textToken token)))
+                    raise (SyntaxException(e.Message, token))
                 else
                     ((new ErrorNode(context, token, new Error(2, e.Message)) :> INodeImpl), tokens)
             |_  -> rethrow()
@@ -216,7 +216,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         
         | Lexer.Error error ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
-                then raise (SyntaxException(error.ErrorMessage, (error :> TextToken)))
+                then raise (SyntaxException(error.ErrorMessage, Error error))
             ({
                         new ErrorNode(context, token, new Error(2, error.ErrorMessage))
                             with

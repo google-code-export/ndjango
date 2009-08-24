@@ -118,7 +118,7 @@ module internal Misc =
                 match token.Args with
                     | [] -> raise (SyntaxError ("'firstof' tag requires at least one argument"))
                     | _ -> 
-                        let variables = token.Args |> List.map (fun (name) -> new FilterExpression(context, name))
+                        let variables = token.Args |> List.map (fun (expression) -> new FilterExpression(context, expression))
                         ({
                             new TagNode(context, token)
                             with 
@@ -450,6 +450,7 @@ module Abstract =
                                             | _ as trimmed -> (elem.WithValue trimmed)::state ) 
                                         []
                                 )
+// TODO: ExpressionToken
                         new FilterExpression(context, path), argList, var
                 
                 (({
