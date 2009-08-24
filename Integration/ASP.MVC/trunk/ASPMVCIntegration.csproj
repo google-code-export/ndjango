@@ -32,15 +32,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core, Version=1.9.6.16, Culture=neutral, PublicKeyToken=a19089b1c74d0809, processorArchitecture=MSIL" />
-    <Reference Include="NDjango.Core, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NDjango.Core, Version=0.9.1.1, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\NDjango\branches\V0.9.1.0\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="NDjango.Filters, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\NDjango\branches\V0.9.1.0\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
+      <HintPath>..\..\..\NDjango\trunk\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -53,12 +50,14 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="NDjangoHandle.cs" />
     <Compile Include="NDjangoView.cs" />
     <Compile Include="NDjangoViewEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NDjangoSectionHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
