@@ -8,6 +8,7 @@ namespace NDjango.ASPMVCIntegration
 {
     class NDjangoSectionHandler : ConfigurationSection
     {
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="SectionHandler"/> class.
         /// </summary>
@@ -61,7 +62,7 @@ namespace NDjango.ASPMVCIntegration
     }
 
     #region generic
-    public class NameValueElementCollection<T>  : ConfigurationElementCollection where T : ConfigurationElement,INameElement
+    public class NameValueElementCollection<T> : ConfigurationElementCollection where T : ConfigurationElement, INameElement
     {
         public override ConfigurationElementCollectionType CollectionType
         {
@@ -118,16 +119,15 @@ namespace NDjango.ASPMVCIntegration
         }
     }
 
-    public interface INameElement 
+    public interface INameElement
     {
-        string Name {get;set;}
+        string Name { get; set; }
     }
-
 
 
     #endregion
 
-    public class NameValueElementAssembly : ConfigurationElement,INameElement
+    public class NameValueElementAssembly : ConfigurationElement, INameElement
     {
         public NameValueElementAssembly() { }
 
@@ -146,7 +146,7 @@ namespace NDjango.ASPMVCIntegration
         }
 
         [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElementAssembly>), AddItemName = "import")]
-        [ConfigurationProperty("", IsDefaultCollection=true , IsRequired = true)]
+        [ConfigurationProperty("", IsDefaultCollection = true, IsRequired = true)]
         public NameValueElementCollection<NameValueElementImport> ImportCollection
         {
             get
@@ -158,7 +158,7 @@ namespace NDjango.ASPMVCIntegration
 
     }
 
-    public class NameValueElement : ConfigurationElement,INameElement
+    public class NameValueElement : ConfigurationElement, INameElement
     {
         public NameValueElement() { }
 
@@ -184,7 +184,7 @@ namespace NDjango.ASPMVCIntegration
         }
 
     }
-    public class NameValueElementImport : ConfigurationElement,INameElement
+    public class NameValueElementImport : ConfigurationElement, INameElement
     {
         public NameValueElementImport() { }
 
