@@ -40,7 +40,13 @@ namespace TemplateViewer
         private void Process(TreeNodeCollection treeNodeCollection, INode node)
         {
             string text = node.NodeType.ToString();
-            text += ": " + templateSource.Text.Substring(node.Position, node.Length);
+            try
+            {
+                text += ": " + templateSource.Text.Substring(node.Position, node.Length);
+            }
+            catch
+            {
+            }
             TreeNode tnode = new TreeNode(text);
             tnode.Tag = node;
 

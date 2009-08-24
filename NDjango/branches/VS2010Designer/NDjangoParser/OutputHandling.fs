@@ -67,7 +67,7 @@ module OutputHandling =
         member x.StartsWith start = x.string.StartsWith start
         
     let (|LexerToken|) (t:LexToken) = LexerToken(t.string)
-
+    
     /// Generator that splits a string by spaces, leaving quoted phrases together.
     /// Supports both single and double quotes, and supports escaping quotes with
     /// backslashes. In the output, strings will keep their initial and trailing

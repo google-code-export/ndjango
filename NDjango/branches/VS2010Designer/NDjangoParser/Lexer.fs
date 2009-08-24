@@ -23,21 +23,67 @@
 namespace NDjango
 
 open System
-open System.IO
 open System.Collections
 open System.Collections.Generic
+open System.IO
+open System.Text.RegularExpressions
 
 open NDjango.OutputHandling
 
 module Lexer =
 
-    type TextToken(text:string, pos:int, line:int, linePos:int) =
-        member x.Text = text
-        member x.Position = pos
-        member x.Line = line
-        member x.LinePos = linePos
-        member x.Length = text.Length
-        override x.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text line linePos
+    /// Structure describing the token location in the original source string
+    type Location = 
+        {
+            /// 0 based offset of the text from the begining of the source file
+            Offset: int
+            /// Length of the text fragment from which the token was generated 
+            /// may or may not match the length of the actual text
+            Length: int
+            /// 0 based position of the starting position of the text within the line it belongs to
+            Position: int
+            /// 0 based line number
+            Line: int
+        }
+
+    /// base class for text tokens
+    type TextToken(text:string, value:string, location: Location) =
+  
+        let location_ofMatch (m:Match) =
+            {location 
+                with 
+                    Offset = location.Offset + m.Groups.[0].Index;
+                    Length = m.Groups.[0].Length;
+                    Position = location.Position + m.Groups.[0].Index;
+            }
+              
+        new (text:string, location: Location) =
+            new TextToken(text, text, location)
+            
+        member x.Tokenize (regex:Regex) =
+            [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
+
+        member x.RawText = text
+        
+        member x.BlockBody = 
+            let body = x.RawText.[2..x.RawText.Length-4].Trim()
+            if body = "" then
+                raise (SyntaxError("Empty block"))
+            x.CreateToken(x.RawText.IndexOf(body), body.Length)
+
+        override x.ToString() = sprintf " in token: \"%s\" at line %d pos %d " text location.Line location.Position
+        
+        member x.Location = location
+        
+        member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index,capture.Length)
+        
+        member x.CreateToken (offset,length) = 
+            new TextToken(x.RawText.Substring(offset,length)
+                , {location with Offset = location.Offset + offset; Length = length; Position = location.Position + offset}) 
+                
+        member x.WithValue new_value = new TextToken(text, new_value, location)
+        
+        member x.Value = value
 
     /// Exception raised when template syntax errors are encountered
     /// this exception is defined here because it its dependency on the TextToken class
@@ -47,33 +93,36 @@ module Lexer =
         member x.Token = token
         member x.ErrorMessage = message  
     
-    type BlockToken(text, pos, line, linePos) =
-        inherit TextToken(text, pos, line, linePos)
-        let verb, args = 
-            match smart_split (text.[Constants.BLOCK_TAG_START.Length..text.Length-Constants.BLOCK_TAG_END.Length-1]) 2 with
-            | verb::args -> verb, args 
-            | _ -> raise (SyntaxError("Empty tag block"))
-        member x.Verb = verb 
-        member x.Args = args
+    let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
+
+    type BlockToken(text, location) =
+        inherit TextToken(text, location)
+        let mutable fragments = None
+        
+        member private x.Tokenize =
+            match fragments with
+            | Some _ -> ()
+            | None ->
+                fragments <- 
+                    match x.BlockBody.Tokenize split_tag_re with
+                    | [] -> raise (SyntaxError("Empty tag block"))
+                    | _ as tokens -> Some tokens
+            fragments.Value
+            
+        member x.Verb = List.hd x.Tokenize
+        member x.Args = List.tl x.Tokenize 
     
-    type ErrorToken(text, error:string, pos, line, linePos) =
-        inherit TextToken(text, pos, line, linePos)
+    type ErrorToken(text, error:string, location) =
+        inherit TextToken(text, location)
           
         member x.ErrorMessage = error
+
+    type VariableToken(text:string, location) =
+        inherit TextToken(text, location)
+            member x.Expression = x.BlockBody
     
-    type VariableToken(text:string, pos, line, linePos) =
-        inherit TextToken(text, pos, line, linePos)
-        let expression = text.[Constants.VARIABLE_TAG_START.Length..text.Length-Constants.VARIABLE_TAG_END.Length-1].Trim()
-        
-        /// raw string represnting the expression in the template source
-        /// the string as is before any parsing or substitution
-        member this.Expression = 
-            if expression.Equals("") then
-                raise (SyntaxError("Empty variable block"))
-            expression 
-    
-    type CommentToken(text, pos, line, linePos) =
-        inherit TextToken(text, pos, line, linePos) 
+    type CommentToken(text, location) =
+        inherit TextToken(text, location) 
     
     /// A lexer token produced through the tokenize function
     type Token =
@@ -83,6 +132,23 @@ module Lexer =
         | Error of ErrorToken
         | Text of TextToken
         
+        member private x.TextToken = 
+            match x with
+            | Block b -> b :> TextToken
+            | Error e -> e :> TextToken
+            | Variable v -> v :> TextToken
+            | Comment c -> c :> TextToken
+            | Text t -> t
+
+        member x.Position = x.TextToken.Location.Position
+        member x.Length = x.TextToken.Location.Length
+        member x.CreateToken location = x.TextToken.CreateToken location
+//        member x.CreateToken (capture:Capture) = x.TextToken.CreateTokenAt capture.Index capture.Length
+//        member x.Value = x.TextToken.Text
+            
+    let (|MatchToken|) (t:TextToken) = t.RawText
+                   
+
     let get_textToken = function
     | Block b -> b :> TextToken
     | Error e -> e :> TextToken
@@ -103,7 +169,7 @@ module Lexer =
         let mutable tail = ""
         let buffer = Array.create 4096 ' '
         
-        let create_token in_tag text = 
+        let create_token in_tag (text:string) = 
             in_tag := not !in_tag
             let currentPos = pos
             let currentLine = line
@@ -117,18 +183,19 @@ module Lexer =
                     else linePos <- linePos + 1
                     ) 
                 text
+            let location = {Offset = currentPos; Length = text.Length; Line = currentLine; Position = currentLinePos}
             if not !in_tag then
-                Text(new TextToken(text, currentPos, currentLine, currentLinePos))
+                Text(new TextToken(text, location))
             else
                 try
                     match text.[0..1] with
-                    | "{{" -> Variable (new VariableToken(text, currentPos, currentLine, currentLinePos))
-                    | "{%" -> Block (new BlockToken(text, currentPos, currentLine, currentLinePos))
-                    | "{#" -> Comment (new CommentToken(text, currentPos, currentLine, currentLinePos))
-                    | _ -> Text (new TextToken(text, currentPos, currentLine, currentLinePos))
+                    | "{{" -> Variable (new VariableToken(text, location))
+                    | "{%" -> Block (new BlockToken(text, location))
+                    | "{#" -> Comment (new CommentToken(text, location))
+                    | _ -> Text (new TextToken(text, location))
                 with
                 | :? SyntaxError as ex -> 
-                    Error (new ErrorToken(text, ex.Message, currentPos, currentLine, currentLinePos))
+                    Error (new ErrorToken(text, ex.Message, location))
                 | _ -> rethrow()
         
         interface IEnumerator<Token seq> with

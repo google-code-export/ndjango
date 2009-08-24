@@ -158,25 +158,25 @@ module internal If =
         /// builds a list of FilterExpression objects for the variable components of an if statement. 
         /// The tuple returned is (not flag, FilterExpression), where not flag is true when the value
         /// is modified by the "not" keyword, and false otherwise.
-        let rec build_vars token notFlag (tokens: LexToken list) parser (vars:(IfLinkType option)*(bool*FilterExpression) list) =
+        let rec build_vars token notFlag (tokens: TextToken list) parser (vars:(IfLinkType option)*(bool*FilterExpression) list) =
             match tokens with
-            | LexerToken("not")::var::tail -> build_vars token true (var::tail) parser vars
+            | MatchToken("not")::var::tail -> build_vars token true (var::tail) parser vars
             | var::[] -> 
                 match fst vars with
-                | None -> IfLinkType.Or, [(notFlag, new FilterExpression(parser, Block token, var))]
-                | Some any -> any, snd vars @ [(notFlag, new FilterExpression(parser, Block token, var))]
-            | var::LexerToken("and")::var2::tail -> 
+                | None -> IfLinkType.Or, [(notFlag, new FilterExpression(parser, var))]
+                | Some any -> any, snd vars @ [(notFlag, new FilterExpression(parser, var))]
+            | var::MatchToken("and")::var2::tail -> 
                 append_vars IfLinkType.And var token notFlag (var2::tail) parser vars 
-            | var::LexerToken("or")::var2::tail -> 
+            | var::MatchToken("or")::var2::tail -> 
                 append_vars IfLinkType.Or var token notFlag (var2::tail) parser vars 
             | _ -> raise (SyntaxError ("invalid conditional expression in 'if' tag"))
             
         and append_vars linkType var
-            token notFlag (tokens: LexToken list) parser vars =
+            token notFlag (tokens: TextToken list) parser vars =
             match fst vars with
             | Some any when any <> linkType -> raise (SyntaxError ("'if' tags can't mix 'and' and 'or'"))
             | _ -> ()
-            build_vars token false tokens parser (Some linkType, snd vars @ [(notFlag, new FilterExpression(parser, Block token, var))])
+            build_vars token false tokens parser (Some linkType, snd vars @ [(notFlag, new FilterExpression(parser, var))])
         
         
         interface ITag with 
@@ -188,7 +188,7 @@ module internal If =
                 let node_list_false, remaining2 =
                     match node_list_true.[node_list_true.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
-                        if b.Verb.string = "else" then
+                        if b.Verb.RawText = "else" then
                             (context.Provider :?> IParser).Parse (Some token) remaining ["endif"]
                         else
                             [], remaining

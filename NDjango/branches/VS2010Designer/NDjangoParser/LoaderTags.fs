@@ -39,8 +39,8 @@ module internal LoaderTags =
             member this.Perform token context tokens =
                 match token.Args with 
                 | name::[] -> 
-                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name.string]
-                    (new BlockNode(context, token, name.string, node_list) :> INodeImpl), remaining
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name.RawText]
+                    (new BlockNode(context, token, name.RawText, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("block tag takes only one argument"))
 
     /// Signal that this template extends a parent template.
@@ -58,7 +58,7 @@ module internal LoaderTags =
                     let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens []
                     
                     let parent_name_expr = 
-                        new FilterExpression(context, Block token, parent)
+                        new FilterExpression(context, parent)
                         
                     (new ExtendsNode(context, token, node_list, parent_name_expr) :> INodeImpl), LazyList.empty<Token>()
                 | _ -> raise (SyntaxError ("extends tag takes only one argument"))
@@ -92,7 +92,7 @@ module internal LoaderTags =
                 match token.Args with
                 | name::[] -> 
                     let template_name = 
-                        new FilterExpression(context, Block token, name)
+                        new FilterExpression(context, name)
                     ({
                         //todo: we're not producing a node list here. may have to revisit
                         new TagNode(context, token) 
@@ -139,9 +139,9 @@ module internal LoaderTags =
         interface ITag with
             member this.Perform token context tokens = 
                 match token.Args with
-                | path::[] -> (new SsiNode(context, token, Path path.string, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
-                | path::LexerToken("parsed")::[] ->
-                    let templateRef = FilterExpression (context, Block token, LexToken.String ("\"" + path.string + "\""))
+                | path::[] -> (new SsiNode(context, token, Path path.RawText, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
+                | path::MatchToken("parsed")::[] ->
+                    let templateRef = FilterExpression (context, path.WithValue("\"" + path.RawText + "\""))
                     ({
                         new TagNode(context, token) 
                         with

@@ -59,14 +59,14 @@ module internal IfChanged =
                 let nodes_ifsame, remaining =
                     match nodes_ifchanged.[nodes_ifchanged.Length-1].Token with
                     | NDjango.Lexer.Block b -> 
-                        if b.Verb.string = "else" then
+                        if b.Verb.RawText = "else" then
                             (context.Provider :?> IParser).Parse (Some token) remaining ["endifchanged"]
                         else
                             [], remaining
                     | _ -> [], remaining
 
                 let createWalker manager =
-                    match token.Args |> List.map (fun var -> new Variable(context, Block token, var)) with
+                    match token.Args |> List.map (fun var -> new Variable(context, var)) with
                     | [] ->
                         fun walker ->
                             let reader = 

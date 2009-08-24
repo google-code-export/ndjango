@@ -106,6 +106,7 @@
     <ProjectReference Include="..\NDjangoParser\NDjangoParser.fsproj">
       <Project>{B75384C4-C545-4511-A7FE-93D438B8AFA4}</Project>
       <Name>NDjangoParser</Name>
+      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

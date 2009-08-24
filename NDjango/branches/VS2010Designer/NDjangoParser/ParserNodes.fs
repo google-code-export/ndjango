@@ -74,8 +74,8 @@ module internal ParserNodes =
         default x.elements 
             with get() = 
                 [
-                    (new ConstructBracketNode(get_textToken token, Open) :> INode); 
-                    (new ConstructBracketNode(get_textToken token, Close) :> INode)
+                    (new ConstructBracketNode(token, Open) :> INode); 
+                    (new ConstructBracketNode(token, Close) :> INode)
                 ]
         
         /// A list of all values allowed for the node, i.e. for the tag name node a list of all registered tags
@@ -94,9 +94,9 @@ module internal ParserNodes =
 
             member x.NodeType = x.node_type
             /// Position - the position of the first character of the token 
-            member x.Position = (get_textToken token).Position
+            member x.Position = token.Position
             /// Length - length of the token
-            member x.Length = (get_textToken token).Length
+            member x.Length = token.Length
             member x.Values = x.Values
             member x.ErrorMessage = x.ErrorMessage
             member x.Description = x.Description
@@ -108,7 +108,7 @@ module internal ParserNodes =
             member x.walk manager walker = x.walk manager walker
             
     /// Node representing a django construct bracket
-    and private ConstructBracketNode(token: TextToken, bracketType: BracketType) =
+    and private ConstructBracketNode(token: Token, bracketType: BracketType) =
 
         interface INode with
             
@@ -119,7 +119,7 @@ module internal ParserNodes =
             member x.Position = 
                 match bracketType with
                 | Open -> token.Position
-                | Close -> token.Position + token.Text.Length - 2
+                | Close -> token.Position + token.Length - 2
             
             /// Length of the marker = 2
             member x.Length = 2
@@ -145,55 +145,41 @@ module internal ParserNodes =
 //        /// triggers code completion
 //
 
-    type ValueListNode(nodeType, token: TextToken, location, values)  =
+    type ValueListNode(nodeType, token: Token, values)  =
             
-        let body = token.Text
         interface INode with
-             /// TagNode type = TagName
             member x.NodeType = nodeType 
-            
-            /// Position - starting from the first no-whitespace character and including all 
-            /// whitespaces to the left of it
-            member x.Position = 
-//                token.Position + body.Substring(0, position).TrimEnd([|' ';'\t'|]).Length
-                token.Position + fst location
-            
-            /// Length from the "poistion" till (but excluding) the first whitespace
-            member x.Length = snd location
-////                let delta = position - body.Substring(0, position).TrimEnd([|' ';'\t'|]).Length
-//                let body_tail = body.[offset..].TrimStart([|' ';'\t'|])       
-//                let endpos = body_tail.IndexOfAny([|' ';'\t';'%';'}';'#'|]);
-//                if (endpos < 0)
-//                    then body.Length - offset// + delta
-//                    else body.Length - offset - body_tail.Length + endpos// + delta
-
-            /// a list of registered tags
+            member x.Position = token.Position
+            member x.Length = token.Length
             member x.Values = values
-            
             /// No message associated with the node
             member x.ErrorMessage = new Error(-1,"")
-            
             /// No description 
             member x.Description = ""
-            
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
             
-    type TagNameNode (context: ParsingContext, token, location) =
+    type TagNameNode (context: ParsingContext, token) =
         inherit ValueListNode
             (
                 NodeType.TagName, 
                 token,
-                location,
                 context.Tags
             )
             
-    type KeyWordNode (token:TextToken, location, values:string list) =
+    type KeywordNode (token:TextToken, values:string list) =
         inherit ValueListNode
             (
                 NodeType.Keyword, 
-                token,
-                location,
+                Text token,
+                values
+            )
+            
+    type FilterNameNode (token:TextToken, values:string list) =
+        inherit ValueListNode
+            (
+                NodeType.FilterName, 
+                Text token,
                 values
             )
             
@@ -213,10 +199,10 @@ module internal ParserNodes =
         
         /// Add TagName node to the list of elements
         override x.elements =
-            (new TagNameNode(context, (token :> TextToken), token.Verb.Location) :> INode) :: base.elements
+            (new TagNameNode(context, Block token) :> INode) :: base.elements
             
         override x.Description =
-            match context.Provider.Tags.TryFind(token.Verb.string) with
+            match context.Provider.Tags.TryFind(token.Verb.RawText) with
             | None -> ""
             | Some tag -> 
                 let attrs = tag.GetType().GetCustomAttributes(typeof<DescriptionAttribute>, false)
