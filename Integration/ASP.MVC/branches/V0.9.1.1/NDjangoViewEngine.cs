@@ -67,8 +67,6 @@ namespace NDjango.ASPMVCIntegration
         {
 
             provider = new TemplateManagerProvider().WithLoader(this).WithTag("url", new AspMvcUrlTag());
-            provider = FilterManager.Initialize(provider);
-
             NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate(this);
             NDjangoRegisterTemplate.Provider = provider;
             NDjangoRegisterTemplate.RegisterTemplates();
@@ -87,7 +85,7 @@ namespace NDjango.ASPMVCIntegration
         /// Gets or sets the ndjango manager obtained by registering the engine as a Loader.
         /// </summary>
         /// <value>The initial manager.</value>
-//        public NDjango.Interfaces.ITemplateManager InitialManager { get; private set; }
+        //        public NDjango.Interfaces.ITemplateManager InitialManager { get; private set; }
 
         /// <summary>
         /// Creates the partial view.
@@ -187,15 +185,15 @@ namespace NDjango.ASPMVCIntegration
             {
                 nameValueSection = ConfigurationManager.GetSection(path) as NDjangoSectionHandler;
             }
-            catch (ConfigurationException cfgEx) {
-                //TODO Exception
+            catch (ConfigurationException cfgEx)
+            {
             }
 
             if (nameValueSection != null)
             {
                 return nameValueSection;
             }
-            return null; 
+            return null;
         }
 
         private void RegisterCurrentTemplate(NDjangoSectionHandler nameValueSection)
@@ -207,7 +205,8 @@ namespace NDjango.ASPMVCIntegration
                     //register all tag and filter
                     RegisterGroupOfTemplates(item.Name);
                 }
-                else {
+                else
+                {
                     //register only defined tag and filter
                     foreach (NameValueElementImport impItem in item.ImportCollection)
                     {
@@ -225,18 +224,24 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
-        private void RegisterITag(string name,ITag tag) {
+        //Register Tag by Name
+        private void RegisterITag(string name, ITag tag)
+        {
             provider = provider.WithLoader(templateLoader).WithTag(name, tag);
         }
 
-        private void RegisterISimpleFilter(string name, ISimpleFilter filter) {
+        //Register Filter by Name
+        private void RegisterISimpleFilter(string name, ISimpleFilter filter)
+        {
             provider = provider.WithLoader(templateLoader).WithFilter(name, filter);
         }
 
-        private void ValidateSettings(string name, string value) {
+        //Validate Settings by Type of provider and current Name
+        private void ValidateSettings(string name, string value)
+        {
             object result = null;
             bool r1;
-   
+
             bool isNewSetting = true;
             foreach (var item in ((ITemplateManagerProvider)provider).Settings)
             {
@@ -261,10 +266,7 @@ namespace NDjango.ASPMVCIntegration
                     }
                     else if (setType == typeof(string))
                     {
-                        if (result == null)
-                        {
-                            result = value.ToString();
-                        }
+                        result = value.ToString();
 
                         provider = provider.WithLoader(templateLoader).WithSetting(name, result);
                         isNewSetting = false;
@@ -277,6 +279,7 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
+        //Register Group of filters and tags by name
         private void RegisterGroupOfTemplates(string name, string value)
         {
             string assemblyPath = String.Empty;
@@ -292,6 +295,7 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
+        //Register Group of filters and tags
         private void RegisterGroupOfTemplates(string value)
         {
             string assemblyPath = String.Empty;
@@ -307,6 +311,7 @@ namespace NDjango.ASPMVCIntegration
 
         }
 
+        //Load only assemblies by name
         private void LoadAssembly(string name, string assemblyPath)
         {
             try
@@ -350,12 +355,15 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
-
+        //Load all assemblies
         private void LoadAssembly(string assemblyPath)
         {
             try
             {
-                Assembly assembly = Assembly.LoadFrom(assemblyPath);
+                AssemblyName assemblyName = new AssemblyName();
+                assemblyName.CodeBase = assemblyPath;
+
+                Assembly assembly = Assembly.Load(assemblyName);
                 foreach (Type myType in assembly.GetTypes())
                 {
                     if (myType.GetInterface(typeof(ITag).Name) != null)
@@ -385,7 +393,8 @@ namespace NDjango.ASPMVCIntegration
             }
         }
 
-        private string GetTagName(Type type) {
+        private string GetTagName(Type type)
+        {
             string name = String.Empty;
             object[] tagName = type.GetCustomAttributes(typeof(NDjango.Interfaces.NameAttribute), false);
             foreach (NDjango.Interfaces.NameAttribute item in tagName)
@@ -394,8 +403,9 @@ namespace NDjango.ASPMVCIntegration
             }
             return name;
         }
-        
-        private string GetAssemblyPath(string value) {
+
+        private string GetAssemblyPath(string value)
+        {
             StringBuilder baseBaseDirectory = new StringBuilder(AppDomain.CurrentDomain.BaseDirectory);
             baseBaseDirectory.Append("bin");
             return CombinePaths(baseBaseDirectory.ToString(), value);
@@ -410,7 +420,6 @@ namespace NDjango.ASPMVCIntegration
             }
             catch (Exception e)
             {
-                //TODO EXCEPTION
             }
             return combination;
         }
