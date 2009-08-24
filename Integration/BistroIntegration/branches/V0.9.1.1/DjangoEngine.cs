@@ -70,7 +70,7 @@ namespace NDjango.BistroIntegration
     /// <summary>
     /// Integration point for django into the bistro rendering framework
     /// </summary>
-    public class DjangoEngine : TemplateEngine//, NDjango.Interfaces.ITemplateLoader
+    public class DjangoEngine : TemplateEngine
     {
         readonly string errorTemplate =
 @"
@@ -102,7 +102,7 @@ namespace NDjango.BistroIntegration
                         ITemplateLoader loader = new IntegrationTemplateLoader();
                         provider = new TemplateManagerProvider().WithLoader(loader).WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
 
-                        NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate(loader);
+                        NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate();
                         NDjangoRegisterTemplate.Provider = provider;
                         NDjangoRegisterTemplate.RegisterTemplates();
                         provider = NDjangoRegisterTemplate.Provider;
@@ -171,7 +171,6 @@ namespace NDjango.BistroIntegration
 
         string[] Sections = new string[] { NDJangoCommonSection };
         private TemplateManagerProvider provider;
-        private NDjango.Interfaces.ITemplateLoader templateLoader;
         public TemplateManagerProvider Provider
         {
             get
@@ -187,9 +186,8 @@ namespace NDjango.BistroIntegration
         /// <summary>
         /// Initializes a new instance of the <see cref="NDjangoRegisterTemplate"/> class.
         /// </summary>
-        public NDjangoRegisterTemplate(NDjango.Interfaces.ITemplateLoader NDjangoTemplateLoader)
+        public NDjangoRegisterTemplate()
         {
-            templateLoader = NDjangoTemplateLoader;
         }
 
         public void RegisterTemplates()
@@ -206,7 +204,6 @@ namespace NDjango.BistroIntegration
             }
             catch (ConfigurationException cfgEx)
             {
-                //TODO Exception
             }
 
             if (nameValueSection != null)
@@ -218,14 +215,24 @@ namespace NDjango.BistroIntegration
 
         private void RegisterCurrentTemplate(NDjangoSectionHandler nameValueSection)
         {
+            //NDjangoSectionHandler section isn't exist
             if (nameValueSection == null)
+            {
                 return;
+            }
+
+            foreach (NameValueClassElement item in nameValueSection.NDJangoTagFilterSectionCollection)
+            {
+                CreateInstanceByAssemblyName(item.Name);
+            }
+
             foreach (NameValueElementAssembly item in nameValueSection.NDJangoSectionCollection)
             {
                 if (item.ImportCollection.Count == 0)
                 {
                     //register all tag and filter
-                    RegisterGroupOfTemplates(item.Name);
+                    //RegisterGroupOfTemplates(item.Name);
+                    LoadByAssemblyName(item.Name);
                 }
                 else
                 {
@@ -246,16 +253,19 @@ namespace NDjango.BistroIntegration
 
         }
 
+        //Register Tag by Name
         private void RegisterITag(string name, ITag tag)
         {
             provider = provider.WithTag(name, tag);
         }
 
+        //Register Filter by Name
         private void RegisterISimpleFilter(string name, ISimpleFilter filter)
         {
             provider = provider.WithFilter(name, filter);
         }
 
+        //Validate Settings by Type of provider and current Name
         private void ValidateSettings(string name, string value)
         {
             object result = null;
@@ -285,10 +295,7 @@ namespace NDjango.BistroIntegration
                     }
                     else if (setType == typeof(string))
                     {
-                        if (result == null)
-                        {
-                            result = value.ToString();
-                        }
+                        result = value.ToString();
 
                         provider = provider.WithSetting(name, result);
                         isNewSetting = false;
@@ -301,6 +308,7 @@ namespace NDjango.BistroIntegration
             }
         }
 
+        //Register Group of filters and tags by name
         private void RegisterGroupOfTemplates(string name, string value)
         {
             string assemblyPath = String.Empty;
@@ -316,6 +324,20 @@ namespace NDjango.BistroIntegration
 
         }
 
+        //Register Group of filters and tags By Full Assembly Name
+        private void RegisterGroupOfTagFilterByFullAssemblyName(string value)
+        {
+            try
+            {
+                LoadAssembly(String.Empty, value);
+            }
+            catch (Exception e)
+            {
+            }
+
+        }
+
+        //Register Group of filters and tags
         private void RegisterGroupOfTemplates(string value)
         {
             string assemblyPath = String.Empty;
@@ -331,6 +353,38 @@ namespace NDjango.BistroIntegration
 
         }
 
+        //Create instance by full assembly name
+        private void CreateInstanceByAssemblyName(string AssemblyName)
+        {
+            try
+            {
+                Type type = Type.GetType(AssemblyName);
+                if (type.GetInterface(typeof(ITag).Name) != null)
+                {
+                    ITag tag = (ITag)Activator.CreateInstance(type);
+                    RegisterITag(GetTagName(type), tag);
+                }
+                else if (type.GetInterface(typeof(ISimpleFilter).Name) != null)
+                {
+                    ISimpleFilter filter = (ISimpleFilter)Activator.CreateInstance(type);
+                    RegisterISimpleFilter(GetTagName(type), filter);
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(ex.Message);
+                for (int i = 0; i < ex.Types.Length; i++)
+                    if (ex.Types[i] != null)
+                        sb.AppendFormat("\t{0} loaded\r\n", ex.Types[i].Name);
+
+                for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    if (ex.LoaderExceptions[i] != null)
+                        sb.AppendFormat("\texception {0}\r\n", ex.LoaderExceptions[i].Message);
+            }
+        }
+
+        //Load only assemblies by name
         private void LoadAssembly(string name, string assemblyPath)
         {
             try
@@ -374,12 +428,50 @@ namespace NDjango.BistroIntegration
             }
         }
 
+        //Load assemblies by assembly name
+        private void LoadByAssemblyName(string assemblyName)
+        {
+            try
+            {
+                Assembly assembly = Assembly.Load(assemblyName);
+                foreach (Type myType in assembly.GetTypes())
+                {
+                    if (myType.GetInterface(typeof(ITag).Name) != null)
+                    {
+                        ITag tag = (ITag)System.Activator.CreateInstance(myType);
+                        RegisterITag(GetTagName(myType), tag);
+                    }
 
+                    if (myType.GetInterface(typeof(ISimpleFilter).Name) != null)
+                    {
+                        ISimpleFilter filter = (ISimpleFilter)System.Activator.CreateInstance(myType);
+                        RegisterISimpleFilter(GetTagName(myType), filter);
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine(ex.Message);
+                for (int i = 0; i < ex.Types.Length; i++)
+                    if (ex.Types[i] != null)
+                        sb.AppendFormat("\t{0} loaded\r\n", ex.Types[i].Name);
+
+                for (int i = 0; i < ex.LoaderExceptions.Length; i++)
+                    if (ex.LoaderExceptions[i] != null)
+                        sb.AppendFormat("\texception {0}\r\n", ex.LoaderExceptions[i].Message);
+            }
+        }
+
+        //Load all assemblies
         private void LoadAssembly(string assemblyPath)
         {
             try
             {
-                Assembly assembly = Assembly.LoadFrom(assemblyPath);
+                AssemblyName assemblyName = new AssemblyName();
+                assemblyName.CodeBase = assemblyPath;
+
+                Assembly assembly = Assembly.Load(assemblyName);
                 foreach (Type myType in assembly.GetTypes())
                 {
                     if (myType.GetInterface(typeof(ITag).Name) != null)
@@ -436,7 +528,6 @@ namespace NDjango.BistroIntegration
             }
             catch (Exception e)
             {
-                //TODO EXCEPTION
             }
             return combination;
         }
@@ -451,5 +542,4 @@ namespace NDjango.BistroIntegration
 
 
     }
-
 }
