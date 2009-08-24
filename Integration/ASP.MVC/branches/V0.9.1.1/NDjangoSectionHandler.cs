@@ -15,12 +15,12 @@ namespace NDjango.ASPMVCIntegration
         public NDjangoSectionHandler() { }
 
         [ConfigurationCollection(typeof(NameValueElementCollection<NameValueElementAssembly>), AddItemName = "NDJangoImport")]
-        [ConfigurationProperty("NDJangoCollection", IsDefaultCollection = true)]
+        [ConfigurationProperty("NDJangoAssemblyCollection", IsDefaultCollection = true)]
         public NameValueElementCollection<NameValueElementAssembly> NDJangoSectionCollection
         {
             get
             {
-                return (NameValueElementCollection<NameValueElementAssembly>)base["NDJangoCollection"];
+                return (NameValueElementCollection<NameValueElementAssembly>)base["NDJangoAssemblyCollection"];
             }
 
         }
