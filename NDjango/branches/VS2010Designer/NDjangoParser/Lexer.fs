@@ -69,9 +69,11 @@ module Lexer =
         /// The original, unmodified text as it is in the source
         member x.RawText = text
         
-        /// The escaped, unescaped, internationalized, in other the value of the text with all modifications applied
+        /// The value after modifications
         member x.Value = value
 
+        /// Creates a token with the text of the tag body by stripping off
+        /// the first two and the last two characters
         member x.BlockBody = 
             let body = x.RawText.[2..x.RawText.Length-3].Trim()
             x.CreateToken(x.RawText.IndexOf(body), body.Length)
@@ -81,12 +83,12 @@ module Lexer =
         
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one                 
-        member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index,capture.Length)
+        member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index, capture.Length)
         
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one                 
-        member x.CreateToken (offset,length) = 
-            new TextToken(x.RawText.Substring(offset,length)
+        member x.CreateToken (offset, length) = 
+            new TextToken(x.Value.Substring(offset,length)
                 , {location with Offset = location.Offset + offset; Length = length; Position = location.Position + offset}) 
         
         /// Creates a new token bound to the same location in the source, but with a different value
@@ -135,9 +137,6 @@ module Lexer =
     type CommentToken(text, location) =
         inherit TextToken(text, location) 
         
-    type ExpressionToken(text, value, location) = 
-        inherit TextToken(text, value, location)
-    
     /// A lexer token produced through the tokenize function
     type Token =
         | Block of BlockToken
@@ -145,13 +144,11 @@ module Lexer =
         | Comment of CommentToken
         | Error of ErrorToken
         | Text of TextToken
-        | Expression of ExpressionToken
         
         member private x.TextToken = 
             match x with
             | Block b -> b :> TextToken
             | Error e -> e :> TextToken
-            | Expression e -> e :> TextToken
             | Variable v -> v :> TextToken
             | Comment c -> c :> TextToken
             | Text t -> t
