@@ -33,28 +33,30 @@ namespace TemplateViewer
         private void parseToolStripMenuItem_Click(object sender, EventArgs e)
         {
             templateTree.Nodes.Clear();
+            Diagonstics.Clear();
             StringReader reader = new StringReader(templateSource.Text);
             try
             {
                 foreach (INode node in provider.ParseTemplate(reader))
                     Process(templateTree.Nodes, node);
             }
-            catch
-            { }
+            catch (Exception ex)
+            {
+                Diagonstics.AppendText(
+                    "Exception: " + ex.Message + "\n"
+                    + ex.StackTrace
+                    );
+            }
         }
 
         private void Process(TreeNodeCollection treeNodeCollection, INode node)
         {
             string text = node.NodeType.ToString();
-            try
-            {
-                text += ": " + templateSource.Text.Substring(node.Position, node.Length);
-            }
-            catch
-            {
-            }
+            text += ": " + templateSource.Text.Substring(node.Position, node.Length);
+            
             TreeNode tnode = new TreeNode(text);
             tnode.Tag = node;
+            tnode.NodeFont = new Font(templateTree.Font, FontStyle.Bold);
 
             if (node.ErrorMessage.Severity > -1)
                 tnode.Nodes.Add("(Error)" + node.ErrorMessage.Message);

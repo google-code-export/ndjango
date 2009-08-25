@@ -24,7 +24,6 @@ namespace NDjango.UnitTests
             //*
             // Plain text should go through the template parser untouched
             lst.Add(new TestDescriptor("basic-syntax01", "something cool", null, ContextObjects.p("something cool")));
-
             // Variables should be replaced with their value in the current context
             lst.Add(new TestDescriptor("basic-syntax02", "{{ headline }}", ContextObjects.p("headline", "Success"), ContextObjects.p("Success"),"headline"));
 
@@ -95,7 +94,8 @@ namespace NDjango.UnitTests
             // purposes.
             lst.Add(new TestDescriptor("basic-syntax25", "{{ \"fred\" }}", ContextObjects.empty, ContextObjects.p("fred")));
             lst.Add(new TestDescriptor("basic-syntax25-sq1", "{{ '\"fred\"' }}", ContextObjects.empty, ContextObjects.p("\"fred\"")));
-            lst.Add(new TestDescriptor("basic-syntax25-sq2", "{{ 'fr\"ed' }}", ContextObjects.empty, ContextObjects.p("fr\"ed")));
+            // No unescape for double-quote inside a single quoted string
+            lst.Add(new TestDescriptor("basic-syntax25-sq2", "{{ 'fr\"ed' }}", ContextObjects.empty, ContextObjects.p("fr\\\"ed")));
             lst.Add(new TestDescriptor("basic-syntax26", "{% autoescape off %}{{ \"\\\"fred\\\"\" }}{% endautoescape %}", ContextObjects.empty, ContextObjects.p("\"fred\"")));
             lst.Add(new TestDescriptor("basic-syntax27", "{{ _(\"\\\"fred\\\"\") }}", ContextObjects.empty, ContextObjects.p("\"fred\"")));
 
