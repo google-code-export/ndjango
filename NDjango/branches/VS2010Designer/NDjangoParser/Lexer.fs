@@ -100,6 +100,9 @@ module Lexer =
         inherit TextToken(text, location)
         
         let verb,args =
+            let body = block_body text
+            let offset = text.IndexOf body
+            let location = {location with Offset=location.Offset + offset; Length = body.Length; Position = location.Position + offset}
             match tokenize_for_token location split_tag_re (block_body text) with
             | [] -> raise (SyntaxError("Empty tag block"))
             | verb::args -> verb,args
