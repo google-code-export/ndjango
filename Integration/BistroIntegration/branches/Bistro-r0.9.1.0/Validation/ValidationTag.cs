@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Bistro.Validation;
+using NDjango.Interfaces;
 
 namespace NDjango.BistroIntegration.Validation
 {
     /// <summary>
     /// Default implementation of the {% validate %} tag
     /// </summary>
-    class ValidationTag: NDjango.Compatibility.SimpleTag
+    [Name("validate")]
+    public class ValidationTag: NDjango.Compatibility.SimpleTag
     {
         public ValidationTag() : base(false, "validate", -1) { }
 
