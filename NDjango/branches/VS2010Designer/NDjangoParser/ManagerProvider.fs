@@ -226,7 +226,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                         /// this is a tag node - add a TagName node to the list of elements
                                         /// so that tag name code completion can be triggered
                                         let offset = error.RawText.Length - error.RawText.[2..].TrimStart([|' ';'\t'|]).Length
-                                        let name_token = error.CreateToken(offset, error.RawText.Length-offset)
+                                        let name_token = error.CreateToken((offset, error.RawText.Length-offset))
                                         (new TagNameNode(context, Text name_token )
                                                 :> INode) :: base.elements
                                     | _ -> base.elements

@@ -66,7 +66,7 @@ module internal Filter =
                 match token.Args with
                 | filter::[] ->
 // TODO: ExpressionToken
-                    let filter_expr = new FilterExpression(context, filter.WithValue(FILTER_VARIABLE_NAME + "|" + filter.Value))
+                    let filter_expr = new FilterExpression(context, filter.WithValue(FILTER_VARIABLE_NAME + "|" + filter.Value) None)
                     let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endfilter"]
                     (new FilterNode(context, token, filter_expr, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("'filter' tag requires one argument"))

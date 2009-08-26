@@ -47,7 +47,7 @@ module Expressions =
             
         let args = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list 
                 |> List.map 
-                    (fun (c) ->
+                    (fun (c:Capture) ->
                         new Variable(context, filter_token.CreateToken(c))
                     )
                     

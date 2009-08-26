@@ -159,7 +159,7 @@ module internal LoaderTags =
                 | path::[] -> (new SsiNode(context, token, Path path.Value, context.Provider.Loader.GetTemplate) :> INodeImpl), tokens
                 | path::MatchToken("parsed")::[] ->
 // TODO: ExpressionToken
-                    let templateRef = FilterExpression (context, path.WithValue("\"" + path.Value + "\""))
+                    let templateRef = FilterExpression (context, path.WithValue("\"" + path.Value + "\"") None)
                     ({
                         new TagNode(context, token) 
                         with

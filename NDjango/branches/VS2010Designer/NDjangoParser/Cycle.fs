@@ -117,11 +117,13 @@ module internal Cycle =
 
                 let normalize (values: TextToken list) =
                     if List.exists checkForOldSyntax values then
+                        // Create a new token covering the text span from the beginning
+                        // of the first parameter till the end of the last one
                         let start = values.Head.Location.Offset
                         let end_location = values.[values.Length-1].Location
-                        let t1 = token.CreateToken(start - token.Location.Offset, end_location.Offset + end_location.Length - start)
+                        let t1 = token.CreateToken((start - token.Location.Offset, end_location.Offset + end_location.Length - start))
                         tokenize_for_token t1.Location oldstyle_re t1.Value |>
-                        List.map (fun t -> t.WithValue("'" + t.RawText + "'"))
+                        List.map (fun t -> t.WithValue ("'" + t.RawText + "'") None)
                     else
                         values
 
@@ -134,9 +136,6 @@ module internal Cycle =
                         | [] -> raise (SyntaxError ("'cycle' tag requires at least one argument"))
                         | name::[] -> name.RawText, []
                         | _ as values -> "$Anonymous$Cycle", values
-//                        let values1 = token.Args |> normalize
-//                        if values1.Length = 1 then (values1.[0].RawText, [])
-//                        else "$Anonymous$Cycle", values1
                         
                 let values = List.map (fun v -> new Variable(context, v)) values
                 ((new TagNode(context, token, name, values) :> NDjango.Interfaces.INodeImpl), tokens)
