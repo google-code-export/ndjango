@@ -76,10 +76,18 @@ namespace NDjango.UnitTests
         }
 
 
-        public static string runTemplate(NDjango.Interfaces.ITemplateManager manager, string templateName, IDictionary<string,object> context)
+        public string runTemplate(NDjango.Interfaces.ITemplateManager manager, string templateName, IDictionary<string,object> context)
         {
-            var template = manager.RenderTemplate(templateName, context);
-            string retStr = template.ReadToEnd();
+            Stopwatch stopwatch = new Stopwatch();
+            string retStr = "";
+            stopwatch.Start();
+            for (int i = 0; i < 10; i++)
+            {
+                var template = manager.RenderTemplate(templateName, context);
+                retStr = template.ReadToEnd();
+            }
+            using (TextWriter stream = System.IO.File.AppendText("Timers.txt"))
+                stream.WriteLine(Name + "," + stopwatch.ElapsedTicks); 
             return retStr;
         }
 

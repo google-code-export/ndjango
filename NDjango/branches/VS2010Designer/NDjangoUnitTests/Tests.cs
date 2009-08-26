@@ -51,7 +51,7 @@ this is inner2
             {
                 // alternate
                 //return ts.Second % 2 == 0;
-                return false;
+                return true;
             }
 
             #endregion
@@ -247,44 +247,44 @@ this is inner2
         }
 
 //        [Test, TestCaseSource("TemplateTestEnum1")]
-        public void Test1(string path)
-        {
-            string retVal = TestDescriptor.runTemplate(manager, File.ReadAllText(path + ".django"), CreateContext(path + ".xml"));
-            string retBase = File.ReadAllText(path + ".htm");
-            Assert.AreEqual(retBase, retVal, String.Format("RESULT!!!!!!!!!!!!!!!!:\r\n{0}", retVal));
-        }
+        //public void Test1(string path)
+        //{
+        //    string retVal = TestDescriptor.runTemplate(manager, File.ReadAllText(path + ".django"), CreateContext(path + ".xml"));
+        //    string retBase = File.ReadAllText(path + ".htm");
+        //    Assert.AreEqual(retBase, retVal, String.Format("RESULT!!!!!!!!!!!!!!!!:\r\n{0}", retVal));
+        //}
 
 
-        public IEnumerable<string> TemplateTestEnum1
-        {
-            get
-            {
-                var result = new System.Collections.Generic.List<string>();
-                result.Add("../Tests/Templates/Test1____/Scripts/create");
-                return result;
-            }
-        }
+        //public IEnumerable<string> TemplateTestEnum1
+        //{
+        //    get
+        //    {
+        //        var result = new System.Collections.Generic.List<string>();
+        //        result.Add("../Tests/Templates/Test1____/Scripts/create");
+        //        return result;
+        //    }
+        //}
 
 
 
 
-//        [Test, TestCaseSource("TestEnumerator")]
-        public void Test(string path)
-        {
-            string retVal = TestDescriptor.runTemplate(manager, File.ReadAllText(path + ".django"), CreateContext(path + ".xml"));
-            string retBase = File.ReadAllText(path + ".htm"); 
-            Assert.AreEqual(retBase, retVal,String.Format("RESULT!!!!!!!!!!!!!!!!:\r\n{0}",retVal));
-        }
+////        [Test, TestCaseSource("TestEnumerator")]
+//        public void Test(string path)
+//        {
+//            string retVal = TestDescriptor.runTemplate(manager, File.ReadAllText(path + ".django"), CreateContext(path + ".xml"));
+//            string retBase = File.ReadAllText(path + ".htm"); 
+//            Assert.AreEqual(retBase, retVal,String.Format("RESULT!!!!!!!!!!!!!!!!:\r\n{0}",retVal));
+//        }
 
-        public IEnumerable<string> TestEnumerator
-        {
-            get 
-            {
-                var result = new System.Collections.Generic.List<string>();
-                foreach (string file in Directory.GetFiles("../../Tests", "*.django", SearchOption.AllDirectories))
-                    result.Add(file.Substring(0, file.LastIndexOf(".")));
-                return result; 
-            }
-        }
+//        public IEnumerable<string> TestEnumerator
+//        {
+//            get 
+//            {
+//                var result = new System.Collections.Generic.List<string>();
+//                foreach (string file in Directory.GetFiles("../../Tests", "*.django", SearchOption.AllDirectories))
+//                    result.Add(file.Substring(0, file.LastIndexOf(".")));
+//                return result; 
+//            }
+//        }
     }
 }
