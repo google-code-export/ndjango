@@ -5,6 +5,10 @@ using System.IO;
 using System.Web;
 using System;
 using NDjango.FiltersCS;
+using NDjango.Interfaces;
+using System.Configuration;
+using System.Reflection;
+using System.Text;
 using NDjango.BistroIntegration.Validation;
 
 namespace NDjango.BistroIntegration
@@ -15,6 +19,7 @@ namespace NDjango.BistroIntegration
     /// This tag will take a url in a String.Format format, and apply the 
     /// supplied parameters to it.
     /// </summary>
+    [Name("url")]
     public class BistroUrlTag : NDjango.Tags.Abstract.UrlTag
     {
         string rootDir;
@@ -62,7 +67,7 @@ namespace NDjango.BistroIntegration
     }
 
 
-    
+
 
     /// <summary>
     /// Integration point for django into the bistro rendering framework
@@ -87,7 +92,9 @@ namespace NDjango.BistroIntegration
 
         private static object lockObj = new object();
 
-        private static TemplateManagerProvider Provider
+        private static ConfigurationLoader loader;
+
+        public static TemplateManagerProvider Provider
         {
             get
             {
@@ -96,11 +103,27 @@ namespace NDjango.BistroIntegration
                 {
                     if (provider == null)
                     {
-                        provider = new TemplateManagerProvider().WithLoader(new IntegrationTemplateLoader()).WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath)).WithTag("validate", new ValidationTag());
+                        loader = new ConfigurationLoader();
+                        ITemplateLoader templateLoader = new IntegrationTemplateLoader();
+                        provider = 
+                            new TemplateManagerProvider()
+                                .WithLoader(templateLoader)
+                                .WithFilters(loader.GetFilters())
+                                .WithTags(loader.GetTags())
+                                // the url tag has a constructor parameter. structuremap won't pick it up for us
+                                .WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
+                        
                         provider = FilterManager.Initialize(provider);
                     }
                 }
                 return provider;
+            }
+            set
+            {
+                lock (lockObj)
+                {
+                    provider = value;
+                }
             }
         }
 
@@ -114,8 +137,7 @@ namespace NDjango.BistroIntegration
         private NDjango.Interfaces.ITemplateManager manager;
         #endregion
 
-        
-        public override void Render(HttpContextBase httpContext, IContext requestContext)
+        public override void Render(HttpContextBase httpContext, Bistro.Controllers.IContext requestContext)
         {
             if (httpContext.Session != null)
                 foreach (object key in httpContext.Session.Keys)
@@ -145,6 +167,5 @@ namespace NDjango.BistroIntegration
         {
             return String.Format(errorTemplate, request, ex.Message, showTrace ? ex.ToString() : String.Empty);
         }
-
     }
 }
