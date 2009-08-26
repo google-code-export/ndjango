@@ -81,7 +81,7 @@ namespace NDjango.UnitTests
             Stopwatch stopwatch = new Stopwatch();
             string retStr = "";
             stopwatch.Start();
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 1; i++)
             {
                 var template = manager.RenderTemplate(templateName, context);
                 retStr = template.ReadToEnd();
