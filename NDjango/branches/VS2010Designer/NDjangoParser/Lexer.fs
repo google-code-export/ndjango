@@ -61,12 +61,6 @@ module Lexer =
         /// The value after modifications
         member x.Value = value
 
-        /// Creates a token with the text of the tag body by stripping off
-        /// the first two and the last two characters
-        member x.BlockBody = 
-            let body = x.RawText.[2..x.RawText.Length-3].Trim()
-            x.CreateToken(x.RawText.IndexOf(body), body.Length)
-
         /// Token location
         member x.Location = location
         
@@ -95,6 +89,8 @@ module Lexer =
                 }
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
             
+    let block_body (text:string) = text.[2..text.Length-3].Trim()
+
     /// Locates the tag fragments the tag name and tag arguments by splitting the text into pieces by whitespaces
     /// Whitespaces inside strings in double- or single quotes remain unaffected
     let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
@@ -104,7 +100,7 @@ module Lexer =
         inherit TextToken(text, location)
         
         let verb,args =
-            match tokenize_for_token location split_tag_re text with
+            match tokenize_for_token location split_tag_re (block_body text) with
             | [] -> raise (SyntaxError("Empty tag block"))
             | verb::args -> verb,args
         
@@ -124,10 +120,15 @@ module Lexer =
     /// Represents a variable block
     type VariableToken(text:string, location) =
         inherit TextToken(text, location)
-            member x.Expression = 
-                let body = x.BlockBody
-                if (body.RawText = "") then raise (SyntaxError("Empty variable block"))
-                body
+
+        /// Creates a token with the text of the tag body by stripping off
+        /// the first two and the last two characters
+        let expression = 
+            let body = block_body text
+            if (body = "") then raise (SyntaxError("Empty variable block"))
+            new TextToken(body, {location with Offset=location.Offset+2; Length=body.Length; Position = location.Position + 2 })
+
+        member x.Expression = expression
     
     type CommentToken(text, location) =
         inherit TextToken(text, location) 
