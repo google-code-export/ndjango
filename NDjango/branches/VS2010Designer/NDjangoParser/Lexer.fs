@@ -33,27 +33,47 @@ open NDjango.OutputHandling
 module Lexer =
 
     /// Structure describing the token location in the original source string
-    type Location = 
-        {
-            /// 0 based offset of the text from the begining of the source file
-            Offset: int
-            /// Length of the text fragment from which the token was generated 
-            /// may or may not match the length of the actual text
-            Length: int
-            /// 0 based position of the starting position of the text within the line it belongs to
-            Position: int
-            /// 0 based line number
-            Line: int
-        }
+    type Location(offset:int, length:int, line:int, position:int) = 
+
+        public new(parent:Location, (offset:int, length:int)) =
+            Location(parent.Offset + offset, length, parent.Line, parent.Position + offset) 
+                
+        /// 0 based offset of the text from the begining of the source file
+        member x.Offset = offset
+        
+        /// Length of the text fragment from which the token was generated 
+        /// may or may not match the length of the actual text
+        member x.Length = length
+        
+        /// 0 based line number
+        member x.Line = line
+
+        /// 0 based position of the starting position of the text within the line it belongs to
+        member x.Position = position
+        
+    /// Provides mapping from the spans of the actual text to the spans of the original text
+    type Item = (int*int)*(int*int)
+    type SpanMap (map :Item list) =
+        member x.Map (offset, length) = 
+            let ((f_span_start, f_span_end),(to_span_start,to_span_end)) 
+                = map |>
+                    List.find (fun ((span_start,span_end),_) -> 
+                            span_start >= offset && span_end < offset)
+            let local_offset = offset - f_span_start
+            let local_length = to_span_end - to_span_start - local_offset
+            let local_length =
+                if local_length > length then length
+                else local_length
+            (to_span_start + local_offset, local_length)
 
     /// Base class for text tokens. Its main purpose is to keep track of bits of text
     /// participating in the template parsing in their relationship with the original 
     /// location of the text in the template. As the text is going through various 
     /// stages of parsing it may or may not differ from the original text in the source
-    type TextToken(text:string, value:string, location: Location) =
+    type TextToken(text:string, value:string, location: Location, map:SpanMap option) =
   
-        new (text:string, location: Location) =
-            new TextToken(text, text, location)
+        new (text:string, location: Location, ?map:SpanMap) =
+            new TextToken(text, text, location, map)
             
         /// The original, unmodified text as it is in the source
         member x.RawText = text
@@ -65,33 +85,34 @@ module Lexer =
         member x.Location = location
         
         /// Creates a new token from the existing one 
-        /// Use this method when you need to create a new token from a part of the text of an existing one                 
-        member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index, capture.Length)
+        /// Use this method when you need to create a new token from a part of the text of an existing one 
+        [<OverloadID("Capture")>]                
+        member x.CreateToken (capture:Capture) = x.CreateToken ((capture.Index, capture.Length))
         
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one                 
-        member x.CreateToken (offset, length) = 
-            new TextToken(x.Value.Substring(offset,length)
-                , {location with Offset = location.Offset + offset; Length = length; Position = location.Position + offset}) 
+        [<OverloadID("Location")>]                
+        member x.CreateToken (location) = 
+            let mapped_location = 
+                match map with 
+                | Some m -> m.Map location
+                | None -> location
+                
+            new TextToken(value.Substring(fst location, snd location), new Location(x.Location, location))
         
         /// Creates a new token bound to the same location in the source, but with a different value
         /// Use this method when you need to modify the token value but keep its binding to the source                
-        member x.WithValue new_value = new TextToken(text, new_value, location)
+        member x.WithValue new_value map = new TextToken(text, new_value, location, map)
 
     /// generates a list of tokens by applying the regexp
     let tokenize_for_token location (regex:Regex) value =
-            let location_ofMatch (m:Match) =
-                {location 
-                    with 
-                        Offset = location.Offset + m.Groups.[0].Index;
-                        Length = m.Groups.[0].Length;
-                        Position = location.Position + m.Groups.[0].Index;
-                }
+            let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
-            
+    
+    /// extracts the text representing the block body        
     let block_body (text:string) = text.[2..text.Length-3].Trim()
 
-    /// Locates the tag fragments the tag name and tag arguments by splitting the text into pieces by whitespaces
+    /// Locates the tag fragments: the tag name and tag arguments by splitting the text into pieces by whitespaces
     /// Whitespaces inside strings in double- or single quotes remain unaffected
     let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
     
@@ -102,10 +123,10 @@ module Lexer =
         let verb,args =
             let body = block_body text
             let offset = text.IndexOf body
-            let location = {location with Offset=location.Offset + offset; Length = body.Length; Position = location.Position + offset}
+            let location = new Location(location, (offset, body.Length))
             match tokenize_for_token location split_tag_re (block_body text) with
             | [] -> raise (SyntaxError("Empty tag block"))
-            | verb::args -> verb,args
+            | verb::args -> verb, args
         
         /// A.K.A. tag name
         member x.Verb = verb
@@ -117,7 +138,7 @@ module Lexer =
     /// till parsing stage
     type ErrorToken(text, error:string, location) =
         inherit TextToken(text, location)
-          
+        /// Error message  
         member x.ErrorMessage = error
 
     /// Represents a variable block
@@ -129,8 +150,9 @@ module Lexer =
         let expression = 
             let body = block_body text
             if (body = "") then raise (SyntaxError("Empty variable block"))
-            new TextToken(body, {location with Offset=location.Offset+2; Length=body.Length; Position = location.Position + 2 })
-
+            new TextToken(body, new Location(location, (2, body.Length)))
+        
+        /// token representing the expression
         member x.Expression = expression
     
     type CommentToken(text, location) =
@@ -190,7 +212,7 @@ module Lexer =
                     else linePos <- linePos + 1
                     ) 
                 text
-            let location = {Offset = currentPos; Length = text.Length; Line = currentLine; Position = currentLinePos}
+            let location = new Location(currentPos, text.Length, currentLine, currentLinePos)
             if not !in_tag then
                 Text(new TextToken(text, location))
             else

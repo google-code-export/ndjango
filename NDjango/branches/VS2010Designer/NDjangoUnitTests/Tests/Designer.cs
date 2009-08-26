@@ -9,7 +9,7 @@ namespace NDjango.UnitTests
 {
     public partial class Tests
     {
-        [Test, TestCaseSource("GetDesignerTests")]
+        //[Test, TestCaseSource("GetDesignerTests")]
         public void DesignerTests(TestDescriptor test)
         {
             InternalFilterProcess(test);
