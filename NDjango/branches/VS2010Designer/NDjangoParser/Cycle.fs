@@ -119,7 +119,8 @@ module internal Cycle =
                     if List.exists checkForOldSyntax values then
                         let start = values.Head.Location.Offset
                         let end_location = values.[values.Length-1].Location
-                        token.CreateToken(start - token.Location.Offset, end_location.Offset + end_location.Length - start).Tokenize(oldstyle_re) |>
+                        let t1 = token.CreateToken(start - token.Location.Offset, end_location.Offset + end_location.Length - start)
+                        tokenize_for_token t1.Location oldstyle_re t1.Value |>
                         List.map (fun t -> t.WithValue("'" + t.RawText + "'"))
                     else
                         values

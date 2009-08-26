@@ -55,17 +55,6 @@ module Lexer =
         new (text:string, location: Location) =
             new TextToken(text, text, location)
             
-        /// generates a list of tokens by applying the regexp
-        member x.Tokenize (regex:Regex) =
-            let location_ofMatch (m:Match) =
-                {location 
-                    with 
-                        Offset = location.Offset + m.Groups.[0].Index;
-                        Length = m.Groups.[0].Length;
-                        Position = location.Position + m.Groups.[0].Index;
-                }
-            [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
-            
         /// The original, unmodified text as it is in the source
         member x.RawText = text
         
@@ -95,28 +84,34 @@ module Lexer =
         /// Use this method when you need to modify the token value but keep its binding to the source                
         member x.WithValue new_value = new TextToken(text, new_value, location)
 
+    /// generates a list of tokens by applying the regexp
+    let tokenize_for_token location (regex:Regex) value =
+            let location_ofMatch (m:Match) =
+                {location 
+                    with 
+                        Offset = location.Offset + m.Groups.[0].Index;
+                        Length = m.Groups.[0].Length;
+                        Position = location.Position + m.Groups.[0].Index;
+                }
+            [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
+            
+    /// Locates the tag fragments the tag name and tag arguments by splitting the text into pieces by whitespaces
+    /// Whitespaces inside strings in double- or single quotes remain unaffected
+    let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
+    
     /// Represents a tag block 
     type BlockToken(text, location) =
         inherit TextToken(text, location)
         
-        let mutable fragments = None
-        /// Locates the tag fragments the tag name and tag arguments by splitting the text into pieces by whitespaces
-        /// Whitespaces inside strings in double- or single quotes remain unaffected
-        let split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
-        member private x.Tokenize =
-            match fragments with
-            | Some _ -> ()
-            | None ->
-                fragments <- 
-                    match x.BlockBody.Tokenize split_tag_re with
-                    | [] -> raise (SyntaxError("Empty tag block"))
-                    | _ as tokens -> Some tokens
-            fragments.Value
-            
+        let verb,args =
+            match tokenize_for_token location split_tag_re text with
+            | [] -> raise (SyntaxError("Empty tag block"))
+            | verb::args -> verb,args
+        
         /// A.K.A. tag name
-        member x.Verb = List.hd x.Tokenize
+        member x.Verb = verb
         /// List of arguments - can be empty
-        member x.Args = List.tl x.Tokenize 
+        member x.Args = args 
     
     /// Represents an syntax error in the syntax node tree. These tokens are generated in response
     /// to exceptions thrown during lexing of the template, so that the actual exception throwing can be delayed
