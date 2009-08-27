@@ -86,19 +86,18 @@ module Lexer =
         
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one 
-        [<OverloadID("Capture")>]                
-        member x.CreateToken (capture:Capture) = x.CreateToken ((capture.Index, capture.Length))
+        member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index, capture.Length)
         
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one                 
-        [<OverloadID("Location")>]                
-        member x.CreateToken (location) = 
+        member x.CreateToken (offset, length) = 
             let mapped_location = 
-                match map with 
-                | Some m -> m.Map location
-                | None -> location
+//                match map with 
+//                | Some m -> m.Map (offset, length)
+//                | None -> 
+                    (offset, length)
                 
-            new TextToken(value.Substring(fst location, snd location), new Location(x.Location, location))
+            new TextToken(value.Substring(offset, length), new Location(x.Location, (offset, length)))
         
         /// Creates a new token bound to the same location in the source, but with a different value
         /// Use this method when you need to modify the token value but keep its binding to the source                

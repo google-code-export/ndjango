@@ -121,7 +121,7 @@ module internal Cycle =
                         // of the first parameter till the end of the last one
                         let start = values.Head.Location.Offset
                         let end_location = values.[values.Length-1].Location
-                        let t1 = token.CreateToken((start - token.Location.Offset, end_location.Offset + end_location.Length - start))
+                        let t1 = token.CreateToken(start - token.Location.Offset, end_location.Offset + end_location.Length - start)
                         tokenize_for_token t1.Location oldstyle_re t1.Value |>
                         List.map (fun t -> t.WithValue ("'" + t.RawText + "'") None)
                     else

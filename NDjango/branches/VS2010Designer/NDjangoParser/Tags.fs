@@ -53,7 +53,7 @@ module internal Misc =
                     | MatchToken("on")::[] -> true
                     | MatchToken("off")::[] -> false
                     | arg::list -> fail arg
-                    | _ -> fail <| token.CreateToken ((token.Location.Length - 2, 0))
+                    | _ -> fail <| token.CreateToken (token.Location.Length - 2, 0)
                     
                 (({
                     new TagNode(context, token) with

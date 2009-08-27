@@ -86,8 +86,8 @@ namespace NDjango.UnitTests
                 var template = manager.RenderTemplate(templateName, context);
                 retStr = template.ReadToEnd();
             }
-            using (TextWriter stream = System.IO.File.AppendText("Timers.txt"))
-                stream.WriteLine(Name + "," + stopwatch.ElapsedTicks); 
+//            using (TextWriter stream = System.IO.File.AppendText("Timers.txt"))
+//                stream.WriteLine(Name + "," + stopwatch.ElapsedTicks); 
             return retStr;
         }
 
