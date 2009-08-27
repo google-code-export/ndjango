@@ -240,13 +240,13 @@ and ITemplateManagerProvider =
 
     /// Retrieves the requested template checking first the global
     /// dictionary and validating the timestamp
-    abstract member GetTemplate: string -> (ITemplate* System.DateTime)
+    abstract member GetTemplate: string -> (ITemplate * System.DateTime)
 
     /// Retrieves the requested template without checking the 
     /// local dictionary and/or timestamp
     /// the retrieved template is placed in the dictionary replacing 
     /// the existing template with the same name (if any)
-    abstract member LoadTemplate: string -> (ITemplate* System.DateTime)
+    abstract member LoadTemplate: string -> (ITemplate * System.DateTime)
         
 /// A tag implementation
 and ITag = 
@@ -258,7 +258,7 @@ and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) 
                         Seq.append (Seq.of_list <| extra_tags)
     member x.Provider = provider
     
-/// This esception is thrown if a problem encountered while rendering the template
+/// This exception is thrown if a problem encountered while rendering the template
 /// This exception will be later caught in the ASTWalker and re-thrown as the 
 /// RenderingException
 type RenderingError (message: string, ?innerException: exn) =

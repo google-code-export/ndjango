@@ -36,18 +36,19 @@ open Utilities
 module Expressions =
     
     /// Represents a single filter in the expression            
-    type private Filter(context:ParsingContext, filter_token:TextToken, filter_match:Match) =
+    type private Filter(context:ParsingContext, expression_token:TextToken, filter_match:Match) =
+        let filter_token = expression_token.CreateToken(filter_match)
         let filter_name = filter_match.Groups.["filter_name"]
         let name_node = 
             new FilterNameNode (
-                filter_token.CreateToken(filter_name), 
+                expression_token.CreateToken(filter_name), 
                 context.Provider.Filters |> Map.to_list |> List.map (fun f -> fst f)
             )
             
         let args = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list 
                 |> List.map 
                     (fun (c) ->
-                        new Variable(context, filter_token.CreateToken(c))
+                        new Variable(context, expression_token.CreateToken(c))
                     )
                     
         let error, filter =
@@ -134,7 +135,8 @@ module Expressions =
                                     raise (SyntaxError (sprintf "Could not find variable at the start of %s" expression_text))
                             | Some _ -> 
                                 let token = expression.CreateToken(mtch) 
-                                offset+mtch.Length, error, variable, filters @ [new Filter(context, expression, mtch)]
+                                offset+mtch.Length, error, variable, filters @ 
+                                    [new Filter(context, expression, mtch)]
                     with
                     | :? SyntaxError as ex ->
                         if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
@@ -148,7 +150,7 @@ module Expressions =
         
         // check if we reached the end of the expression string        
         let error = 
-            if (count = expression_text.Length) 
+            if count = expression_text.Length 
             then error
             else
                 let message = 

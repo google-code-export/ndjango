@@ -1,2 +1,3 @@
-{% with a|aaa|bbb as b %}
+{% with a|wordwrap|bbb as b %}
 {%endwith%}
+{%debug%}
