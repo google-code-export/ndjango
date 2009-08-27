@@ -33,24 +33,44 @@ open NDjango.OutputHandling
 module Lexer =
 
     /// Structure describing the token location in the original source string
-    type Location(offset:int, length:int, line:int, position:int) = 
+    type Location =  
+        {
+                    
+            /// 0 based offset of the text from the begining of the source file
+            Offset:int
+            
+            /// Length of the text fragment from which the token was generated 
+            /// may or may not match the length of the actual text
+            Length:int
+            
+            /// 0 based line number
+            Line:int
 
-        public new(parent:Location, (offset:int, length:int)) =
-            Location(parent.Offset + offset, length, parent.Line, parent.Position + offset) 
-                
-        /// 0 based offset of the text from the begining of the source file
-        member x.Offset = offset
+            /// 0 based position of the starting position of the text within the line it belongs to
+            Position:int
+        }
         
-        /// Length of the text fragment from which the token was generated 
-        /// may or may not match the length of the actual text
-        member x.Length = length
-        
-        /// 0 based line number
-        member x.Line = line
-
-        /// 0 based position of the starting position of the text within the line it belongs to
-        member x.Position = position
-        
+    let location_of_parent (parent:Location) (offset, length) = 
+        {parent with Offset=parent.Offset + offset; Length=length; Position=parent.Position + offset}
+//    /// Structure describing the token location in the original source string
+//    type Location(offset:int, length:int, line:int, position:int) = 
+//
+//        public new(parent:Location, (offset:int, length:int)) =
+//            Location(parent.Offset + offset, length, parent.Line, parent.Position + offset) 
+//                
+//        /// 0 based offset of the text from the begining of the source file
+//        member x.Offset = offset
+//        
+//        /// Length of the text fragment from which the token was generated 
+//        /// may or may not match the length of the actual text
+//        member x.Length = length
+//        
+//        /// 0 based line number
+//        member x.Line = line
+//
+//        /// 0 based position of the starting position of the text within the line it belongs to
+//        member x.Position = position
+//        
     /// Provides mapping from the spans of the actual text to the spans of the original text
     type Item = (int*int)*(int*int)
     type SpanMap (map :Item list) =
@@ -97,7 +117,8 @@ module Lexer =
 //                | None -> 
                     (offset, length)
                 
-            new TextToken(value.Substring(offset, length), new Location(x.Location, (offset, length)))
+//            new TextToken(value.Substring(offset, length), new Location(x.Location, (offset, length)))
+            new TextToken(value.Substring(offset, length), location_of_parent x.Location (offset, length))
         
         /// Creates a new token bound to the same location in the source, but with a different value
         /// Use this method when you need to modify the token value but keep its binding to the source                
@@ -105,7 +126,8 @@ module Lexer =
 
     /// generates a list of tokens by applying the regexp
     let tokenize_for_token location (regex:Regex) value =
-            let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
+//            let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
+            let location_ofMatch (m:Match) = location_of_parent location (m.Groups.[0].Index, m.Groups.[0].Length)
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
     
     /// extracts the text representing the block body        
@@ -122,7 +144,8 @@ module Lexer =
         let verb,args =
             let body = block_body text
             let offset = text.IndexOf body
-            let location = new Location(location, (offset, body.Length))
+//            let location = new Location(location, (offset, body.Length))
+            let location = location_of_parent location (offset, body.Length)
             match tokenize_for_token location split_tag_re (block_body text) with
             | [] -> raise (SyntaxError("Empty tag block"))
             | verb::args -> verb, args
@@ -149,7 +172,8 @@ module Lexer =
         let expression = 
             let body = block_body text
             if (body = "") then raise (SyntaxError("Empty variable block"))
-            new TextToken(body, new Location(location, (2, body.Length)))
+//            new TextToken(body, new Location(location, (2, body.Length)))
+            new TextToken(body, location_of_parent location (2, body.Length))
         
         /// token representing the expression
         member x.Expression = expression
@@ -211,7 +235,8 @@ module Lexer =
                     else linePos <- linePos + 1
                     ) 
                 text
-            let location = new Location(currentPos, text.Length, currentLine, currentLinePos)
+//            let location = new Location(currentPos, text.Length, currentLine, currentLinePos)
+            let location = {Offset=currentPos; Length=text.Length; Line=currentLine; Position=currentLinePos}
             if not !in_tag then
                 Text(new TextToken(text, location))
             else
