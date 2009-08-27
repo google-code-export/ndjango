@@ -170,6 +170,7 @@
             this.templateTree.Name = "templateTree";
             this.templateTree.Size = new System.Drawing.Size(204, 270);
             this.templateTree.TabIndex = 3;
+            this.templateTree.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.templateTree_AfterSelect);
             // 
             // templateSource
             // 

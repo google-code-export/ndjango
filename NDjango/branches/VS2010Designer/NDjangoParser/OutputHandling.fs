@@ -115,14 +115,7 @@ module OutputHandling =
 
         if quoted 
         then None, Some (unescape_quotes v.[count..v.Length-2*count] :> obj), was_i18n
-        else
-//            if v = "" || v.Chars.[0] = '-' || v.Chars.[0] = '_' 
-            if v = "" || v.StartsWith("-") || v.StartsWith("_") 
-            then 
-                raise (SyntaxError 
-                            (sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s'" v))
-                    
-            Some v, None , was_i18n
+        else Some v, None , was_i18n
 
     /// escapes html sensitive elements from the string
     let internal escape text = 

@@ -30,6 +30,7 @@ open System.Reflection
 open NDjango.Interfaces
 open OutputHandling
 open Utilities
+open Lexer
 
 module Variables =
 
@@ -123,27 +124,6 @@ module Variables =
     ///     u'News'
     /// (The example assumes VARIABLE_ATTRIBUTE_SEPARATOR is '.')
     type Variable(context: ParsingContext, token:Lexer.TextToken) =
-//        let (|ComponentStartsWith|_|) chr (text: LexToken) =
-//            if text.StartsWith(chr) || text.Contains(Constants.VARIABLE_ATTRIBUTE_SEPARATOR + chr) then
-//                Some chr
-//            else
-//                None
-//        
-        let fail_syntax v = 
-            raise (
-                SyntaxError (
-                    sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s', '%s'" token.RawText v)
-                    )
-//
-//        do match variable with 
-//            | ComponentStartsWith "-" v->
-//                match variable.string with
-//                | Int i -> () 
-//                | Float f -> ()
-//                | _ -> fail_syntax v
-//            | ComponentStartsWith "_" v when not <| variable.StartsWith(Constants.I18N_OPEN) ->
-//                fail_syntax v
-//            | _ -> () // need this to show the compiler that all cases are covered. 
 
         /// Returns a tuple of (var * value * needs translation)
         let find_literal = function
@@ -153,7 +133,32 @@ module Variables =
 
         let var, literal, translate = find_literal token.Value
         
-        let lookups = if var.IsSome then Some <| List.of_array (var.Value.Split(Constants.VARIABLE_ATTRIBUTE_SEPARATOR.ToCharArray())) else None
+        // So far no errors
+        let error = new Error(-1,"")
+        
+        let error, lookups = 
+            match var with
+            | Some v -> 
+                try
+                    let var_list = List.of_array (v.Split(Constants.VARIABLE_ATTRIBUTE_SEPARATOR.ToCharArray()))
+                    var_list |> 
+                        List.iter 
+                            (fun v ->
+                                if v = "" || v.StartsWith("-") || v.StartsWith("_") 
+                                then 
+                                    raise (SyntaxError 
+                                            (sprintf "Variables and attributes may not be empty, begin with underscores or minus (-) signs: '%s'" v))
+                        )
+                    error, Some var_list  
+                with
+                | :? SyntaxError as ex -> 
+                    if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+                    then
+                        raise (SyntaxException(ex.Message, Text token))
+                    else
+                        new Error(2, ex.Message), None
+                | _ -> rethrow()
+            | None -> error, None
         
         let clean_nulls  = function
         | Some v as orig -> if v = null then None else orig
@@ -192,23 +197,10 @@ module Variables =
         member this.IsLiteral with get() = lookups.IsNone
 
         interface INode with            
-                     /// TagNode type = TagName
             member x.NodeType = NodeType.Reference 
-            
-            /// Position - see above
             member x.Position = token.Location.Position
-            
-            /// Length - see above
             member x.Length = token.Location.Length
-
-            /// List of available values empty
             member x.Values =  seq []
-            
-            /// No message associated with the node
-            member x.ErrorMessage = new Error(-1,"")
-            
-            /// No description 
+            member x.ErrorMessage = error
             member x.Description = ""
-            
-            /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>

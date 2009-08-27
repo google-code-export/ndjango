@@ -19,7 +19,6 @@
  *  
  ***************************************************************************)
 
-
 namespace NDjango
 open System.Text
 open System.Text.RegularExpressions
@@ -56,14 +55,10 @@ module Expressions =
                 match Map.tryFind filter_name.Value context.Provider.Filters with
                 | None -> raise (SyntaxError (sprintf "filter %A could not be found" filter_name.Value))
                 | Some filter ->
-                    let error = new Error(-1, "") // no errors
-                    match filter with
-                    | :? IFilter as f -> 
-                        match args with
-                        | [] when f.DefaultValue = null -> 
-                                raise (SyntaxError ("filter requires argument, none provided"))
-                        | _ -> error, Some filter
-                    | _ -> error, Some filter
+                    match filter, args with
+                    | :? IFilter as f, [] when f.DefaultValue = null -> 
+                         raise (SyntaxError ("filter requires argument, none provided"))
+                    | _ -> new Error(-1, ""), Some filter
             with
             | :? SyntaxError as ex -> 
                 if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
