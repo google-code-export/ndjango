@@ -45,6 +45,13 @@ namespace NDjango.UnitTests
             return Name;
         }
 
+        public TestDescriptor(string name, string template, List<DesignerData> designResult)
+        {
+            Name = name;
+            Template = template;
+            ResultForDesigner = designResult;
+        }
+
         public TestDescriptor(string name, string template, object[] values, object[] result, List<DesignerData> designResult, params string[] vars)
         {
             Name = name;
@@ -193,7 +200,7 @@ namespace NDjango.UnitTests
         }
 
         //the same list as in Defaults.standardTags
-        public static string[] standartValues = new string[]
+        public static string[] standardValues = new string[]
         { 
             "autoescape",
             "block",
