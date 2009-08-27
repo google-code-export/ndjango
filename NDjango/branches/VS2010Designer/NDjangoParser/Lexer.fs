@@ -146,7 +146,7 @@ module Lexer =
             let offset = text.IndexOf body
 //            let location = new Location(location, (offset, body.Length))
             let location = location_of_parent location (offset, body.Length)
-            match tokenize_for_token location split_tag_re (block_body text) with
+            match tokenize_for_token location split_tag_re body with
             | [] -> raise (SyntaxError("Empty tag block"))
             | verb::args -> verb, args
         
@@ -197,7 +197,7 @@ module Lexer =
             | Comment c -> c :> TextToken
             | Text t -> t
 
-        member x.Position = x.TextToken.Location.Position
+        member x.Position = x.TextToken.Location.Offset
         member x.Length = x.TextToken.Location.Length
             
         /// provides additional diagnostic information for the token 

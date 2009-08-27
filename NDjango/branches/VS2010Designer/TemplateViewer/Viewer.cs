@@ -56,7 +56,7 @@ namespace TemplateViewer
             
             TreeNode tnode = new TreeNode(text);
             tnode.Tag = node;
-            tnode.NodeFont = new Font(templateTree.Font, FontStyle.Bold);
+            tnode.NodeFont = new Font(templateTree.Font, FontStyle.Underline);
 
             if (node.ErrorMessage.Severity > -1)
                 tnode.Nodes.Add("(Error)" + node.ErrorMessage.Message);
