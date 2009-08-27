@@ -406,6 +406,7 @@ module internal Misc =
                                     context = context; 
                                     nodes=nodes}
                             override this.nodelist = nodes
+                            override x.elements = [(expression :> INode)]
                        } :> INodeImpl), 
                        remaining)
                 | _ -> raise (SyntaxError ("'with' expected format is 'value as name'"))
