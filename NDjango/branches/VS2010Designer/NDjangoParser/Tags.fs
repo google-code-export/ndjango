@@ -42,11 +42,9 @@ module internal Misc =
             member this.Perform token context tokens =
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
+                let elements = [(new KeywordNode(token, ["on";"off"]) :> INode)]
                 let fail token =
-                        raise (TagSyntaxError(
-                                "invalid arguments for 'Autoescape' tag", 
-                                [(new KeywordNode(token, ["on";"off"]) :> INode)]
-                                ))
+                        raise (TagSyntaxError("invalid arguments for 'Autoescape' tag", elements))
 
                 let autoescape_flag = 
                     match token.Args with 
@@ -63,9 +61,9 @@ module internal Misc =
                                 context = walker.context.WithAutoescape autoescape_flag; 
                                 nodes=nodes}
                         override x.nodelist with get() = nodes
-                        override x.elements =
-                            (new KeywordNode(List.hd token.Args, ["on";"off"]) :> INode)
-                                ::base.elements
+                        override x.elements = elements @ base.elements
+//                            (new KeywordNode(List.hd token.Args, ["on";"off"]) :> INode)
+//                                ::base.elements
                    } :> INodeImpl), 
                    remaining)
                         

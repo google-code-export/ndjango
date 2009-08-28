@@ -28,7 +28,7 @@ namespace NDjango.UnitTests
         }
       
 
-        [Test, TestCaseSource("GetDesignerTests")]
+//        [Test, TestCaseSource("GetDesignerTests")]
         public void DesignerTests(TestDescriptor test)
         {
             InternalFilterProcess(test);

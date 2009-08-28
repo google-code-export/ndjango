@@ -198,7 +198,7 @@ module Variables =
 
         interface INode with            
             member x.NodeType = NodeType.Reference 
-            member x.Position = token.Location.Position
+            member x.Position = token.Location.Offset
             member x.Length = token.Location.Length
             member x.Values =  seq []
             member x.ErrorMessage = error
