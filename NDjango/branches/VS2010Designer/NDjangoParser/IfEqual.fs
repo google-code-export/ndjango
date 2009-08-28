@@ -80,7 +80,11 @@ module internal IfEqual =
                                         parent=Some walker;
                                         nodes=getNodeList (fst (var1.Resolve walker.context true)) (fst (var2.Resolve walker.context true))
                                 }
-                        
+                                
+                            override this.elements 
+                                with get() = 
+                                    (var1 :> INode) :: (var2 :> INode) :: base.elements
+                            
                             override this.Nodes 
                                 with get() =
                                     base.Nodes 
