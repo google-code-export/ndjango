@@ -23,7 +23,8 @@ namespace NDjango.UnitTests
                 .WithTag("url", new TestUrlTag())
                 ;
             provider = FilterManager.Initialize(provider);
-            this.standardValues = ((IDictionary<string, ITag>)((ITemplateManagerProvider)provider).Tags).Keys;
+            this.standardTags = ((IDictionary<string, ITag>)((ITemplateManagerProvider)provider).Tags).Keys;
+            this.standardFilters = ((IDictionary<string, ISimpleFilter>)((ITemplateManagerProvider)provider).Filters).Keys;
         }
       
 
@@ -62,7 +63,7 @@ namespace NDjango.UnitTests
                     Node(15, 10, AddToStandardList("else", "endif")),
                     Node(15, 2, EmptyList),
                     Node(23, 2, EmptyList),
-                    Node(0, 12, standardValues.ToArray()),
+                    Node(0, 12, standardTags.ToArray()),
                     Node(0, 2, EmptyList),
                     Node(10, 2, EmptyList),
                     Node(38, 0, EmptyList)
@@ -74,15 +75,19 @@ namespace NDjango.UnitTests
                     Node(0, 21, EmptyList),
                     Node(34, 2, EmptyList),
                     Node(36, 16, EmptyList),
-                    Node(38, 11, AddToStandardList("endif")),
+                    Node(36, 16, AddToStandardList("endifequal")),
                     Node(36, 2, EmptyList),
                     Node(50, 2, EmptyList),
                     Node(21, 3, EmptyList),
                     Node(24, 10, EmptyList),
-                    Node(26, 5, standardValues.ToArray()),
+                    Node(24, 10, AddToStandardList("else", "endifequal")),
                     Node(24, 2, EmptyList),
                     Node(32, 2, EmptyList),
-                    Node(2, 8, standardValues.ToArray()),
+                    Node(11, 3, EmptyList),
+                    Node(11, 3, EmptyList),
+                    Node(15, 3, EmptyList),
+                    Node(15, 3, EmptyList),
+                    Node(0, 21, standardTags.ToArray()),
                     Node(0, 2, EmptyList),
                     Node(19, 2, EmptyList),
                     Node(52, 0, EmptyList)
@@ -92,44 +97,47 @@ namespace NDjango.UnitTests
                 (
                     Node(0, 0, EmptyList),
                     Node(0, 20, EmptyList),
-                    Node(0, 2, EmptyList),
-                    Node(18, 2, EmptyList),
+                    Node(2, 14, EmptyList),
+                    Node(2, 14, EmptyList),
+                    Node(9, 3, standardFilters.ToArray()),
+                    Node(13, 3, EmptyList),
+                    Node(2, 5, EmptyList),
                     Node(20, 0, EmptyList)
                 ));
-            NewTest("fortag-designer", "{% for i in test %}{% ifchanged %}nothing changed{%else%}same {% endifchanged %}{{ forloop.counter }},{% endfor %}"
-                , Nodes 
-                (
-                    Node(0, 0, EmptyList),
-                    Node(0, 19, EmptyList),
-                    Node(19, 0, EmptyList),
-                    Node(19, 15, EmptyList),
-                    Node(57, 5, EmptyList),
-                    Node(62, 18, EmptyList),
-                    Node(64, 13, AddToStandardList("endif")),
-                    Node(62, 2, EmptyList),
-                    Node(78, 2, EmptyList),
-                    Node(34, 15, EmptyList),
-                    Node(49, 8, EmptyList),
-                    Node(51, 4, AddToStandardList("else", "endif")),
-                    Node(49, 2, EmptyList),
-                    Node(55, 2, EmptyList),
-                    Node(21, 10, standardValues.ToArray()),
-                    Node(19, 2, EmptyList),
-                    Node(32, 2, EmptyList),
-                    Node(80, 0, EmptyList),
-                    Node(80, 21, EmptyList),
-                    Node(80, 2, EmptyList),
-                    Node(99, 2, EmptyList),
-                    Node(101, 1, EmptyList),
-                    Node(102, 12, EmptyList),
-                    Node(104, 7, standardValues.ToArray()),
-                    Node(102, 2, EmptyList),
-                    Node(112, 2, EmptyList),
-                    Node(2, 4, standardValues.ToArray()),
-                    Node(0, 2, EmptyList),
-                    Node(17, 2, EmptyList),
-                    Node(114, 0, EmptyList)
-                ));
+            //NewTest("fortag-designer", "{% for i in test %}{% ifchanged %}nothing changed{%else%}same {% endifchanged %}{{ forloop.counter }},{% endfor %}"
+            //    , Nodes 
+            //    (
+            //        Node(0, 0, EmptyList),
+            //        Node(0, 19, EmptyList),
+            //        Node(19, 0, EmptyList),
+            //        Node(19, 15, EmptyList),
+            //        Node(57, 5, EmptyList),
+            //        Node(62, 18, EmptyList),
+            //        Node(64, 13, AddToStandardList("endif")),
+            //        Node(62, 2, EmptyList),
+            //        Node(78, 2, EmptyList),
+            //        Node(34, 15, EmptyList),
+            //        Node(49, 8, EmptyList),
+            //        Node(51, 4, AddToStandardList("else", "endif")),
+            //        Node(49, 2, EmptyList),
+            //        Node(55, 2, EmptyList),
+            //        Node(21, 10, standardTags.ToArray()),
+            //        Node(19, 2, EmptyList),
+            //        Node(32, 2, EmptyList),
+            //        Node(80, 0, EmptyList),
+            //        Node(80, 21, EmptyList),
+            //        Node(80, 2, EmptyList),
+            //        Node(99, 2, EmptyList),
+            //        Node(101, 1, EmptyList),
+            //        Node(102, 12, EmptyList),
+            //        Node(104, 7, standardTags.ToArray()),
+            //        Node(102, 2, EmptyList),
+            //        Node(112, 2, EmptyList),
+            //        Node(2, 4, standardTags.ToArray()),
+            //        Node(0, 2, EmptyList),
+            //        Node(17, 2, EmptyList),
+            //        Node(114, 0, EmptyList)
+            //    ));
 
             return tests;
         }
@@ -151,7 +159,7 @@ namespace NDjango.UnitTests
 
         private string[] AddToStandardList(params string[] tags)
         {
-            List<string> result = new List<string>(standardValues);
+            List<string> result = new List<string>(standardTags);
             result.InsertRange(0, tags);
             return result.ToArray();
         }
