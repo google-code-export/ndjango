@@ -65,8 +65,11 @@ module internal IfChanged =
                             [], remaining
                     | _ -> [], remaining
 
+                let variables =
+                    token.Args |> List.map (fun var -> new Variable(context, var))
+
                 let createWalker manager =
-                    match token.Args |> List.map (fun var -> new Variable(context, var)) with
+                    match variables with
                     | [] ->
                         fun walker ->
                             let reader = 
@@ -94,6 +97,10 @@ module internal IfChanged =
                     with
                         override this.walk manager walker =
                             createWalker manager walker 
+                                   
+                        override this.elements
+                            with get() =
+                                List.append (variables |> List.map (fun node -> (node :> INode))) base.elements
                                    
                         override this.Nodes 
                             with get() =
