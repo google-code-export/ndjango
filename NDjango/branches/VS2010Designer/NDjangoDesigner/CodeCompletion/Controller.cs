@@ -115,7 +115,10 @@ namespace NDjango.Designer.CodeCompletion
             }
 
             // we only start the session when an alphanumeric key is pressed
-            if (!(e.Key >= Key.A && e.Key <= Key.Z))
+            if (!(e.Key >= Key.A && e.Key <= Key.Z)
+                && !(e.Key >= Key.D0 && e.Key <= Key.D9)
+                && e.Key != Key.Oem5
+                )
                 return;
 
             // if there is a session already leave it be
