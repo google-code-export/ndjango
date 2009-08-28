@@ -11,6 +11,7 @@ using StringList = System.Collections.Generic.List<string>;
 using System.Text.RegularExpressions;
 using System.Xml;
 using NDjango.FiltersCS;
+using NDjango.Interfaces;
 
 namespace NDjango.UnitTests
 {
@@ -67,7 +68,8 @@ this is inner2
 
         NDjango.Interfaces.ITemplateManager manager;
         TemplateManagerProvider provider;
-        
+        public ICollection<string> standardValues = new List<string>();
+
         [TestFixtureSetUp]
         public void Setup()
         {

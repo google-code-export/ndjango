@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using NDjango.UnitTests.Data;
+using NDjango.Interfaces;
+using System.Collections;
+using NDjango.FiltersCS;
 
 namespace NDjango.UnitTests
 {
@@ -11,10 +14,22 @@ namespace NDjango.UnitTests
     {
         List<TestDescriptor> tests = new List<TestDescriptor>();
 
-        //[Test, TestCaseSource("GetDesignerTests")]
+        public void SetupStandartdValues()
+        {
+            provider = new TemplateManagerProvider()
+                .WithLoader(new Loader())
+                .WithTag("non-nested", new TestDescriptor.SimpleNonNestedTag())
+                .WithTag("nested", new TestDescriptor.SimpleNestedTag())
+                .WithTag("url", new TestUrlTag())
+                ;
+            provider = FilterManager.Initialize(provider);
+            this.standardValues = ((IDictionary<string, ITag>)((ITemplateManagerProvider)provider).Tags).Keys;
+        }
+      
+
+        [Test, TestCaseSource("GetDesignerTests")]
         public void DesignerTests(TestDescriptor test)
         {
-           
             InternalFilterProcess(test);
         }
 
@@ -30,6 +45,8 @@ namespace NDjango.UnitTests
 
         public IList<TestDescriptor> GetDesignerTests()
         {
+            SetupStandartdValues();
+
             NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}" 
                 , Nodes 
                 (
@@ -37,15 +54,15 @@ namespace NDjango.UnitTests
                     Node(0, 12, EmptyList),
                     Node(25, 2, EmptyList),
                     Node(27, 11, EmptyList),
-                    Node(27, 11, TestDescriptor.standardValues),
+                    Node(27, 11, AddToStandardList("endif")),
                     Node(27, 2, EmptyList),
                     Node(36, 2, EmptyList),
                     Node(12, 3, EmptyList),
                     Node(15, 10, EmptyList),
-                    Node(17, 5, TestDescriptor.standardValues),
+                    Node(15, 10, AddToStandardList("else", "endif")),
                     Node(15, 2, EmptyList),
                     Node(23, 2, EmptyList),
-                    Node(2, 3, EmptyList),
+                    Node(0, 12, standardValues.ToArray()),
                     Node(0, 2, EmptyList),
                     Node(10, 2, EmptyList),
                     Node(38, 0, EmptyList)
@@ -57,15 +74,15 @@ namespace NDjango.UnitTests
                     Node(0, 21, EmptyList),
                     Node(34, 2, EmptyList),
                     Node(36, 16, EmptyList),
-                    Node(38, 11, TestDescriptor.standardValues),
+                    Node(38, 11, AddToStandardList("endif")),
                     Node(36, 2, EmptyList),
                     Node(50, 2, EmptyList),
                     Node(21, 3, EmptyList),
                     Node(24, 10, EmptyList),
-                    Node(26, 5, TestDescriptor.standardValues),
+                    Node(26, 5, standardValues.ToArray()),
                     Node(24, 2, EmptyList),
                     Node(32, 2, EmptyList),
-                    Node(2, 8, TestDescriptor.standardValues),
+                    Node(2, 8, standardValues.ToArray()),
                     Node(0, 2, EmptyList),
                     Node(19, 2, EmptyList),
                     Node(52, 0, EmptyList)
@@ -88,15 +105,15 @@ namespace NDjango.UnitTests
                     Node(19, 15, EmptyList),
                     Node(57, 5, EmptyList),
                     Node(62, 18, EmptyList),
-                    Node(64, 13, TestDescriptor.standardValues),
+                    Node(64, 13, AddToStandardList("endif")),
                     Node(62, 2, EmptyList),
                     Node(78, 2, EmptyList),
                     Node(34, 15, EmptyList),
                     Node(49, 8, EmptyList),
-                    Node(51, 4, TestDescriptor.standardValues),
+                    Node(51, 4, AddToStandardList("else", "endif")),
                     Node(49, 2, EmptyList),
                     Node(55, 2, EmptyList),
-                    Node(21, 10, TestDescriptor.standardValues),
+                    Node(21, 10, standardValues.ToArray()),
                     Node(19, 2, EmptyList),
                     Node(32, 2, EmptyList),
                     Node(80, 0, EmptyList),
@@ -105,10 +122,10 @@ namespace NDjango.UnitTests
                     Node(99, 2, EmptyList),
                     Node(101, 1, EmptyList),
                     Node(102, 12, EmptyList),
-                    Node(104, 7, TestDescriptor.standardValues),
+                    Node(104, 7, standardValues.ToArray()),
                     Node(102, 2, EmptyList),
                     Node(112, 2, EmptyList),
-                    Node(2, 4, TestDescriptor.standardValues),
+                    Node(2, 4, standardValues.ToArray()),
                     Node(0, 2, EmptyList),
                     Node(17, 2, EmptyList),
                     Node(114, 0, EmptyList)
@@ -132,5 +149,11 @@ namespace NDjango.UnitTests
             tests.Add(new TestDescriptor(name, template, nodeList.ToList<DesignerData>()));
         }
 
+        private string[] AddToStandardList(params string[] tags)
+        {
+            List<string> result = new List<string>(standardValues);
+            result.InsertRange(0, tags);
+            return result.ToArray();
+        }
     }
 }

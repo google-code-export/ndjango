@@ -200,33 +200,7 @@ namespace NDjango.UnitTests
         }
 
         //the same list as in Defaults.standardTags
-        public static string[] standardValues = new string[]
-        { 
-            "autoescape",
-            "block",
-            "comment",
-            "cycle",
-            "debug",
-            "extends",
-            "filter",
-            "firstof",
-            "for",
-            "if",
-            "ifchanged",
-            "ifequal",
-            "ifnotequal",
-            "include",
-            "nested",
-            "non-nested",
-            "now",
-            "regroup",
-            "spaceless",
-            "ssi",
-            "templatetag",
-            "url",
-            "widthratio",
-            "with"
-        };
+        
     }
 
 }
