@@ -95,28 +95,20 @@ namespace NDjango.BistroIntegration
         {
             get
             {
-                // lock must be here.
                 lock (lockObj)
                 {
                     if (provider == null)
                     {
                         loader = new ConfigurationLoader();
                         ITemplateLoader templateLoader = new IntegrationTemplateLoader();
-                        provider = 
+                        provider =
                             new TemplateManagerProvider()
                                 .WithLoader(templateLoader)
                                 .WithFilters(loader.GetFilters())
                                 .WithTags(loader.GetTags())
-                                .WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
-                        provider = NDjango.FiltersCS.FilterManager.Initialize(provider);
+                                .WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath))
+                                .WithFilters(NDjango.FiltersCS.FilterManager.GetFilters());
 
-
-/*
-                        NDjangoRegisterTemplate NDjangoRegisterTemplate = new NDjangoRegisterTemplate();
-                        NDjangoRegisterTemplate.Provider = provider;
-                        NDjangoRegisterTemplate.RegisterTemplates();
-                        provider = NDjangoRegisterTemplate.Provider;
-*/
                     }
                 }
                 return provider;
