@@ -95,7 +95,7 @@ module Expressions =
 
         interface INode with
             member x.NodeType = NodeType.Filter
-            member x.Position = filter_token.Location.Position
+            member x.Position = filter_token.Location.Offset
             member x.Length = filter_token.Location.Length
             member x.Values = seq []
             member x.ErrorMessage = error
@@ -221,7 +221,7 @@ module Expressions =
             member x.NodeType = NodeType.Expression 
             
             /// Position - the position of the first character of the expression
-            member x.Position = expression.Location.Position
+            member x.Position = expression.Location.Offset
             
             /// Length - the expression length
             member x.Length = expression.Location.Length
