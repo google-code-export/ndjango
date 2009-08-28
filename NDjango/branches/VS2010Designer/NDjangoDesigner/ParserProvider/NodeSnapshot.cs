@@ -48,16 +48,14 @@ namespace NDjango.Designer.Parsing
                 // types smth in this space he will get the dropdown
                 for (; node.Position - offset > line.Extent.Start.Position; offset++)
                 {
-                    if (snapshot[node.Position - offset] == ' ')
-                        continue;
-                    if (snapshot[node.Position - offset] == '\t')
-                        continue;
-                    if (
-                        snapshot[node.Position - offset] == '%' ||
-                        snapshot[node.Position - offset] == '{' ||
-                        snapshot[node.Position - offset] == '|'
-                        )
-                        offset++;
+                    switch (snapshot[node.Position - offset-1])
+                    {
+                        case ' ':
+                        case '\t':
+                            continue;
+                        default:
+                            break;
+                    }
                     break;
                 }
             }

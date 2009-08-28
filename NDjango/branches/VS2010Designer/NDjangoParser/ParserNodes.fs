@@ -199,7 +199,7 @@ module internal ParserNodes =
         
         /// Add TagName node to the list of elements
         override x.elements =
-            (new TagNameNode(context, Block token) :> INode) :: base.elements
+            (new TagNameNode(context, Text token.Verb) :> INode) :: base.elements
             
         override x.Description =
             match context.Provider.Tags.TryFind(token.Verb.RawText) with
