@@ -68,7 +68,8 @@ this is inner2
 
         NDjango.Interfaces.ITemplateManager manager;
         TemplateManagerProvider provider;
-        public ICollection<string> standardValues = new List<string>();
+        public ICollection<string> standardTags = new List<string>();
+        public ICollection<string> standardFilters = new List<string>();
 
         [TestFixtureSetUp]
         public void Setup()
