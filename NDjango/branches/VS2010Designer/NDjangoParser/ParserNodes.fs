@@ -52,6 +52,7 @@ module internal ParserNodes =
         default  x.walk manager walker = walker
 
         /// List of child nodes used by the tags with a single list of child nodes e.g. spaceless, with or escape
+        /// this list is also used by the extends tag to build a list of tags substitution
         abstract member nodelist: INodeImpl list
         default x.nodelist with get() = []
         
@@ -136,15 +137,8 @@ module internal ParserNodes =
             /// node lists are empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
    
-//        /// We play a little trick here: the scope of the node here is defined as the span starting from the 
-//        /// first whitespace character after the open bracket and ending with the first whitespace after the
-//        /// verb, or the close bracket if there is no whitespace within the tag. This causes the span to 
-//        /// cover the tag verb and the leading whitespace between the verb and the open bracket. It also 
-//        /// covers the situation of empty tag. This makes the name tag applicable if a character is typed inside 
-//        /// the existing verb as well as in the space between the verb and open bracket, whic in turn
-//        /// triggers code completion
-//
-
+    /// Value list node is a node carrying a list of values which will be used by code completion
+    /// it can be used either directly or through several node classes inherited from the Value list node
     type ValueListNode(nodeType, token: Token, values)  =
             
         interface INode with
@@ -159,6 +153,7 @@ module internal ParserNodes =
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
             
+    /// a node representing a tag name. carries alist of valid tag names 
     type TagNameNode (context: ParsingContext, token) =
         inherit ValueListNode
             (
@@ -167,6 +162,7 @@ module internal ParserNodes =
                 context.Tags
             )
             
+    /// a node representing a keyword - i.e. on/off values for the autoescape tag
     type KeywordNode (token:TextToken, values:string list) =
         inherit ValueListNode
             (
@@ -175,6 +171,7 @@ module internal ParserNodes =
                 values
             )
             
+    /// a node representing a filter name
     type FilterNameNode (token:TextToken, values:string list) =
         inherit ValueListNode
             (

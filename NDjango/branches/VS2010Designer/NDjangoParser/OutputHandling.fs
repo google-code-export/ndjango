@@ -26,67 +26,6 @@ open System.Text.RegularExpressions
 
 module OutputHandling =
 
-    /// Generator that splits a string by spaces, leaving quoted phrases together.
-    /// Supports both single and double quotes, and supports escaping quotes with
-    /// backslashes. In the output, strings will keep their initial and trailing
-    /// quote marks.
-    /// 
-    /// >>> list(smart_split(r'This is "a person\'s" test.'))
-    /// [u'This', u'is', u'"a person\\\'s"', u'test.']
-    /// >>> list(smart_split(r"Another 'person\'s' test.")) 
-    /// [u'Another', u"'person's'", u'test.']
-    /// >>> list(smart_split(r'A "\"funky\" style" test.')) 
-    /// [u'A', u'""funky" style"', u'test.']
-    //
-    // Moved to the Lexer
-    //
-//    let smart_split text offset = 
-//        [for m in smart_split_re.Matches(text) -> 
-//            LexToken(m.Groups.[0].Value,(m.Groups.[0].Index + offset, m.Groups.[0].Length))
-//            let bit = m.Groups.[0].Value
-//            LexToken(
-//                    (if bit.[0] = '"' && bit.[bit.Length-1] = '"' then
-//                        "\"" + bit.[1..bit.Length-2].Replace("\\\"", "\"").Replace("\\\\", "\\") + "\""
-//                        elif bit.[0] = '\'' && bit.[bit.Length-1] = '\'' then
-//                            "'" + bit.[1..bit.Length-2].Replace("\\'", "'").Replace("\\\\", "\\") + "'"
-//                        else
-//                          bit),
-//                    (m.Groups.[0].Index + offset, m.Groups.[0].Length)
-//                    )
-//        ]
-        
-    /// smart-splits the token, also keeping intact requests for translation, e.g.
-    ///
-    /// >>> list(split_token_contents(r'This is _("a person\'s" test.)'))
-    /// [u'This', u'is', u'_("a person\\\'s", test.)']
-    /// >>> list(split_token_contents(r"Another 'person\'s' test.")) 
-    /// [u'Another', u"'person's'", u'test.']
-    /// >>> list(split_token_contents(r'A "\"funky\" style" test.')) 
-    /// [u'A', u'""funky" style"', u'test.']
-//    let split_token_contents token =
-//        let join_token_split = fun (acc: string list * string option) elem ->
-//            let lst, sentinel = acc
-//            match sentinel with
-//            | Some s ->
-//                match elem with
-//                | EndsWith s v -> ([(List.hd lst) + " " + elem] @ (List.tl lst), None)
-//                | _ -> ([(List.hd lst) + " " + elem] @ (List.tl lst), Some s)
-//            | None ->
-//                match elem with
-//                // you can have the scenario when v is a single token, so it will contain
-//                // both the _( and the )
-//                | StartsWith "_(\"" v | StartsWith "_('" v when not (v.EndsWith(v.[2].ToString() + ")")) -> 
-//                    ([elem] @ lst, Some (v.[2].ToString() + ")"))
-//                | _ -> ([elem] @ lst, None)
-//
-//        fst <| List.fold join_token_split ([], None) (smart_split token) |> List.rev
-        
-    /// This esception is thrown if a problem encountered while parsing the template
-    /// This exception will be later caught and re-thrown as the SyntaxException
-    /// SyntaxException is defined in the Lexer.fs module
-    type SyntaxError (message) = 
-        inherit System.ApplicationException(message)
-
     /// determines whether the given string is either single or double quoted, escaped or un-escaped.
     /// returnes whether it is quoted, and the number of characters the quote string occupies
     let internal is_quoted (text: string) = 
@@ -135,3 +74,10 @@ module OutputHandling =
         /// negative severity is used to mark a dummy message ("No messages" message) 
         member x.Severity = severity
         member x.Message = message
+
+    /// This esception is thrown if a problem encountered while parsing the template
+    /// This exception will be later caught and re-thrown as the SyntaxException
+    /// SyntaxException is defined in the Lexer.fs module
+    type SyntaxError (message) = 
+        inherit System.ApplicationException(message)
+
