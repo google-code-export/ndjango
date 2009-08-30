@@ -50,16 +50,18 @@ module Constants =
     // (e.g. strings)
     let internal UNKNOWN_SOURCE = "&lt;unknown source&gt;"
 
+    // Regular expression to extract django tags from the source of the template.
+    // In compliance with django specs it is built to ensure that a character 
+    // sequence starting with a tag start and ending with a tag end is considered 
+    // to be a tag ONLY if both tag start and start end are located on the SAME line
     let internal tag_re = 
         new Regex(
             "(" + !!BLOCK_TAG_START + ".*?" + !!BLOCK_TAG_END + "|"
              + !!VARIABLE_TAG_START + ".*?" + !!VARIABLE_TAG_END + "|"
               + !!COMMENT_TAG_START + ".*?" + !!COMMENT_TAG_END + ")",
             RegexOptions.Compiled)
-
-    let internal word_split_re = new Regex("\s+", RegexOptions.Compiled)
-            
   
+    // Regular expression parsing a filter expression in raw (Python) format
     // This expression was modified from the original python version
     // to allow $ as the first character of variable names. Such names will 
     // be used for internal purposes          
@@ -98,6 +100,7 @@ module Constants =
          )"
     *)
      
+    // Regular expression parsing a filter expression converted to .NET format
     let internal filter_re =
         new Regex(
             filter_raw_string.

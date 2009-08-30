@@ -32,7 +32,7 @@ open NDjango.OutputHandling
 
 module Lexer =
 
-    /// Structure describing the token location in the original source string
+    /// Object describing the token location in the original source string
     type Location(offset:int, length:int, line:int, position:int) = 
 
         public new(parent:Location, (offset:int, length:int)) =
@@ -52,19 +52,19 @@ module Lexer =
         member x.Position = position
         
     /// Provides mapping from the spans of the actual text to the spans of the original text
-    type Item = (int*int)*(int*int)
-    type SpanMap (map :Item list) =
+    /// Mapping is only provided for the purposes of diagnostic to accomodate the situations where 
+    /// some of the text is coming from a template source, while some of it is generated, i.e. for filter
+    /// tag the name of the variable is generated, while filters are coming directly from the template
+    /// The constructor takes a list of mapping spans, each defined by its length and a boolean set to true
+    /// if this span originated from the original string and to false otherwise
+    /// offset adjustment is calculated as a sum of lengths of all non-mapped mapping spans with start offset
+    /// less or equal to the offset of the span being mapped
+    /// mapped length is caluclated as a sum of all intervals of the span being mapped which fall on the
+    /// mapped mapping spans
+    type SpanMap (map :(int*bool) list) =
         member x.Map (offset, length) = 
-            let ((f_span_start, f_span_end),(to_span_start,to_span_end)) 
-                = map |>
-                    List.find (fun ((span_start,span_end),_) -> 
-                            span_start >= offset && span_end < offset)
-            let local_offset = offset - f_span_start
-            let local_length = to_span_end - to_span_start - local_offset
-            let local_length =
-                if local_length > length then length
-                else local_length
-            (to_span_start + local_offset, local_length)
+        // TODO: Implement
+                    raise (Exception("SpanMap.Map - not implemented"))
 
     /// Base class for text tokens. Its main purpose is to keep track of bits of text
     /// participating in the template parsing in their relationship with the original 
@@ -108,14 +108,15 @@ module Lexer =
             let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
     
-    /// extracts the text representing the block body        
+    /// Determines the text of the tag body by stripping off
+    /// the first two and the last two characters
     let block_body (text:string) = text.[2..text.Length-3].Trim()
 
     /// Locates the tag fragments: the tag name and tag arguments by splitting the text into pieces by whitespaces
     /// Whitespaces inside strings in double- or single quotes remain unaffected
     let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
     
-    /// Represents a tag block 
+    /// Represents a token  for a django tag block 
     type BlockToken(text, location) =
         inherit TextToken(text, location)
         
@@ -132,7 +133,7 @@ module Lexer =
         /// List of arguments - can be empty
         member x.Args = args 
     
-    /// Represents an syntax error in the syntax node tree. These tokens are generated in response
+    /// Represents a syntax error in the syntax node tree. These tokens are generated in response
     /// to exceptions thrown during lexing of the template, so that the actual exception throwing can be delayed
     /// till parsing stage
     type ErrorToken(text, error:string, location) =
@@ -140,12 +141,10 @@ module Lexer =
         /// Error message  
         member x.ErrorMessage = error
 
-    /// Represents a variable block
+    /// Represents a token for a variable django block
     type VariableToken(text:string, location) =
         inherit TextToken(text, location)
 
-        /// Creates a token with the text of the tag body by stripping off
-        /// the first two and the last two characters
         let expression = 
             let body = block_body text
             if (body = "") then raise (SyntaxError("Empty variable block"))
@@ -154,10 +153,11 @@ module Lexer =
         /// token representing the expression
         member x.Expression = expression
     
+    /// Represents a token for a django comment tag
     type CommentToken(text, location) =
         inherit TextToken(text, location) 
         
-    /// A lexer token produced through the tokenize function
+    /// A generic lexer token produced through the tokenize function
     type Token =
         | Block of BlockToken
         | Variable of VariableToken
@@ -197,6 +197,11 @@ module Lexer =
         let mutable tail = ""
         let buffer = Array.create 4096 ' '
         
+        /// converts supplied string into an appropriate token. It is assumed that
+        /// the strings representing django tags in the template are identified
+        /// before calling of this function.
+        /// Every string passed to this function will be converted into a single
+        /// token based on the 1st two characters of the string. 
         let create_token in_tag (text:string) = 
             in_tag := not !in_tag
             let currentPos = pos
@@ -238,16 +243,21 @@ module Lexer =
                     false
                 | _ -> 
                     let count = template.ReadBlock(buffer, 0, buffer.Length)
+                    // Split the tail of the old buffer appended by the newly read buffer 
+                    // into django tags
                     let strings = (Constants.tag_re.Split(tail + new String(buffer, 0, count)))
                     let t, strings = 
                         if (count > 0) then strings.[strings.Length-1], strings.[0..strings.Length - 2]
                         else null, strings
-                    
+                    // Keep the tail for the next pass
                     tail <- t
                     let in_tag = ref true
+                    // convert strings to tokens
                     current <- strings |> List.of_array |> List.map (create_token in_tag)
                     true
                 
+            /// we cannot reset the enumerator, because resetting the template text reader
+            /// may or may not be possible. We are lucky it is not necessary
             member this.Reset() = failwith "Reset is not supported by Tokenizer"
         
         interface IEnumerable<Token seq> with
