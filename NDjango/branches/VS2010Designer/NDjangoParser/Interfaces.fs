@@ -253,7 +253,10 @@ and ITag =
     /// Transforms a {% %} tag into a list of nodes and uncommited token list
     abstract member Perform: Lexer.BlockToken -> ParsingContext -> LazyList<Lexer.Token> -> (INodeImpl * LazyList<Lexer.Token>)
 
+/// Parsing context is a container for information specific to the tag being parsed
 and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) =
+    /// List (sequence) of all allowed tag names. Includes all registered tags as well as 
+    /// a list of all closing tags for the context
     member x.Tags = provider.Tags |> Map.to_seq |> Seq.map (fun tag -> tag |> fst) |> 
                         Seq.append (Seq.of_list <| extra_tags)
     member x.Provider = provider
@@ -276,11 +279,25 @@ type SyntaxException (message: string, token: NDjango.Lexer.Token) =
     member x.Token = token
     member x.ErrorMessage = message  
 
-/// a special type of exception thrown when the error message applies to 
-/// multiple tags i.e. missing closing tag exception. Inculdes node list as an
-/// additional parameter 
-type internal CompoundSyntaxError(message, nodes:seq<INodeImpl>) =
-    inherit OutputHandling.SyntaxError(message)
-    
-    member x.Nodes = nodes
+/// This esception is thrown if a problem encountered while parsing the template
+/// This exception will be later caught and re-thrown as the SyntaxException
+type SyntaxError (message, nodes: seq<INodeImpl> option, pattern:INode list option) = 
+    inherit System.ApplicationException(message)
+    new (message) = new SyntaxError(message, None, None)
 
+    /// constructor to be used when the error applies to 
+    /// multiple tags i.e. missing closing tag exception. Inculdes node list as an
+    /// additional parameter 
+    [<OverloadID("nodes")>]
+    new (message, nodes) = new SyntaxError(message, Some nodes, None)
+
+    /// constructor to be used when the error applies to a partially parsed tag 
+    /// Inculdes a list of tag elements to be associated with the error
+    [<OverloadID("pattern")>]
+    new (message, pattern) = new SyntaxError(message, None, Some pattern)
+
+    /// list (sequence) of nodes related to the error
+    member x.Nodes = match nodes with | Some n -> n | None -> seq []
+    
+    /// list of tag elements from the partially parsed tag
+    member x.Pattern = match pattern with | Some p -> p | None -> []

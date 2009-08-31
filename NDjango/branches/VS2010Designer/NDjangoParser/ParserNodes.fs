@@ -219,7 +219,3 @@ module internal ParserNodes =
         override x.walk manager walker = 
             raise (SyntaxException(error.Message, token))
             
-    type TagSyntaxError(message: string, pattern:INode list) =
-        inherit SyntaxError(message)
-        
-        member x.Pattern = pattern

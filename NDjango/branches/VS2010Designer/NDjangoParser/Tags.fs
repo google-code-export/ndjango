@@ -43,7 +43,7 @@ module internal Misc =
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
                 let fail token =
-                        raise (TagSyntaxError(
+                        raise (SyntaxError(
                                 "invalid arguments for 'Autoescape' tag", 
                                 [(new KeywordNode(token, ["on";"off"]) :> INode)]
                                 ))

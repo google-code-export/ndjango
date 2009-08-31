@@ -97,7 +97,7 @@ module internal ASTNodes =
                         walker.context
             }
             
-        override x.nodelist with get() = nodelist
+        override x.nodelist = nodelist
        
     and ExtendsNode(parsing_context: ParsingContext, token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
         inherit TagNode(parsing_context, token)
