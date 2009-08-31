@@ -44,6 +44,7 @@ module internal IfEqual =
     ///            ...
     ///        {% endifnotequal %}
 
+    [<Description("Outputs the content of enclosed tags based on whether the values are equal.")>]
     type Tag(not:bool) =
         interface ITag with
             member this.Perform token context tokens =

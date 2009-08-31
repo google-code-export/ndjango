@@ -59,7 +59,7 @@ module internal Cycle =
         member this.OrigValues = origValues
         member this.Value = List.hd values
         
-    /// Cycles among the given strings each time this tag is encountered.
+    [<NDjango.ParserNodes.Description("Cycles among the given strings each time this tag is encountered.")>]
     type TagNode(provider, token, name: string, values: Variable list) =
         inherit NDjango.ParserNodes.TagNode(provider, token)
         

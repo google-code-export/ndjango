@@ -34,6 +34,7 @@ open NDjango.Expressions
 module internal LoaderTags =
 
     /// Define a block that can be overridden by child templates.
+    [<Description("Defines a block that can be overridden by child templates.")>]
     type BlockTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -50,6 +51,7 @@ module internal LoaderTags =
     /// or ``{% extends variable %}`` uses the value of ``variable`` as either the
     /// name of the parent template to extend (if it evaluates to a string) or as
     /// the parent tempate itelf (if it evaluates to a Template object).
+    [<Description("Signals that this template extends a parent template.")>]
     type ExtendsTag() =
         interface ITag with
             member this.Perform token context tokens = 
@@ -102,6 +104,7 @@ module internal LoaderTags =
     /// Hello, {{ person }}
     /// See also: {% ssi %}.
 
+    [<Description("Loads and renders a template.")>]
     type IncludeTag() =
 
         interface ITag with
@@ -151,6 +154,7 @@ module internal LoaderTags =
                 else (new SsiNode(provider, token, TextReader templateReader, loader) :> INodeImpl) :: walker.nodes
             {walker with buffer = buffer; nodes=nodes}
 
+    [<Description("Outputs the contents of a given file into the page.")>]
     type SsiTag() =
 
         interface ITag with

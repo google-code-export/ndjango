@@ -35,8 +35,6 @@ module internal Debug =
         inherit NDjango.ParserNodes.TagNode(parsing_context, t)
 
         override this.walk manager walker = 
-            let output = new System.Text.StringBuilder()
-            
             {walker with buffer = walker.context.ToString()}
      
                     

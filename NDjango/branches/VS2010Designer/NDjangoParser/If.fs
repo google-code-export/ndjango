@@ -154,6 +154,7 @@ module internal If =
         // this override is not used by the if node for rendering but is necessary for the blocks to work properly
 //        override x.nodelist = node_list_true @ node_list_false
     
+    [<NDjango.ParserNodes.Description("Outputs the content of enclosed tags based on expression evaluation result.")>]
     type Tag() =
         /// builds a list of FilterExpression objects for the variable components of an if statement. 
         /// The tuple returned is (not flag, FilterExpression), where not flag is true when the value

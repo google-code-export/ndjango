@@ -60,6 +60,7 @@ module internal Filter =
     ///     {% filter force_escape|lower %}
     ///         This text will be HTML-escaped, and will appear in lowercase.
     ///     {% endfilter %}
+    [<Description("Filters the contents of the block through variable filters.")>]
     type FilterTag() =
         interface ITag with
             member this.Perform token context tokens =

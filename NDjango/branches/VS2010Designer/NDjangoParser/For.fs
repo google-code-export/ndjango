@@ -232,6 +232,7 @@ module internal For =
             else 
                 createWalker walker enumerator
 
+    [<NDjango.ParserNodes.Description("Loops over each item in a collection.")>]
     type Tag() =
 
         interface NDjango.Interfaces.ITag with 

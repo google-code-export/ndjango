@@ -52,6 +52,7 @@ module internal IfChanged =
 ///     {% endifchanged %}
 /// {% endfor %}
 
+    [<Description("Outputs the content of enclosed tags based on whether the value has changed.")>]
     type Tag() =
         interface ITag with
             member this.Perform token context tokens =

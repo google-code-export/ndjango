@@ -176,6 +176,7 @@ module internal Now =
                     | None -> if mtch.Value = "\"" then "" else mtch.Value
                     ))
     
+    [<Description("Displays the current date, formatted according to the given string.")>]
     type Tag() =
         interface ITag with
             member this.Perform token provider tokens =
