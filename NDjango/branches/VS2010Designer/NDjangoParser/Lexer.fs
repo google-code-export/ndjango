@@ -32,6 +32,11 @@ open NDjango.OutputHandling
 
 module Lexer =
 
+    /// This esception is thrown if a problem encountered while lexing the template
+    /// Lexer errors never leave the lexer, they are caught and converted into Error tokens
+    type LexerError (message) = 
+        inherit System.ApplicationException(message)
+
     /// Object describing the token location in the original source string
     type Location(offset:int, length:int, line:int, position:int) = 
 
@@ -125,7 +130,7 @@ module Lexer =
             let offset = text.IndexOf body
             let location = new Location(location, (offset, body.Length))
             match tokenize_for_token location split_tag_re body with
-            | [] -> raise (SyntaxError("Empty tag block"))
+            | [] -> raise (LexerError("Empty tag block"))
             | verb::args -> verb, args
         
         /// A.K.A. tag name
@@ -147,7 +152,7 @@ module Lexer =
 
         let expression = 
             let body = block_body text
-            if (body = "") then raise (SyntaxError("Empty variable block"))
+            if (body = "") then raise (LexerError("Empty variable block"))
             new TextToken(body, new Location(location, (2, body.Length)))
         
         /// token representing the expression
@@ -227,7 +232,7 @@ module Lexer =
                     | "{#" -> Comment (new CommentToken(text, location))
                     | _ -> Text (new TextToken(text, location))
                 with
-                | :? SyntaxError as ex -> 
+                | :? LexerError as ex -> 
                     Error (new ErrorToken(text, ex.Message, location))
                 | _ -> rethrow()
         

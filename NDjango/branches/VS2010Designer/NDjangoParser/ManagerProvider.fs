@@ -134,25 +134,20 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
 
     let generate_diag_for_tag (ex: System.Exception) token context tokens =
         match (token, ex) with
-        | (_ , :? SyntaxError ) & (Some blockToken, e) ->
+        | (Some blockToken, (:? SyntaxError as syntax_error)) ->
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
             then
-                raise (SyntaxException(e.Message, Block blockToken))
+                raise (SyntaxException(syntax_error.Message, Block blockToken))
             else
-                let nodes, tokens, elements = 
-                    match ex with
-                    | :? CompoundSyntaxError as cse -> (cse.Nodes, LazyList.empty<Token>(), [])
-                    | :? TagSyntaxError as tse -> (seq [], tokens, tse.Pattern)
-                    | _ -> (seq [], tokens, [])
                 Some (({
-                        new ErrorNode(context, Block blockToken, new Error(2, e.Message))
+                        new ErrorNode(context, Block blockToken, new Error(2, syntax_error.Message))
                             with
-                                override x.nodelist with get() = List.of_seq nodes
+                                override x.nodelist = List.of_seq syntax_error.Nodes
                                 
                                 /// Add TagName node to the list of elements
                                 override x.elements =
                                     (new TagNameNode(context, Text blockToken.Verb) :> INode)
-                                     :: elements @ base.elements
+                                     :: syntax_error.Pattern @ base.elements
                         } :> INodeImpl), tokens)
         |_  -> None
         
@@ -239,7 +234,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        match tokens with
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
-                raise (CompoundSyntaxError (
+                raise (SyntaxError (
                         sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (fst acc) + (snd acc) + elem)) ("","") parse_until))
                         , nodes))
             (nodes, LazyList.empty<Lexer.Token>())
