@@ -219,6 +219,10 @@ module internal Misc =
                 match token.Args with
                 | source::MatchToken("by")::grouper::MatchToken("as")::result::[] ->
                     let value = new FilterExpression(context, source)
+                    let as_keyword = new KeywordNode(token.Args.[1], ["as"])
+                    let by_keyword = new KeywordNode(token.Args.[3], ["by"])
+                    let grouper_ref = new ReferenceNode(grouper, [])
+                    let var = new VariableNode(result, [])
                     let regroup context =
                         match fst <| value.Resolve context false with
                         | Some o ->
@@ -255,6 +259,11 @@ module internal Misc =
                                 match regroup walker.context with
                                 | [] -> walker
                                 | _ as list -> {walker with context=walker.context.add(result.RawText, (list :> obj))}
+                            
+                            override this.elements 
+                                with get() = 
+                                    (value :> INode) :: (as_keyword :> INode) :: (by_keyword :> INode)
+                                        :: (grouper_ref :> INode) :: (var :> INode) :: base.elements
                     } :> INodeImpl), tokens
 
                 | _ -> raise (SyntaxError ("malformed 'regroup' tag"))
