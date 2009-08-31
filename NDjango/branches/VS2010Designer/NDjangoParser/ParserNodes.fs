@@ -178,7 +178,7 @@ module internal ParserNodes =
                 Text token,
                 values
             )
-        /// a node representing a keyword - i.e. on/off values for the autoescape tag
+    /// a node representing a reference to a value in the current context
     type ReferenceNode (token:TextToken, values:string list) =
         inherit ValueListNode
             (
@@ -186,7 +186,6 @@ module internal ParserNodes =
                 Text token,
                 values
             )       
-            
             
     /// a node representing a filter name
     type FilterNameNode (token:TextToken, values:IEnumerable<string>) =
