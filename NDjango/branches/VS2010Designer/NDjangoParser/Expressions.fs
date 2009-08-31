@@ -41,8 +41,8 @@ module Expressions =
         let filter_name = filter_match.Groups.["filter_name"]
         let name_node = 
             new FilterNameNode (
-                expression_token.CreateToken(filter_name), 
-                context.Provider.Filters |> Map.to_list |> List.map (fun f -> fst f)
+                expression_token.CreateToken(filter_name),
+                context.Provider.Filters |> Map.to_seq |> Seq.map (fun f -> fst f) 
             )
             
         let args = filter_match.Groups.["arg"].Captures |> Seq.cast |> Seq.to_list 
