@@ -35,8 +35,8 @@ open NDjango.ParserNodes
 
 module internal Misc =
 
-    /// Force autoescape behavior for this block
-    [<Description("{% autoescape <on|off> %} ... {% endautoescape %}")>]
+    /// Forces autoescape behavior for this block
+    [<Description("Forces autoescape behavior for enclosed tags")>]
     type AutoescapeTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -70,6 +70,7 @@ module internal Misc =
                    remaining)
                         
     /// Ignores everything between ``{% comment %}`` and ``{% endcomment %}``.
+    [<Description("Ignores everything between ``{% comment %}`` and ``{% endcomment %}``")>]
     type CommentTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -84,9 +85,16 @@ module internal Misc =
     ///     <pre>
     ///         {% debug %}
     ///     </pre>
+    [<Description("Outputs debug information")>]
     type DebugTag() =
         interface ITag with
-            member this.Perform token provider tokens = (new NDjango.Tags.Debug.TagNode(provider, token) :> INodeImpl), tokens
+            member this.Perform token provider tokens = 
+                ({new TagNode(provider, token)
+                    with
+                        override x.walk manager walker =
+                            // the actual debug output is built by the context ToString method
+                            {walker with buffer = walker.context.ToString()}
+                    } :> INodeImpl), tokens
             
     /// Outputs the first variable passed that is not False.
     /// 
@@ -112,6 +120,7 @@ module internal Misc =
     /// passed variables are False::
     /// 
     ///     {% firstof var1 var2 var3 "fallback value" %}
+    [<Description("Outputs the first variable passed that is not False")>]
     type FirstOfTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -213,6 +222,7 @@ module internal Misc =
         }
         member this.Append(o) = {this with list=this.list @ o}
 
+    [<Description("Regroups a list of alike objects by a common attribute.")>]
     type RegroupTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -284,7 +294,7 @@ module internal Misc =
 ///     </strong>
 /// {% endspaceless %}
 
-    [<Description("{% spaceless %} ... {% endspaceless %}")>]
+    [<Description("Removes whitespace characters between HTML tags.")>]
     type SpacelessTag() =
         let spaces_re = new Regex("(?'spaces'>\s+<)", RegexOptions.Compiled)
         interface ITag with
@@ -322,6 +332,7 @@ module internal Misc =
     ///opencomment {# 
     ///closecomment #} 
 
+    [<Description("Outputs one of the syntax characters used to compose template tags.")>]
     type TemplateTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -355,6 +366,7 @@ module internal Misc =
     /// Above, if ``this_value`` is 175 and ``max_value`` is 200, the the image in
     /// the above example will be 88 pixels wide (because 175/200 = .875;
     /// 
+    [<Description("Calculates the ratio of a given value to a max value, and applies it to a constant.")>]
     type WidthRatioTag() =
         interface ITag with
             member this.Perform token context tokens =
@@ -391,6 +403,7 @@ module internal Misc =
     ///     {% with person.some_sql_method as total %}
     ///         {{ total }} object{{ total|pluralize }}
     ///     {% endwith %}
+    [<Description("Adds a value to the context for the enclosed tags.")>]
     type WithTag() =
         interface ITag with
             member this.Perform token context tokens =
