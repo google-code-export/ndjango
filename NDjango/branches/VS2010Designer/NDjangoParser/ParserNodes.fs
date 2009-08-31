@@ -162,14 +162,6 @@ module internal ParserNodes =
                 context.Tags
             )
             
-    /// a node representing a variable - i.e. loop variable in the For tag        
-    type VariableNode (token:TextToken, values:string list) =
-        inherit ValueListNode
-            (
-                NodeType.Variable, 
-                Text token,
-                values
-            )
     /// a node representing a keyword - i.e. on/off values for the autoescape tag
     type KeywordNode (token:TextToken, values:IEnumerable<string>) =
         inherit ValueListNode
@@ -177,15 +169,7 @@ module internal ParserNodes =
                 NodeType.Keyword, 
                 Text token,
                 values
-            )
-    /// a node representing a reference to a value in the current context
-    type ReferenceNode (token:TextToken, values:string list) =
-        inherit ValueListNode
-            (
-                NodeType.Reference, 
-                Text token,
-                values
-            )       
+            )     
             
     /// a node representing a filter name
     type FilterNameNode (token:TextToken, values:IEnumerable<string>) =
