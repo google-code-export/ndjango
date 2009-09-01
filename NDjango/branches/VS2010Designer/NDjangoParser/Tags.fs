@@ -135,6 +135,9 @@ module internal Misc =
                                     match variables |> List.tryPick (fun var -> var.ResolveForOutput manager walker ) with
                                     | None -> walker 
                                     | Some w -> w
+                                override this.elements
+                                    with get()=
+                                        List.append (variables |> List.map (fun node -> (node :> INode))) base.elements
                         } :> INodeImpl), tokens
                         
 /// regroup¶
@@ -391,6 +394,10 @@ module internal Misc =
                                             / toFloat (fst <| maxValue.Resolve walker.context false) 
                                             * width + 0.5
                                 {walker with buffer = ratio |> int |> string}
+                                
+                            override this.elements
+                                with get()=
+                                    (value :> INode) :: (maxValue :> INode) :: base.elements
                        } :> INodeImpl), 
                        tokens)
                 | _ -> raise (SyntaxError ("'widthratio' takes three arguments"))
