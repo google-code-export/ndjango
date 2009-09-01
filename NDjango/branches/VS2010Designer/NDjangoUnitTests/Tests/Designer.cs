@@ -28,7 +28,7 @@ namespace NDjango.UnitTests
         }
       
 
-//        [Test, TestCaseSource("GetDesignerTests")]
+        //[Test, TestCaseSource("GetDesignerTests")]
         public void DesignerTests(TestDescriptor test)
         {
             InternalFilterProcess(test);
@@ -51,103 +51,91 @@ namespace NDjango.UnitTests
             NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}" 
                 , Nodes 
                 (
-                    Node(0, 0, EmptyList),
-                    Node(0, 12, EmptyList),
-                    Node(25, 2, EmptyList),
-                    Node(27, 11, EmptyList),
-                    Node(27, 11, AddToStandardList("endif")),
-                    Node(27, 2, EmptyList),
-                    Node(36, 2, EmptyList),
-                    Node(12, 3, EmptyList),
-                    Node(15, 10, EmptyList),
-                    Node(15, 10, AddToStandardList("else", "endif")),
-                    Node(15, 2, EmptyList),
-                    Node(23, 2, EmptyList),
-                    Node(0, 12, standardTags.ToArray()),
-                    Node(0, 2, EmptyList),
-                    Node(10, 2, EmptyList),
-                    Node(38, 0, EmptyList)
+                    Node(27, 11, "endif"),
+                    Node(15, 10, "else", "endif"),
+                    StandardNode(0, 12)
                 ));
             NewTest("ifequal-tag-designer", "{% ifequal foo bar %}yes{% else %}no{% endifequal %}"
                 , Nodes 
                 (
-                    Node(0, 0, EmptyList),
-                    Node(0, 21, EmptyList),
-                    Node(34, 2, EmptyList),
-                    Node(36, 16, EmptyList),
-                    Node(36, 16, AddToStandardList("endifequal")),
-                    Node(36, 2, EmptyList),
-                    Node(50, 2, EmptyList),
-                    Node(21, 3, EmptyList),
-                    Node(24, 10, EmptyList),
-                    Node(24, 10, AddToStandardList("else", "endifequal")),
-                    Node(24, 2, EmptyList),
-                    Node(32, 2, EmptyList),
-                    Node(11, 3, EmptyList),
-                    Node(11, 3, EmptyList),
-                    Node(15, 3, EmptyList),
-                    Node(15, 3, EmptyList),
-                    Node(0, 21, standardTags.ToArray()),
-                    Node(0, 2, EmptyList),
-                    Node(19, 2, EmptyList),
-                    Node(52, 0, EmptyList)
+                    Node(36, 16, "endifequal"),
+                    Node(24, 10, "else", "endifequal"),
+                    StandardNode(0, 21)
                 ));
             NewTest("add-filter-designer", "{{ value| add:\"2\" }}"
                 , Nodes 
                 (
-                    Node(0, 0, EmptyList),
-                    Node(0, 20, EmptyList),
-                    Node(2, 14, EmptyList),
-                    Node(2, 14, EmptyList),
-                    Node(9, 3, standardFilters.ToArray()),
-                    Node(13, 3, EmptyList),
-                    Node(2, 5, EmptyList),
-                    Node(20, 0, EmptyList)
+                    StandardFilter(9, 3)
                 ));
             //NewTest("fortag-designer", "{% for i in test %}{% ifchanged %}nothing changed{%else%}same {% endifchanged %}{{ forloop.counter }},{% endfor %}"
             //    , Nodes 
             //    (
-            //        Node(0, 0, EmptyList),
-            //        Node(0, 19, EmptyList),
-            //        Node(19, 0, EmptyList),
-            //        Node(19, 15, EmptyList),
-            //        Node(57, 5, EmptyList),
-            //        Node(62, 18, EmptyList),
+            //        Node(0, 0),
+            //        Node(0, 19),
+            //        Node(19, 0),
+            //        Node(19, 15),
+            //        Node(57, 5),
+            //        Node(62, 18),
             //        Node(64, 13, AddToStandardList("endif")),
-            //        Node(62, 2, EmptyList),
-            //        Node(78, 2, EmptyList),
-            //        Node(34, 15, EmptyList),
-            //        Node(49, 8, EmptyList),
+            //        Node(62, 2),
+            //        Node(78, 2),
+            //        Node(34, 15),
+            //        Node(49, 8),
             //        Node(51, 4, AddToStandardList("else", "endif")),
-            //        Node(49, 2, EmptyList),
-            //        Node(55, 2, EmptyList),
+            //        Node(49, 2),
+            //        Node(55, 2),
             //        Node(21, 10, standardTags.ToArray()),
-            //        Node(19, 2, EmptyList),
-            //        Node(32, 2, EmptyList),
-            //        Node(80, 0, EmptyList),
-            //        Node(80, 21, EmptyList),
-            //        Node(80, 2, EmptyList),
-            //        Node(99, 2, EmptyList),
-            //        Node(101, 1, EmptyList),
-            //        Node(102, 12, EmptyList),
+            //        Node(19, 2),
+            //        Node(32, 2),
+            //        Node(80, 0),
+            //        Node(80, 21),
+            //        Node(80, 2),
+            //        Node(99, 2),
+            //        Node(101, 1),
+            //        Node(102, 12),
             //        Node(104, 7, standardTags.ToArray()),
-            //        Node(102, 2, EmptyList),
-            //        Node(112, 2, EmptyList),
+            //        Node(102, 2),
+            //        Node(112, 2),
             //        Node(2, 4, standardTags.ToArray()),
-            //        Node(0, 2, EmptyList),
-            //        Node(17, 2, EmptyList),
-            //        Node(114, 0, EmptyList)
+            //        Node(0, 2),
+            //        Node(17, 2),
+            //        Node(114, 0)
             //    ));
 
             return tests;
         }
 
-        private DesignerData ErrorNode(int position, int length, string[] values, int errorSeverity, string errorMessage)
+        //The following 'standard' methods are for nodes, which have standard Values list without any additions.
+        private DesignerData StandardFilter(int position, int length, int errorSeverity, string errorMessage)
         {
-            return new DesignerData(position, length, values, errorSeverity, errorMessage);
+            return new DesignerData(position, length, standardFilters.ToArray(), errorSeverity, errorMessage);
         }
 
-        private DesignerData Node(int position, int length, string[] values)
+        private DesignerData StandardNode(int position, int length, int errorSeverity, string errorMessage)
+        {
+            return new DesignerData(position, length, standardTags.ToArray(), errorSeverity, errorMessage);
+        }
+
+        private DesignerData StandardFilter(int position, int length)
+        {
+            return new DesignerData(position, length, standardFilters.ToArray(), -1, String.Empty);
+        }
+
+        private DesignerData StandardNode(int position, int length)
+        {
+            return new DesignerData(position, length, standardTags.ToArray(), -1, String.Empty);
+        }
+
+        //method for some node with error message
+        private DesignerData ErrorNode(int position, int length, string[] values, int errorSeverity, string errorMessage)
+        {
+            if (values.Length == 0)
+                return new DesignerData(position, length, EmptyList, errorSeverity, errorMessage);
+            else
+                return new DesignerData(position, length, AddToStandardList(values), errorSeverity, errorMessage);
+        }
+
+        private DesignerData Node(int position, int length, params string[] values)
         {
             return ErrorNode(position, length, values, -1, String.Empty);
         }
