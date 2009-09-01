@@ -57,7 +57,7 @@ type NodeType =
         /// loop variable in the For tag.
         /// <example>loop_item</example>
         /// </summary>
-        | Variable = 0x0005
+        | VariableDefinition = 0x0005
 
         /// <summary>
         /// Expression, which consists of a reference followed by 0 or more filters

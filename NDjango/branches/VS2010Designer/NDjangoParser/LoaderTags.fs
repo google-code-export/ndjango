@@ -79,7 +79,13 @@ module internal LoaderTags =
                                             } :> INodeImpl)
                             )   
                     
-                    (new ExtendsNode(context, token, node_list, parent_name_expr) :> INodeImpl), remaining
+                    (({
+                        new ExtendsNode(context, token, node_list, parent_name_expr) with
+                            override this.elements
+                                with get()=
+                                    (parent_name_expr :> INode) :: base.elements
+                       } :> INodeImpl), 
+                       remaining)
                 | _ -> raise (SyntaxError ("extends tag takes only one argument"))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
@@ -119,6 +125,9 @@ module internal LoaderTags =
                         with
                             override this.walk manager walker = 
                                 {walker with parent=Some walker; nodes=(get_template manager template_name walker.context).Nodes}
+                            override this.elements 
+                                with get()=
+                                    (template_name :> INode) :: base.elements
                     } :> INodeImpl), tokens
                 | _ -> raise (SyntaxError ("'include' tag takes only one argument"))
 

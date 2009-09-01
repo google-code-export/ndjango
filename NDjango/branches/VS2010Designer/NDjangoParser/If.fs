@@ -195,6 +195,13 @@ module internal If =
                             [], remaining
                     | _ -> [], remaining
 
-                ((new TagNode(context, token, bool_vars, node_list_true, node_list_false, link_type) :> NDjango.Interfaces.INodeImpl), remaining2)
+                (({
+                    new TagNode(context, token, bool_vars, node_list_true, node_list_false, link_type)
+                        with
+                            override this.elements
+                                with get()=
+                                    List.append (bool_vars |> List.map(fun (_, element) -> (element :> INode))) base.elements
+                    } :> NDjango.Interfaces.INodeImpl),
+                    remaining2)
 
 
