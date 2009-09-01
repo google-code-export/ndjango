@@ -93,8 +93,8 @@ namespace NDjango.UnitTests
                 var template = manager.RenderTemplate(templateName, context);
                 retStr = template.ReadToEnd();
             }
-//            using (TextWriter stream = System.IO.File.AppendText("Timers.txt"))
-//                stream.WriteLine(Name + "," + stopwatch.ElapsedTicks); 
+            using (TextWriter stream = System.IO.File.AppendText("Timers.txt"))
+                stream.WriteLine(Name + "," + stopwatch.ElapsedTicks); 
             return retStr;
         }
 
@@ -171,10 +171,14 @@ namespace NDjango.UnitTests
             //the same logic responsible for retriving nodes as in NodeProvider class (DjangoDesigner).
             List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll(node => (INode)node));
             List<DesignerData> actualResult = nodes.ConvertAll(
-                node => new DesignerData(node.Position, node.Length, new List<string>(node.Values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message));
-
+                node => new DesignerData(node.Position, node.Length, new List<string>(node.Values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message))
+                .FindAll(node => (node.Values.Length != 0));
+            
             for (int i = 0; i < nodes.Count; i++)
             {
+                if (actualResult[i].Values.Length == 0)
+                    continue;
+
                 Assert.AreEqual(actualResult[i].Length, ResultForDesigner[i].Length, "Invalid Length");
                 Assert.AreEqual(actualResult[i].Position, ResultForDesigner[i].Position, "Invalid Position");
                 Assert.AreEqual(actualResult[i].Severity, ResultForDesigner[i].Severity, "Invalid Severity");
