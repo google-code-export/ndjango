@@ -260,5 +260,12 @@ module internal For =
                             [], remaining
                     | _ -> [], remaining
 
-                ((TagNode(context, token, enumExpr, variables, node_list_body, node_list_empty, reversed) :> NDjango.Interfaces.INodeImpl), remaining2)
+                (({
+                    new TagNode(context, token, enumExpr, variables, node_list_body, node_list_empty, reversed)
+                        with
+                            override this.elements
+                                with get()=
+                                    (enumExpr :> INode) :: base.elements
+                  } :> NDjango.Interfaces.INodeImpl), 
+                  remaining2)
 
