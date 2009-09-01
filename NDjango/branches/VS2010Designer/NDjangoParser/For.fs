@@ -144,7 +144,7 @@ module internal For =
                 }
             | false ->
                 match context with
-                | None -> failwith "Context should always be available after the first iteration"
+                | None -> raise (new RenderingError("Context should always be available after the first iteration"))
                 | Some context ->
                     {
                         counter = context.counter+1;

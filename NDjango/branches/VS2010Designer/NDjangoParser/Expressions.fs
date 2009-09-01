@@ -59,7 +59,7 @@ module Expressions =
                     match filter, args with
                     | :? IFilter as f, [] when f.DefaultValue = null -> 
                          raise (SyntaxError ("filter requires argument, none provided"))
-                    | _ -> new Error(-1, ""), Some filter
+                    | _ -> Error.None, Some filter
             with
             | :? SyntaxError as ex -> 
                 if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
@@ -84,7 +84,7 @@ module Expressions =
                     std.PerformWithParam(input, param)
                 | _ as simple -> simple.Perform input
             
-        member x.elements = seq ([(name_node :> INode)] @ (args |> List.map (fun a -> (a:>INode))))
+        member x.elements = [(name_node :> INode)] |> Seq.append (args |> Seq.map (fun a -> (a:>INode)))
         member x.EscapeFilter = 
             match filter with
             | None -> raise (SyntaxException(error.Message, Text filter_token))
@@ -104,7 +104,30 @@ module Expressions =
                 Map.of_list[(Constants.NODELIST_TAG_ELEMENTS, x.elements)] 
                     :> IDictionary<string, IEnumerable<INode>>
 
-    /// Represents a filter expression 
+    /// a filter placeholder object is included as the last element in the list of the nodes
+    /// generated for every filter expression
+    type private FilterPlaceHolder(context:ParsingContext, expression_token:TextToken) =
+        let filter_token = expression_token.CreateToken(expression_token.Location.Length,0)
+        let name_node = 
+            new FilterNameNode (
+                filter_token,
+                context.Provider.Filters |> Map.to_seq |> Seq.map (fun f -> fst f) 
+            )
+        interface INode with
+            member x.NodeType = NodeType.Filter
+            member x.Position = filter_token.Location.Offset
+            member x.Length = filter_token.Location.Length
+            member x.Values = seq []
+            member x.ErrorMessage = Error.None
+            member x.Description = ""
+            member x.Nodes = 
+                Map.of_list[(Constants.NODELIST_TAG_ELEMENTS, seq [(name_node :> INode)])] 
+                    :> IDictionary<string, IEnumerable<INode>>
+
+    /// Represents a django expression. An experssion consists of a reference followed by 
+    /// zero or more filters, followed by a filter placeholder. Filter
+    /// placeholder is always added as the last element so that the designer
+    /// can properly maintain the intellisense session when a new filter is added. 
     type FilterExpression (context:ParsingContext, expression: TextToken) =
         
         let expression_text = expression.Value
@@ -146,7 +169,7 @@ module Expressions =
                             mtch.Index+mtch.Length, new Error(2, ex.Message), variable, filters
                     | _ -> rethrow()
                 ) 
-                (0, new Error(-1, ""), None, [])
+                (0, Error.None, None, [])
         
         // check if we reached the end of the expression string        
         let error = 
@@ -237,13 +260,15 @@ module Expressions =
             
             /// node list consists of the variable node and the list of the filter nodes
             member x.Nodes =
-                let list = 
-                    (filters |> List.map (fun f -> f:>INode)) @
+                let elements = 
+                    filters |> Seq.of_list |> Seq.map (fun f -> f:>INode) 
+                let elements =
                     match variable with
-                    | Some v -> [(v :> INode)] 
-                    | None -> [] 
+                    | Some v -> [(v :> INode)] |> Seq.append elements
+                    | None -> elements 
+                let elements = elements |> Seq.append [(new FilterPlaceHolder(context, expression) :> INode)] 
                 new Map<string, IEnumerable<INode>>([]) 
-                    |> Map.add Constants.NODELIST_TAG_ELEMENTS (list  :> IEnumerable<INode>) 
+                    |> Map.add Constants.NODELIST_TAG_ELEMENTS elements 
                         :> IDictionary<string, IEnumerable<INode>>
 
 

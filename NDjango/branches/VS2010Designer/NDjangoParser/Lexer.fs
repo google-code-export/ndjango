@@ -115,8 +115,9 @@ module Lexer =
     
     /// Determines the text of the tag body by stripping off
     /// the first two and the last two characters
-    let block_body (text:string) = text.[2..text.Length-3].Trim()
-
+    let block_body (text:string) (location:Location) = 
+        let body = text.[2..text.Length-3].Trim()
+        body, new Location(location, (text.IndexOf body, body.Length))
     /// Locates the tag fragments: the tag name and tag arguments by splitting the text into pieces by whitespaces
     /// Whitespaces inside strings in double- or single quotes remain unaffected
     let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
@@ -126,9 +127,7 @@ module Lexer =
         inherit TextToken(text, location)
         
         let verb,args =
-            let body = block_body text
-            let offset = text.IndexOf body
-            let location = new Location(location, (offset, body.Length))
+            let body, location = block_body text location
             match tokenize_for_token location split_tag_re body with
             | [] -> raise (LexerError("Empty tag block"))
             | verb::args -> verb, args
@@ -151,9 +150,9 @@ module Lexer =
         inherit TextToken(text, location)
 
         let expression = 
-            let body = block_body text
+            let body, location = block_body text location
             if (body = "") then raise (LexerError("Empty variable block"))
-            new TextToken(body, new Location(location, (2, body.Length)))
+            new TextToken(body, location)
         
         /// token representing the expression
         member x.Expression = expression
