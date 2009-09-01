@@ -101,6 +101,14 @@ type NodeType =
         /// </summary>
         | Comment = 0x000c
 
+/// Error message
+type Error(severity:int, message:string) =
+    /// indicates the severity of the error with 0 being the information message
+    /// negative severity is used to mark a dummy message ("No messages" message) 
+    member x.Severity = severity
+    member x.Message = message
+    static member None = new Error(-1, "") 
+
 /// A representation of a node of the template abstract syntax tree    
 type INode =
 
@@ -117,7 +125,7 @@ type INode =
     abstract member Values: IEnumerable<string>
     
     /// message associated with the node
-    abstract member ErrorMessage: OutputHandling.Error
+    abstract member ErrorMessage: Error
     
     /// TagNode description (will be shown in the tooltip)
     abstract member Description: string

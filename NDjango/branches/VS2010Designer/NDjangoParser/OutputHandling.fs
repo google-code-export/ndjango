@@ -68,10 +68,6 @@ module OutputHandling =
     /// used to set defaults for optional parameters. retunrs o.Value if o.IsSome, v otherwise
     let internal defaultArg o v = match o with | Some o -> o | _ -> v
 
-    /// Error message
-    type Error(severity:int, message:string) =
-        /// indicates the severity of the error with 0 being the information message
-        /// negative severity is used to mark a dummy message ("No messages" message) 
-        member x.Severity = severity
-        member x.Message = message
+      
+    
 

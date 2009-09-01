@@ -134,7 +134,7 @@ module Variables =
         let var, literal, translate = find_literal token.Value
         
         // So far no errors
-        let error = new Error(-1,"")
+        let error = Error.None
         
         let error, lookups = 
             match var with

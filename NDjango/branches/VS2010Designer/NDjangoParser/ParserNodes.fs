@@ -85,7 +85,7 @@ module internal ParserNodes =
             
         /// Error message represented by this node
         abstract member ErrorMessage: Error
-        default x.ErrorMessage = new Error(-1,"")
+        default x.ErrorMessage = Error.None
             
         /// Description to be shown for this node
         abstract member Description: string
@@ -129,7 +129,7 @@ module internal ParserNodes =
             member x.Values = seq []
             
             /// No message associated with the node
-            member x.ErrorMessage = new Error(-1,"")
+            member x.ErrorMessage = Error.None
             
             /// No description 
             member x.Description = ""
@@ -147,7 +147,7 @@ module internal ParserNodes =
             member x.Length = token.Length
             member x.Values = values
             /// No message associated with the node
-            member x.ErrorMessage = new Error(-1,"")
+            member x.ErrorMessage = Error.None
             /// No description 
             member x.Description = ""
             /// node list is empty
