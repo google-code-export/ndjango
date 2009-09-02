@@ -90,7 +90,7 @@ namespace NDjango.Designer.QuickInfo
             if (point.HasValue)
             {
                 NodeProvider nodeProvider = nodeProviderBroker.GetNodeProvider(point.Value.Snapshot.TextBuffer);
-                List<INode> quickInfoNodes = nodeProvider.GetNodes(point.Value);
+                List<NodeSnapshot> quickInfoNodes = nodeProvider.GetNodes(point.Value);
                 if (quickInfoNodes != null)
                 {
                     // the invocation occurred in a subject buffer of interest to us
@@ -98,7 +98,7 @@ namespace NDjango.Designer.QuickInfo
                     ITrackingPoint triggerPoint = point.Value.Snapshot.CreateTrackingPoint(point.Value.Position, PointTrackingMode.Positive);
 
                     activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
-                    activeSession.Properties.AddProperty(typeof(SourceProvider), quickInfoNodes);
+                    activeSession.Properties.AddProperty(typeof(Source), quickInfoNodes);
                     activeSession.Start();
                 }
             }

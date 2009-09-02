@@ -169,7 +169,7 @@ namespace NDjango.Designer.Parsing
             List<NodeSnapshot> result = new List<NodeSnapshot>();
             foreach (NodeSnapshot node in nodes)
             {
-                if (node.SnapshotSpan.IntersectsWith(snapshotSpan))
+                if (node.SnapshotSpan.IntersectsWith(snapshotSpan) || node.ExtensionSpan.IntersectsWith(snapshotSpan))
                     result.Add(node);
                 result.AddRange(GetNodes(snapshotSpan, node.Children));
             }
@@ -181,9 +181,30 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="point">point identifiying the desired node</param>
         /// <returns></returns>
-        internal List<INode> GetNodes(SnapshotPoint point)
+        internal List<NodeSnapshot> GetNodes(SnapshotPoint point)
         {
-            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0)).ConvertAll(node => node.Node);
+            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0));
+        }
+
+        internal List<NodeSnapshot> GetNodes(SnapshotPoint snapshotPoint, char[] trigger)
+        {
+            List<NodeSnapshot> result;
+            if (trigger.Length == 0)
+                return new List<NodeSnapshot>();
+            switch (trigger[0])
+            {
+                case '|':
+                    result = GetNodes(snapshotPoint).FindAll(node => node.Node.NodeType == NodeType.FilterName);
+                    return result;
+                default:
+                    if (Char.IsLetterOrDigit(trigger[0]))
+                    {
+                        result = GetNodes(snapshotPoint)
+                            .FindAll(node => node.Node.Length > 0 || node.Node.NodeType == NodeType.TagName);
+                        return result;
+                    }
+                    return new List<NodeSnapshot>();
+            }
         }
     }
 }
