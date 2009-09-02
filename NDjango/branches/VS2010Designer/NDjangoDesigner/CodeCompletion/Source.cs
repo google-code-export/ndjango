@@ -25,6 +25,7 @@ using Microsoft.VisualStudio.Language.Intellisense;
 using Microsoft.VisualStudio.Text;
 using System.Collections.ObjectModel;
 using NDjango.Interfaces;
+using NDjango.Designer.Parsing;
 
 namespace NDjango.Designer.CodeCompletion
 {
@@ -45,41 +46,13 @@ namespace NDjango.Designer.CodeCompletion
         /// </remarks>
         public ReadOnlyCollection<CompletionSet> GetCompletionInformation(ICompletionSession session)
         {
-            List<INode> completionNodes = session.Properties[typeof(Source)] as List<INode>;
-            if (completionNodes != null)
+            List<CompletionSet> completions;
+            if (session.Properties.TryGetProperty<List<CompletionSet>>(typeof(Source), out completions))
             {
-                // Calculate the location of the textspan to be replaced with 
-                // the selection. We always want to replace the entire word
-                ITextSnapshot snapshot = session.SubjectBuffer.CurrentSnapshot;
-                int triggerPoint = session.TriggerPoint.GetPosition(snapshot);
-                ITextSnapshotLine line = snapshot.GetLineFromPosition(triggerPoint);
-                string lineString = line.GetText();
-                // position of the first non-space character before the tag name
-                int start = lineString.Substring(0, triggerPoint - line.Start.Position).
-                    LastIndexOfAny(new char[] {' ', '\t', '%'})
-                    + line.Start.Position + 1;
-                // length of the word currently in the tag name position in the tag
-                int length = lineString.Substring(triggerPoint - line.Start.Position).
-                    IndexOfAny(new char[] {' ', '\t', '%'} )
-                    + triggerPoint - start;
-
-                CompletionSet completionSet = new CompletionSet(
-                    "ndjango.completions", 
-                    session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(
-                    start, length, SpanTrackingMode.EdgeInclusive),
-                    CompletionsForNodes(completionNodes),
-                    null);
-                return new ReadOnlyCollection<CompletionSet>(new List<CompletionSet> { completionSet });
+                return new ReadOnlyCollection<CompletionSet>(completions);
             }
 
             return null;
-        }
-
-        private IEnumerable<Completion> CompletionsForNodes(IEnumerable<INode> nodes)
-        {
-            foreach (INode node in nodes)
-                foreach (string value in node.Values)
-                    yield return new Completion(value, value, value);
         }
     }
 }

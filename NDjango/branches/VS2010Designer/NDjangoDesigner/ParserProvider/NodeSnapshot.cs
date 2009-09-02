@@ -32,12 +32,16 @@ namespace NDjango.Designer.Parsing
     class NodeSnapshot
     {
         private SnapshotSpan snapshotSpan;
+        private SnapshotSpan extensionSpan;
         private INode node;
         private List<NodeSnapshot> children = new List<NodeSnapshot>();
 
         public NodeSnapshot(ITextSnapshot snapshot, INode node)
         {
 
+            this.node = node; 
+            this.snapshotSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
+            
             int offset = 0;
             if (node.Values.GetEnumerator().MoveNext())
             {
@@ -59,15 +63,22 @@ namespace NDjango.Designer.Parsing
                     break;
                 }
             }
-
-            this.snapshotSpan = new SnapshotSpan(snapshot, node.Position - offset, node.Length + offset);
-            this.node = node;
+            extensionSpan = new SnapshotSpan(snapshot, node.Position - offset, offset);
             foreach (IEnumerable<INode> list in node.Nodes.Values)
                 foreach (INode child in list)
                     children.Add(new NodeSnapshot(snapshot, child));
         }
 
+        /// <summary>
+        /// Span covering the source the INode was created from
+        /// </summary>
         public SnapshotSpan SnapshotSpan { get { return snapshotSpan; } }
+
+        /// <summary>
+        /// The extension span for the INode - is empty unless the node has code completion values
+        /// if not emoty covers all whitespace to the left of the node 
+        /// </summary>
+        public SnapshotSpan ExtensionSpan { get { return extensionSpan; } }
 
         public IEnumerable<NodeSnapshot> Children { get { return children; } }
 
@@ -99,10 +110,16 @@ namespace NDjango.Designer.Parsing
         internal void TranslateTo(ITextSnapshot snapshot)
         {
             snapshotSpan = snapshotSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
+            extensionSpan = extensionSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
             foreach (NodeSnapshot child in children)
                 child.TranslateTo(snapshot);
         }
 
+        /// <summary>
+        /// Displays a diagnostic message in the error list window as well as in the output pane
+        /// </summary>
+        /// <param name="djangoDiagnostics"></param>
+        /// <param name="filePath"></param>
         internal void ShowDiagnostics(IVsOutputWindowPane djangoDiagnostics, string filePath)
         {
             if (node.ErrorMessage.Severity > 0)
