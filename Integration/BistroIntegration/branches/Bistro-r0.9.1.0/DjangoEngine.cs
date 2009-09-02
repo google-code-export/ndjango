@@ -110,10 +110,9 @@ namespace NDjango.BistroIntegration
                                 .WithLoader(templateLoader)
                                 .WithFilters(loader.GetFilters())
                                 .WithTags(loader.GetTags())
+                                
                                 // the url tag has a constructor parameter. structuremap won't pick it up for us
                                 .WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
-                        
-                        provider = FilterManager.Initialize(provider);
                     }
                 }
                 return provider;
@@ -137,7 +136,7 @@ namespace NDjango.BistroIntegration
         private NDjango.Interfaces.ITemplateManager manager;
         #endregion
 
-        public override void Render(HttpContextBase httpContext, Bistro.Controllers.IContext requestContext)
+        public override void Render(HttpContextBase httpContext, Bistro.Controllers.IContext requestContext, string target)
         {
             if (httpContext.Session != null)
                 foreach (object key in httpContext.Session.Keys)
@@ -150,7 +149,7 @@ namespace NDjango.BistroIntegration
 
             try
             {
-                TextReader reader = manager.RenderTemplate(requestContext.Response.RenderTarget, (IDictionary<string, object>)requestContext);
+                TextReader reader = manager.RenderTemplate(target, (IDictionary<string, object>)requestContext);
                 char[] buffer = new char[4096];
                 int count = 0;
                 while ((count = reader.ReadBlock(buffer, 0, 4096)) > 0)
@@ -159,7 +158,7 @@ namespace NDjango.BistroIntegration
             catch (Exception ex)
             {
                 httpContext.Response.StatusCode = 500;
-                httpContext.Response.Write(RenderException(requestContext.Response.RenderTarget, ex, true));
+                httpContext.Response.Write(RenderException(target, ex, true));
             }
         }
 
