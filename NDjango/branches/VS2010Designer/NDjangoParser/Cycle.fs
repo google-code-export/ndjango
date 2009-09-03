@@ -92,6 +92,8 @@ module internal Cycle =
                 buffer = buffer;
                 context = (walker.context.add ("$cycle" + name, (newc :> obj))).add (name, (buffer :> obj)) 
                 }
+                
+        override x.elements = base.elements @ (values |> List.map(fun v -> v :> INode))
 
     /// Note that the original django implementation returned the same instance of the 
     /// CycleNode for each instance of a given named cycle tag. This implementation
@@ -122,8 +124,8 @@ module internal Cycle =
                         let start = values.Head.Location.Offset
                         let end_location = values.[values.Length-1].Location
                         let t1 = token.CreateToken(start - token.Location.Offset, end_location.Offset + end_location.Length - start)
-                        tokenize_for_token t1.Location oldstyle_re t1.Value |>
-                        List.map (fun t -> t.WithValue ("'" + t.RawText + "'") None)
+                        t1.Tokenize oldstyle_re |>
+                        List.map (fun t -> t.WithValue ("'" + t.Value + "'") (Some [1,false;t.Value.Length,true;1,false]))
                     else
                         values
 
