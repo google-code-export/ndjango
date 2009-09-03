@@ -49,6 +49,8 @@ module internal Filter =
             | None -> walker
             
         override x.nodelist = node_list
+        
+        override x.elements = (filter :> INode) :: base.elements
 
     /// Filters the contents of the block through variable filters.
     /// 
@@ -67,7 +69,9 @@ module internal Filter =
                 match token.Args with
                 | filter::[] ->
 // TODO: ExpressionToken
-                    let filter_expr = new FilterExpression(context, filter.WithValue(FILTER_VARIABLE_NAME + "|" + filter.Value) None)
+                    let prefix = FILTER_VARIABLE_NAME + "|"
+                    let map = Some [prefix.Length, false; filter.Value.Length, true]
+                    let filter_expr = new FilterExpression(context, filter.WithValue(prefix + filter.Value) map)
                     let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endfilter"]
                     (new FilterNode(context, token, filter_expr, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError ("'filter' tag requires one argument"))

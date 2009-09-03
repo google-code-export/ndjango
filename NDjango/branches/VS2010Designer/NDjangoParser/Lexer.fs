@@ -66,18 +66,64 @@ module Lexer =
     /// less or equal to the offset of the span being mapped
     /// mapped length is caluclated as a sum of all intervals of the span being mapped which fall on the
     /// mapped mapping spans
-    type SpanMap (map :(int*bool) list) =
-        member x.Map (offset, length) = 
-        // TODO: Implement
-                    raise (Exception("SpanMap.Map - not implemented"))
+    /// there should be no adjacent mapping spans with the same value of 'mapped'. Also mapping a span into 
+    /// more than one original span is not supported
+    type private SpanMap (map :(int*bool) list) =
+        member x.Map (position, length) = 
+            let _, offset, mapped_length, new_map = 
+                map |> List.fold 
+                    (fun (index, mapped_position, mapped_length, new_map) (span_length, mapped) -> 
+                        if index + span_length <= position
+                        // process the mapping span to the left of the start of the span being mapped
+                        then 
+                            if mapped 
+                            then index + span_length, mapped_position, mapped_length, new_map 
+                            else index + span_length, mapped_position - span_length, mapped_length, new_map
+                        elif index <= position
+                        // if the offset falls on the crack, it belongs to the span to the right
+                        then
+                            // calculate the length of the ovelap between the mapping span and the span being mapped
+                            let interval_length = 
+                                if index + span_length < position + length
+                                then index + span_length - position
+                                else length
+                            // process the mapping span where the start of the span being mapped is located  
+                            if mapped 
+                            then index + span_length, mapped_position, mapped_length, (interval_length, true) :: new_map
+                            // adjust offset to push the span start to the beginning of the next span
+                            else 
+                                index + span_length, mapped_position - (span_length - interval_length), 
+                                if position + length > index + span_length
+                                then mapped_length - interval_length
+                                else 0 // mapped_length can be less than interval_length, but the length cannot be negative
+                                , (interval_length, false) :: new_map
+                        elif index + span_length < position + length
+                        then
+                            // process the mapping span where the end of the span being mapped is located  
+                            // it is ok to calculate interval_length because span being mapped cannot span more then 2 mapping spans
+                            let interval_length = position - index + length
+                            if mapped 
+                            then index + span_length, mapped_position, mapped_length, (interval_length, true) :: new_map
+                            else index + span_length, mapped_position, position + length - index, (interval_length, false) :: new_map
+                        // this is the final value for the offset - further spans have no effect
+                        else index, mapped_position, mapped_length, new_map
+                    ) (0,position,length, [])
+                    
+            (offset, mapped_length), List.rev new_map
 
     /// Base class for text tokens. Its main purpose is to keep track of bits of text
     /// participating in the template parsing in their relationship with the original 
     /// location of the text in the template. As the text is going through various 
     /// stages of parsing it may or may not differ from the original text in the source
-    type TextToken(text:string, value:string, location: Location, map:SpanMap option) =
+    type TextToken(text:string, value:string, location: Location, map:(int*bool) list option) =
+        let map = 
+            match map with
+            | Some mapping -> Some (new SpanMap(mapping))
+            | None -> None
   
-        new (text:string, location: Location, ?map:SpanMap) =
+        let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
+
+        new (text:string, location: Location, ?map) =
             new TextToken(text, text, location, map)
             
         /// The original, unmodified text as it is in the source
@@ -96,17 +142,20 @@ module Lexer =
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one                 
         member x.CreateToken (offset, length) = 
-            let mapped_location = 
                 match map with 
-                | Some m -> m.Map (offset, length)
-                | None -> 
-                    (offset, length)
+                | Some m -> 
+                    let mapped_location, new_map =  m.Map (offset, length)
+                    new TextToken(value.Substring(offset, length), new Location(x.Location, mapped_location), new_map)
+                | None ->
+                    new TextToken(value.Substring(offset, length), new Location(x.Location, (offset, length)))
                 
-            new TextToken(value.Substring(offset, length), new Location(x.Location, mapped_location))
         
         /// Creates a new token bound to the same location in the source, but with a different value
         /// Use this method when you need to modify the token value but keep its binding to the source                
         member x.WithValue new_value map = new TextToken(text, new_value, location, map)
+        
+        member x.Tokenize (regex:Regex) = 
+            [for m in regex.Matches(text) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
 
     /// generates a list of tokens by applying the regexp
     let tokenize_for_token location (regex:Regex) value =
@@ -118,6 +167,7 @@ module Lexer =
     let block_body (text:string) (location:Location) = 
         let body = text.[2..text.Length-3].Trim()
         body, new Location(location, (text.IndexOf body, body.Length))
+    
     /// Locates the tag fragments: the tag name and tag arguments by splitting the text into pieces by whitespaces
     /// Whitespaces inside strings in double- or single quotes remain unaffected
     let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
