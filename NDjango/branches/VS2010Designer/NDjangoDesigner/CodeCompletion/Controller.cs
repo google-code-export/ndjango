@@ -186,6 +186,12 @@ namespace NDjango.Designer.CodeCompletion
         void OnActiveSessionCommitted(object sender, System.EventArgs e)
         {
             detachKeyboardFilter();
+            if (activeSession.SelectedCompletionSet.SelectionStatus.Completion.InsertionText.EndsWith("%}"))
+            {
+                var textView = activeSession.TextView;
+                textView.Caret.MoveToPreviousCaretPosition();
+                textView.Caret.MoveToPreviousCaretPosition();
+            }
             activeSession = null;
         }
 
