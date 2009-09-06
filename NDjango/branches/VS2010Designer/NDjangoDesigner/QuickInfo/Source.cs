@@ -35,6 +35,13 @@ namespace NDjango.Designer.QuickInfo
     /// </summary>
     class Source : IQuickInfoSource
     {
+        private INodeProviderBroker nodeProviderBroker;
+
+        public Source(INodeProviderBroker nodeProviderBroker)
+        {
+            // TODO: Complete member initialization
+            this.nodeProviderBroker = nodeProviderBroker;
+        }
         /// <summary>
         /// Generates the tooltip text 
         /// </summary>
@@ -47,31 +54,47 @@ namespace NDjango.Designer.QuickInfo
         /// </remarks>
         public object GetToolTipContent(IQuickInfoSession session, out ITrackingSpan applicableToSpan)
         {
+            SnapshotPoint point;
             StringBuilder message = new StringBuilder();
             int position = session.SubjectBuffer.CurrentSnapshot.Length;
             int length = 0;
-            string errorSeparator = "\nError:";
-            List<IDjangoSnapshot> nodes;
-            if (session.Properties.TryGetProperty<List<IDjangoSnapshot>>(typeof(Source), out nodes))
+            if (session.Properties.TryGetProperty<SnapshotPoint>(typeof(Controller), out point))
             {
-                nodes.ForEach(
-                    node => 
-                    {
-                        // include the node description at the top of the list
-                        if (!String.IsNullOrEmpty(node.Description))
-                            message.Insert(0, node.Description + "\n");
-                        if (node.ErrorMessage.Severity >= 0)
+                NodeProvider nodeProvider = nodeProviderBroker.GetNodeProvider(point.Snapshot.TextBuffer);
+
+                List<IDjangoSnapshot> tags = nodeProvider
+                    .GetNodes(point, node => node.ContentType == ContentType.Tag);
+                if (tags.Count > 0)
+                {
+                    point.Snapshot.TextBuffer.Properties.AddProperty(typeof(Source), tags[0]);
+                    nodeProvider.RaiseNodesChanged(point.Snapshot);
+                }
+
+                List<IDjangoSnapshot> quickInfoNodes = nodeProvider
+                    .GetNodes(point, node => node.ContentType != ContentType.Context);
+
+                if (quickInfoNodes.Count > 0)
+                {
+                    string errorSeparator = "\nError:";
+                    quickInfoNodes.ForEach(
+                        node =>
                         {
-                            // include the error message text at the bottom
-                            message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
-                            errorSeparator = "";
+                            // include the node description at the top of the list
+                            if (!String.IsNullOrEmpty(node.Description))
+                                message.Insert(0, node.Description + "\n");
+                            if (node.ErrorMessage.Severity >= 0)
+                            {
+                                // include the error message text at the bottom
+                                message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
+                                errorSeparator = "";
+                            }
+                            if (node.SnapshotSpan.Length > length)
+                                length = node.SnapshotSpan.Length;
+                            if (node.SnapshotSpan.Start < position)
+                                position = node.SnapshotSpan.Start;
                         }
-                        if (node.SnapshotSpan.Length > length)
-                            length = node.SnapshotSpan.Length;
-                        if (node.SnapshotSpan.Start < position)
-                            position = node.SnapshotSpan.Start;
-                    }
-                        );
+                            );
+                }
             }
 
             applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(

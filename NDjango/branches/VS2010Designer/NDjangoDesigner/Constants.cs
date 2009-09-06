@@ -35,25 +35,47 @@ namespace NDjango.Designer
 
         internal const string NDJANGO = "text"; //"ndjango";
 
+//        /// <summary>
+//        /// Classifier definition for django tags 
+//        /// </summary>
+//        internal const string DJANGO_CONSTRUCT = "ndjango.tag";
+//        [Export]
+//        [Name(DJANGO_CONSTRUCT)]
+//        private static ClassificationTypeDefinition DjangoConstruct;
+
+//        [Export(typeof(EditorFormatDefinition))]
+//        [Name("ndjango.tag.format")]
+//        [DisplayName("NDjango Tag Format")]
+//        [UserVisible(true)]
+//        [ClassificationType(ClassificationTypeNames = DJANGO_CONSTRUCT)]
+//        [Order]
+//        internal sealed class NDjangoTagFormat : ClassificationFormatDefinition
+//        {
+//            public NDjangoTagFormat()
+//            {
+////                BackgroundColor = Colors.Yellow;
+//            }
+//        }
+
         /// <summary>
         /// Classifier definition for django tags 
         /// </summary>
-        internal const string DJANGO_CONSTRUCT = "ndjango.tag";
+        internal const string DJANGO_SELECTED_TAG = "ndjango.selected.tag";
         [Export]
-        [Name(DJANGO_CONSTRUCT)]
-        private static ClassificationTypeDefinition DjangoConstruct;
+        [Name(DJANGO_SELECTED_TAG)]
+        private static ClassificationTypeDefinition DjangoSelectedTag;
 
         [Export(typeof(EditorFormatDefinition))]
-        [Name("ndjango.tag.format")]
-        [DisplayName("NDjango Tag Format")]
+        [Name("ndjango.selected.tag.format")]
+        [DisplayName("NDjango Selected Tag Format")]
         [UserVisible(true)]
-        [ClassificationType(ClassificationTypeNames = DJANGO_CONSTRUCT)]
+        [ClassificationType(ClassificationTypeNames = DJANGO_SELECTED_TAG)]
         [Order]
-        internal sealed class NDjangoTagFormat : ClassificationFormatDefinition
+        internal sealed class NDjangoSelectedTagFormat : ClassificationFormatDefinition
         {
-            public NDjangoTagFormat()
+            public NDjangoSelectedTagFormat()
             {
-                BackgroundColor = Colors.Yellow;
+                BackgroundColor = Colors.Gainsboro;
             }
         }
 
@@ -73,6 +95,7 @@ namespace NDjango.Designer
             public NDjangoMarkerFormat()
             {
                 ForegroundColor = Colors.Red;
+                BackgroundColor = Colors.Yellow;
             }
         }
 

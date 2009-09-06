@@ -97,6 +97,18 @@ namespace NDjango.Designer.Parsing
             } 
         }
 
+        public IEnumerable<IDjangoSnapshot> Contexts
+        {
+            get
+            {
+                foreach (NodeSnapshot child in children)
+                    if (child.ContentType == ContentType.Context)
+                        yield return child;
+                    else
+                        continue;
+            }
+        }
+
         public INode Node { get { return node; } }
 
         /// <summary>
@@ -110,10 +122,8 @@ namespace NDjango.Designer.Parsing
                 {
                     case NodeType.Marker:
                         return Constants.MARKER_CLASSIFIER;
-                    case NodeType.Text:
-                        return "text";
                     default:
-                        return Constants.DJANGO_CONSTRUCT;
+                        return "text";
                 }
             }
         }
@@ -166,6 +176,7 @@ namespace NDjango.Designer.Parsing
             {
                 switch (node.NodeType)
                 {
+                    case NodeType.Construct: return ContentType.Tag;
                     case NodeType.TagName: return ContentType.TagName;
                     case NodeType.FilterName: return ContentType.FilterName;
                     case NodeType.ParsingContext: return ContentType.Context;
