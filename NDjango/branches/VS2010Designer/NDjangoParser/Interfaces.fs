@@ -101,6 +101,11 @@ type NodeType =
         /// </summary>
         | Comment = 0x000c
 
+        /// <summary>
+        /// A special node to carrying the parsing context info for code completion
+        /// </summary>
+        | ParsingContext = 0x000d
+
 /// Error message
 type Error(severity:int, message:string) =
     /// indicates the severity of the error with 0 being the information message

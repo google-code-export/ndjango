@@ -90,7 +90,7 @@ namespace NDjango.Designer.QuickInfo
             if (point.HasValue)
             {
                 NodeProvider nodeProvider = nodeProviderBroker.GetNodeProvider(point.Value.Snapshot.TextBuffer);
-                List<NodeSnapshot> quickInfoNodes = nodeProvider.GetNodes(point.Value);
+                List<IDjangoSnapshot> quickInfoNodes = nodeProvider.GetNodes(point.Value);
                 if (quickInfoNodes != null)
                 {
                     // the invocation occurred in a subject buffer of interest to us

@@ -51,25 +51,25 @@ namespace NDjango.Designer.QuickInfo
             int position = session.SubjectBuffer.CurrentSnapshot.Length;
             int length = 0;
             string errorSeparator = "\nError:";
-            List<NodeSnapshot> nodes;
-            if (session.Properties.TryGetProperty<List<NodeSnapshot>>(typeof(Source), out nodes))
+            List<IDjangoSnapshot> nodes;
+            if (session.Properties.TryGetProperty<List<IDjangoSnapshot>>(typeof(Source), out nodes))
             {
                 nodes.ForEach(
                     node => 
                     {
                         // include the node description at the top of the list
-                        if (!String.IsNullOrEmpty(node.Node.Description))
-                            message.Insert(0, node.Node.Description + "\n");
-                        if (node.Node.ErrorMessage.Severity >= 0)
+                        if (!String.IsNullOrEmpty(node.Description))
+                            message.Insert(0, node.Description + "\n");
+                        if (node.ErrorMessage.Severity >= 0)
                         {
                             // include the error message text at the bottom
-                            message.Append(errorSeparator + "\n\t" + node.Node.ErrorMessage.Message);
+                            message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
                             errorSeparator = "";
                         }
-                        if (node.Node.Length > length)
-                            length = node.Node.Length;
-                        if (node.Node.Position < position)
-                            position = node.Node.Position;
+                        if (node.SnapshotSpan.Length > length)
+                            length = node.SnapshotSpan.Length;
+                        if (node.SnapshotSpan.Start < position)
+                            position = node.SnapshotSpan.Start;
                     }
                         );
             }

@@ -45,7 +45,7 @@ module internal ParserNodes =
         default x.must_be_first = false
         
         /// The token that defined the node
-        member x.Token with get() = token
+        member x.Token = token
 
         /// Advances the walker as a part of the tag rendering process
         abstract member walk: ITemplateManager -> Walker -> Walker
@@ -179,6 +179,23 @@ module internal ParserNodes =
                 Text token,
                 values
             )
+
+    type ParsingContextNode (context: ParsingContext, position, length) =
+        interface INode with
+            member x.NodeType = NodeType.ParsingContext
+            /// Position - the position of the first character of the token 
+            member x.Position = position
+            /// Length - length of the token
+            member x.Length = length
+            member x.Values = context.Tags
+            member x.ErrorMessage = Error.None
+            member x.Description = ""
+            member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
+            
+        interface INodeImpl with
+            member x.must_be_first = false
+            member x.Token = failwith ("Token on the ParsingContextNode should not be accessed")
+            member x.walk manager walker = walker
             
     /// For tags decorated with this attribute the string given as a parmeter for the attribute
     /// will be shown in the tooltip for the tag            

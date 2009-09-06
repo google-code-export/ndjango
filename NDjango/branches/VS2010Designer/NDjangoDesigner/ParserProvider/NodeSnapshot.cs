@@ -29,7 +29,7 @@ namespace NDjango.Designer.Parsing
     /// <summary>
     /// Maps a ndjango syntax node to the corresponding snapshotspan in the snapshot
     /// </summary>
-    class NodeSnapshot
+    class NodeSnapshot :IDjangoSnapshot
     {
         private SnapshotSpan snapshotSpan;
         private SnapshotSpan extensionSpan;
@@ -39,31 +39,39 @@ namespace NDjango.Designer.Parsing
         public NodeSnapshot(ITextSnapshot snapshot, INode node)
         {
 
-            this.node = node; 
-            this.snapshotSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
-            
-            int offset = 0;
-            if (node.Values.GetEnumerator().MoveNext())
+            this.node = node;
+            if (node.NodeType == NodeType.ParsingContext)
             {
-                ITextSnapshotLine line = snapshot.GetLineFromPosition(node.Position);
+                snapshotSpan = new SnapshotSpan(snapshot, node.Position + node.Length, 0);
+                extensionSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
 
-                // if the Value list is not empty, expand the snapshotSpan
-                // to include leading whitespaces, so that when a user
-                // types smth in this space he will get the dropdown
-                for (; node.Position - offset > line.Extent.Start.Position; offset++)
-                {
-                    switch (snapshot[node.Position - offset-1])
-                    {
-                        case ' ':
-                        case '\t':
-                            continue;
-                        default:
-                            break;
-                    }
-                    break;
-                }
             }
-            extensionSpan = new SnapshotSpan(snapshot, node.Position - offset, offset);
+            else
+            {
+                snapshotSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
+                int offset = 0;
+                if (node.Values.GetEnumerator().MoveNext())
+                {
+                    ITextSnapshotLine line = snapshot.GetLineFromPosition(node.Position);
+
+                    // if the Value list is not empty, expand the snapshotSpan
+                    // to include leading whitespaces, so that when a user
+                    // types smth in this space he will get the dropdown
+                    for (; node.Position - offset > line.Extent.Start.Position; offset++)
+                    {
+                        switch (snapshot[node.Position - offset - 1])
+                        {
+                            case ' ':
+                            case '\t':
+                                continue;
+                            default:
+                                break;
+                        }
+                        break;
+                    }
+                }
+                extensionSpan = new SnapshotSpan(snapshot, node.Position - offset, offset);
+            }
             foreach (IEnumerable<INode> list in node.Nodes.Values)
                 foreach (INode child in list)
                     children.Add(new NodeSnapshot(snapshot, child));
@@ -80,7 +88,14 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         public SnapshotSpan ExtensionSpan { get { return extensionSpan; } }
 
-        public IEnumerable<NodeSnapshot> Children { get { return children; } }
+        public IEnumerable<IDjangoSnapshot> Children 
+        { 
+            get 
+            {
+                foreach (NodeSnapshot child in children)
+                    yield return child; 
+            } 
+        }
 
         public INode Node { get { return node; } }
 
@@ -107,7 +122,7 @@ namespace NDjango.Designer.Parsing
         /// Translates the NodeSnapshot to a newer snapshot
         /// </summary>
         /// <param name="snapshot"></param>
-        internal void TranslateTo(ITextSnapshot snapshot)
+        public void TranslateTo(ITextSnapshot snapshot)
         {
             snapshotSpan = snapshotSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
             extensionSpan = extensionSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
@@ -120,7 +135,7 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="djangoDiagnostics"></param>
         /// <param name="filePath"></param>
-        internal void ShowDiagnostics(IVsOutputWindowPane djangoDiagnostics, string filePath)
+        public void ShowDiagnostics(IVsOutputWindowPane djangoDiagnostics, string filePath)
         {
             if (node.ErrorMessage.Severity > 0)
             {
@@ -138,6 +153,40 @@ namespace NDjango.Designer.Parsing
             }
             foreach (NodeSnapshot child in children)
                 child.ShowDiagnostics(djangoDiagnostics, filePath);
+        }
+
+        public bool IsPlaceholder
+        {
+            get { return node.Length == 0; }
+        }
+
+        public ContentType ContentType
+        {
+            get 
+            {
+                switch (node.NodeType)
+                {
+                    case NodeType.TagName: return ContentType.TagName;
+                    case NodeType.FilterName: return ContentType.FilterName;
+                    case NodeType.ParsingContext: return ContentType.Context;
+                    default: return ContentType.Default;
+                }
+            }
+        }
+
+        public IList<string> Values
+        {
+            get { return new List<string>(node.Values); }
+        }
+
+        public string Description
+        {
+            get { return node.Description; }
+        }
+
+        public Error ErrorMessage
+        {
+            get { return node.ErrorMessage; }
         }
     }
 }
