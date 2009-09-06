@@ -164,11 +164,18 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="snapshotSpan"></param>
         /// <returns></returns>
-        internal List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan)
+        private List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan, Predicate<IDjangoSnapshot> predicate)
         {
             return GetNodes(snapshotSpan, GetNodes(snapshotSpan.Snapshot))
-                .FindAll(node => node.ContentType != ContentType.Context);
+                .FindAll(predicate);
         }
+
+        internal List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan)
+        {
+            return GetNodes(snapshotSpan, node => node.ContentType != ContentType.Context);
+        }
+
+
 
         /// <summary>
         /// Traverses the node tree building a flat list of nodes intersecting with the span
@@ -193,14 +200,20 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="point">point identifiying the desired node</param>
         /// <returns></returns>
+        private List<IDjangoSnapshot> GetNodes(SnapshotPoint point, Predicate<IDjangoSnapshot> predicate)
+        {
+            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0), predicate);
+        }
+
         internal List<IDjangoSnapshot> GetNodes(SnapshotPoint point)
         {
-            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0));
+            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0)
+                , node => node.ContentType != ContentType.Context);
         }
 
         internal List<CompletionSet> GetCompletions(SnapshotPoint point, string trigger)
         {
-            List<IDjangoSnapshot> nodes = GetNodes(point).FindAll(node => node.Values.Count() > 0);
+            List<IDjangoSnapshot> nodes = GetNodes(point, node=>true).FindAll(node => node.Values.Count() > 0);
             List<CompletionSet> result = new List<CompletionSet>();
             if (trigger.Length > 0)
                 switch (trigger)
