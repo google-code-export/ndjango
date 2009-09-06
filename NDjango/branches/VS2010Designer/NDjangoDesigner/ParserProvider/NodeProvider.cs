@@ -27,6 +27,7 @@ using System.Threading;
 using NDjango.Interfaces;
 using System.IO;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Language.Intellisense;
 
 namespace NDjango.Designer.Parsing
 {
@@ -37,7 +38,7 @@ namespace NDjango.Designer.Parsing
     {
         // it can take some time for the parser to build the token list.
         // for now let us initialize it to an empty list
-        private List<NodeSnapshot> nodes = new List<NodeSnapshot>();
+        private List<IDjangoSnapshot> nodes = new List<IDjangoSnapshot>();
         
         private object node_lock = new object();
         private IParser parser;
@@ -112,9 +113,9 @@ namespace NDjango.Designer.Parsing
         private void rebuildNodesAsynch(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
-            List<NodeSnapshot> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
+            List<IDjangoSnapshot> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
                 .ToList()
-                    .ConvertAll<NodeSnapshot>
+                    .ConvertAll<IDjangoSnapshot>
                         (node => new NodeSnapshot(snapshot, (INode)node));
             lock (node_lock)
             {
@@ -127,7 +128,7 @@ namespace NDjango.Designer.Parsing
 
         internal void ShowDiagnostics()
         {
-            List<NodeSnapshot> nodes;
+            List<IDjangoSnapshot> nodes;
             lock (node_lock)
             {
                 nodes = this.nodes;
@@ -142,20 +143,31 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="snapshotSpan"></param>
         /// <returns></returns>
-        internal List<NodeSnapshot> GetNodes(SnapshotSpan snapshotSpan)
+        internal List<IDjangoSnapshot> GetNodes(ITextSnapshot snapshot)
         {
-            List<NodeSnapshot> nodes;
+            List<IDjangoSnapshot> nodes;
             lock (node_lock)
             {
                 nodes = this.nodes;
 
                 // just in case if while the tokens list was being rebuilt
                 // another modification was made
-                if (nodes.Count > 0 && this.nodes[0].SnapshotSpan.Snapshot != snapshotSpan.Snapshot)
-                    this.nodes.ForEach(token => token.TranslateTo(snapshotSpan.Snapshot));
+                if (nodes.Count > 0 && this.nodes[0].SnapshotSpan.Snapshot != snapshot)
+                    this.nodes.ForEach(token => token.TranslateTo(snapshot));
             }
 
-            return GetNodes(snapshotSpan, nodes);
+            return nodes;
+        }
+
+        /// <summary>
+        /// Returns a list of nodes in the specified snapshot span
+        /// </summary>
+        /// <param name="snapshotSpan"></param>
+        /// <returns></returns>
+        internal List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan)
+        {
+            return GetNodes(snapshotSpan, GetNodes(snapshotSpan.Snapshot))
+                .FindAll(node => node.ContentType != ContentType.Context);
         }
 
         /// <summary>
@@ -164,10 +176,10 @@ namespace NDjango.Designer.Parsing
         /// <param name="snapshotSpan"></param>
         /// <param name="nodes"></param>
         /// <returns></returns>
-        private List<NodeSnapshot> GetNodes(SnapshotSpan snapshotSpan, IEnumerable<NodeSnapshot> nodes)
+        private List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan, IEnumerable<IDjangoSnapshot> nodes)
         {
-            List<NodeSnapshot> result = new List<NodeSnapshot>();
-            foreach (NodeSnapshot node in nodes)
+            List<IDjangoSnapshot> result = new List<IDjangoSnapshot>();
+            foreach (IDjangoSnapshot node in nodes)
             {
                 if (node.SnapshotSpan.IntersectsWith(snapshotSpan) || node.ExtensionSpan.IntersectsWith(snapshotSpan))
                     result.Add(node);
@@ -181,30 +193,70 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="point">point identifiying the desired node</param>
         /// <returns></returns>
-        internal List<NodeSnapshot> GetNodes(SnapshotPoint point)
+        internal List<IDjangoSnapshot> GetNodes(SnapshotPoint point)
         {
             return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0));
         }
 
-        internal List<NodeSnapshot> GetNodes(SnapshotPoint snapshotPoint, char[] trigger)
+        internal List<CompletionSet> GetCompletions(SnapshotPoint point, string trigger)
         {
-            List<NodeSnapshot> result;
-            if (trigger.Length == 0)
-                return new List<NodeSnapshot>();
-            switch (trigger[0])
-            {
-                case '|':
-                    result = GetNodes(snapshotPoint).FindAll(node => node.Node.NodeType == NodeType.FilterName);
-                    return result;
-                default:
-                    if (Char.IsLetterOrDigit(trigger[0]))
-                    {
-                        result = GetNodes(snapshotPoint)
-                            .FindAll(node => node.Node.Length > 0 || node.Node.NodeType == NodeType.TagName);
-                        return result;
-                    }
-                    return new List<NodeSnapshot>();
-            }
+            List<IDjangoSnapshot> nodes = GetNodes(point).FindAll(node => node.Values.Count() > 0);
+            List<CompletionSet> result = new List<CompletionSet>();
+            if (trigger.Length > 0)
+                switch (trigger)
+                {
+                    case "{%":
+                        CreateCompletionSet(nodes, result, point, 
+                                node => node.ContentType == ContentType.Context,
+                                "% ",
+                                " %}");
+                        break;
+                    case ":":
+                    case "|":
+                        CreateCompletionSet(nodes, result, point, 
+                                node => node.ContentType == ContentType.FilterName,
+                                trigger,
+                                "");
+                        break;
+                    default:
+                        if (Char.IsLetterOrDigit(trigger[0]))
+                            CreateCompletionSet(nodes, result, point, 
+                                    node => node.ContentType != ContentType.Context,
+                                    "",
+                                    "");
+                        break;
+                }
+            return result;
+        }
+
+        private void CreateCompletionSet(
+                List<IDjangoSnapshot> nodes,
+                List<CompletionSet> sets,
+                SnapshotPoint point, 
+                Predicate<IDjangoSnapshot> selector, 
+                string prefix, 
+                string suffix
+            )
+        {
+            var node = nodes.FindLast(selector);
+            if (node == null)
+                return;
+            Span span = new Span(point.Position, 0);
+            if (node.SnapshotSpan.IntersectsWith(span))
+                span = node.SnapshotSpan.Span;
+            var applicableTo = point.Snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
+            sets.Add(new CompletionSet(
+                "NDjango Completions",
+                applicableTo,
+                CompletionsForNode(node.Values, prefix, suffix),
+                null
+                ));
+        }
+
+        private IEnumerable<Completion> CompletionsForNode(IEnumerable<string> values, string prefix, string suffix)
+        {
+            foreach (string value in values)
+                yield return new Completion(value, prefix + value + suffix, value);
         }
     }
 }

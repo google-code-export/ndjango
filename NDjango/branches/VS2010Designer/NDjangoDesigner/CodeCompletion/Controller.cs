@@ -135,48 +135,39 @@ namespace NDjango.Designer.CodeCompletion
             SnapshotPoint caretPoint = caret.Value;
 
             var subjectBuffer = caretPoint.Snapshot.TextBuffer;
-            char[] triggerChars = Win32.CharsOfKey(e.Key);
-            List<NodeSnapshot> completionNodes = 
-                provider.nodeProviderBroker.GetNodeProvider(subjectBuffer)
-                    .GetNodes(caretPoint, triggerChars)
-                        .FindAll(node => node.Node.Values.Count() > 0);
+
+            string triggerChars = Win32.CharsOfKey(e.Key);
+
+            // return if the key pressed is not a character key
+            if (triggerChars == "")
+                return;
+
+            if (triggerChars == "%" && caretPoint > 0)
+                if (subjectBuffer.CurrentSnapshot[caretPoint.Position-1] == '{')
+                    // start of a new tag
+                    triggerChars = "{%";
+                else
+                    return;
+
+            // the invocation occurred in a subject buffer of interest to us
+            ICompletionBroker broker = provider.CompletionBrokerMapService.GetBrokerForTextView(textView, subjectBuffer);
+            ITrackingPoint triggerPoint = caretPoint.Snapshot.CreateTrackingPoint(caretPoint.Position, PointTrackingMode.Positive);
+
+            List<CompletionSet> completions = 
+                provider.nodeProviderBroker.GetNodeProvider(subjectBuffer).GetCompletions(caretPoint, triggerChars);
 
             // return if there is no information to show
-            if (completionNodes.Count == 0)
+            if (completions.Count == 0)
                 return;
 
             // attach filter to intercept the Enter key
             attachKeyboardFilter();
 
-            // the invocation occurred in a subject buffer of interest to us
-            ICompletionBroker broker = provider.CompletionBrokerMapService.GetBrokerForTextView(textView, caretPoint.Snapshot.TextBuffer);
-            ITrackingPoint triggerPoint = caretPoint.Snapshot.CreateTrackingPoint(caretPoint.Position, PointTrackingMode.Positive);
-
             // Create a completion session
             activeSession = broker.CreateCompletionSession(triggerPoint, true);
 
             // Put the list of completion nodes on the session so that it can be used by the completion source
-            activeSession.Properties
-                .AddProperty(
-                    typeof(Source),
-                    completionNodes.ConvertAll
-                    (
-                        node =>
-                        {
-                            Span span = new Span(caretPoint.Position, 0);
-                            if (node.SnapshotSpan.IntersectsWith(span))
-                                span = node.SnapshotSpan.Span;
-                            var applicableTo = subjectBuffer.CurrentSnapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
-                            CompletionSet result = new CompletionSet(
-                                "NDjango Tags",
-                                applicableTo,
-                                CompletionsForNode(node.Node, triggerChars),
-                                null
-                                );
-                            return result;
-                        }
-                    )
-                );
+            activeSession.Properties.AddProperty(typeof(Source),completions);
 
             // Attach to the session events
             activeSession.Dismissed += new System.EventHandler(OnActiveSessionDismissed);
@@ -184,25 +175,6 @@ namespace NDjango.Designer.CodeCompletion
 
             // Start the completion session. The intellisense will be triggered.
             activeSession.Start();
-        }
-
-
-        private IEnumerable<Completion> CompletionsForNode(INode node, char[] trigger)
-        {
-            string prefix = "";
-            switch (trigger[0])
-            {
-                case ':':
-                    prefix = ":";
-                    break;
-                case '|':
-                    prefix = "|";
-                    break;
-                default:
-                    break;
-            }
-            foreach (string value in node.Values)
-                    yield return new Completion(value, prefix + value, value);
         }
 
         void OnActiveSessionDismissed(object sender, System.EventArgs e)
@@ -275,7 +247,7 @@ namespace NDjango.Designer.CodeCompletion
 
     internal class Win32
     {
-        public static char[] CharsOfKey(Key key)
+        public static string CharsOfKey(Key key)
         {
             uint vk = (uint)KeyInterop.VirtualKeyFromKey(key);
             byte[] keyState = new byte[256];
@@ -287,7 +259,7 @@ namespace NDjango.Designer.CodeCompletion
                 count = 0;
             char[] result = new char[count];
             Array.Copy(buffer, result, count);
-            return result;
+            return new string(result);
         }
 
         /// <summary>The set of valid MapTypes used in MapVirtualKey

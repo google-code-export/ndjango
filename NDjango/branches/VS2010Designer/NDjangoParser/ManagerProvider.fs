@@ -327,7 +327,13 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             let context = ParsingContext(x,parse_until)
             try
                 let nodes, tokens = parse_internal context [] tokens parse_until
-                (nodes |> List.rev, tokens)
+                match nodes with
+                | [] -> [], tokens
+                | hd::_ ->
+                    let end_pos = hd.Token.Position + hd.Token.Length
+                    let result = nodes |> List.rev
+                    let start_pos = (List.hd result).Token.Position
+                    ((new ParsingContextNode(context, start_pos, end_pos - start_pos) :> INodeImpl) :: result, tokens)
             with
             | _ as ex -> 
                 match generate_diag_for_tag ex parent context tokens with
