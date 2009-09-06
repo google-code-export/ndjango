@@ -35,6 +35,13 @@ namespace NDjango.Designer.CodeCompletion
     /// </summary>
     internal class Source : ICompletionSource
     {
+        private INodeProviderBroker nodeProviderBroker;
+
+        public Source(INodeProviderBroker nodeProviderBroker)
+        {
+            // TODO: Complete member initialization
+            this.nodeProviderBroker = nodeProviderBroker;
+        }
         /// <summary>
         /// Gets the completion information
         /// </summary>
@@ -46,13 +53,83 @@ namespace NDjango.Designer.CodeCompletion
         /// </remarks>
         public ReadOnlyCollection<CompletionSet> GetCompletionInformation(ICompletionSession session)
         {
-            List<CompletionSet> completions;
-            if (session.Properties.TryGetProperty<List<CompletionSet>>(typeof(Source), out completions))
+            Tuple<SnapshotPoint, string> origin;
+            if (session.Properties.TryGetProperty<Tuple<SnapshotPoint, string>>(typeof(Source), out origin))
             {
+                var caretPoint = origin.Item1;
+                var triggerChars = origin.Item2;
+                List<CompletionSet> completions =
+                    GetCompletions(caretPoint, triggerChars);
+                if (completions.Count == 0)
+                    return null;
+
                 return new ReadOnlyCollection<CompletionSet>(completions);
             }
-
             return null;
+        }
+
+        private List<CompletionSet> GetCompletions(SnapshotPoint point, string trigger)
+        {
+
+            List<IDjangoSnapshot> nodes = 
+                nodeProviderBroker.GetNodeProvider(point.Snapshot.TextBuffer)
+                    .GetNodes(point, node => true).FindAll(node => node.Values.Count > 0);
+            List<CompletionSet> result = new List<CompletionSet>();
+            if (trigger.Length > 0)
+                switch (trigger)
+                {
+                    case "{%":
+                        CreateCompletionSet(nodes, result, point,
+                                node => node.ContentType == ContentType.Context,
+                                "% ",
+                                " %}");
+                        break;
+                    case ":":
+                    case "|":
+                        CreateCompletionSet(nodes, result, point,
+                                node => node.ContentType == ContentType.FilterName,
+                                trigger,
+                                "");
+                        break;
+                    default:
+                        if (Char.IsLetterOrDigit(trigger[0]))
+                            CreateCompletionSet(nodes, result, point,
+                                    node => node.ContentType != ContentType.Context,
+                                    "",
+                                    "");
+                        break;
+                }
+            return result;
+        }
+
+        private void CreateCompletionSet(
+                List<IDjangoSnapshot> nodes,
+                List<CompletionSet> sets,
+                SnapshotPoint point,
+                Predicate<IDjangoSnapshot> selector,
+                string prefix,
+                string suffix
+            )
+        {
+            var node = nodes.FindLast(selector);
+            if (node == null)
+                return;
+            Span span = new Span(point.Position, 0);
+            if (node.SnapshotSpan.IntersectsWith(span))
+                span = node.SnapshotSpan.Span;
+            var applicableTo = point.Snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
+            sets.Add(new CompletionSet(
+                "NDjango Completions",
+                applicableTo,
+                CompletionsForNode(node.Values, prefix, suffix),
+                null
+                ));
+        }
+
+        private IEnumerable<Completion> CompletionsForNode(IEnumerable<string> values, string prefix, string suffix)
+        {
+            foreach (string value in values)
+                yield return new Completion(value, prefix + value + suffix, value);
         }
     }
 }

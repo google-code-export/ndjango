@@ -147,18 +147,19 @@ namespace NDjango.Designer.CodeCompletion
                     // start of a new tag
                     triggerChars = "{%";
                 else
+                    // if it is not we can ignore it
                     return;
 
             // the invocation occurred in a subject buffer of interest to us
             ICompletionBroker broker = provider.CompletionBrokerMapService.GetBrokerForTextView(textView, subjectBuffer);
             ITrackingPoint triggerPoint = caretPoint.Snapshot.CreateTrackingPoint(caretPoint.Position, PointTrackingMode.Positive);
 
-            List<CompletionSet> completions = 
-                provider.nodeProviderBroker.GetNodeProvider(subjectBuffer).GetCompletions(caretPoint, triggerChars);
+            //List<CompletionSet> completions = 
+            //    provider.nodeProviderBroker.GetNodeProvider(subjectBuffer).GetCompletions(caretPoint, triggerChars);
 
-            // return if there is no information to show
-            if (completions.Count == 0)
-                return;
+            //// return if there is no information to show
+            //if (completions.Count == 0)
+            //    return;
 
             // attach filter to intercept the Enter key
             attachKeyboardFilter();
@@ -167,7 +168,7 @@ namespace NDjango.Designer.CodeCompletion
             activeSession = broker.CreateCompletionSession(triggerPoint, true);
 
             // Put the list of completion nodes on the session so that it can be used by the completion source
-            activeSession.Properties.AddProperty(typeof(Source),completions);
+            activeSession.Properties.AddProperty(typeof(Source), new Tuple<SnapshotPoint, string>(caretPoint, triggerChars));
 
             // Attach to the session events
             activeSession.Dismissed += new System.EventHandler(OnActiveSessionDismissed);

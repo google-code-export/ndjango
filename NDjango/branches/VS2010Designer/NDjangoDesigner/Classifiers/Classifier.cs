@@ -75,7 +75,27 @@ namespace NDjango.Designer.Classifiers
         {
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
-            nodeProvider.GetNodes(span).ForEach(
+            IDjangoSnapshot selection;
+            if (span.Snapshot.TextBuffer.Properties
+                .TryGetProperty<IDjangoSnapshot>(typeof(QuickInfo.Source), out selection))
+            {
+                classifications.Add(
+                    new ClassificationSpan(
+                        selection.SnapshotSpan,
+                        classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAG)
+                        )
+                    );
+                foreach (IDjangoSnapshot context in selection.Contexts)
+                    classifications.Add(
+                        new ClassificationSpan(
+                            context.ExtensionSpan,
+                            classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAG)
+                            )
+                        );
+            }
+
+            nodeProvider.GetNodes(span, node => node.ContentType != ContentType.Context)
+                .ForEach(
                 node =>
                 classifications.Add(
                     new ClassificationSpan(

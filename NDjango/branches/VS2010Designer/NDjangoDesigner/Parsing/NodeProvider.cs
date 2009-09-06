@@ -21,13 +21,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.VisualStudio.Text;
-using System.Threading;
-using NDjango.Interfaces;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Language.Intellisense;
+using Microsoft.VisualStudio.Text;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
@@ -122,6 +121,11 @@ namespace NDjango.Designer.Parsing
                 this.nodes = nodes;
             }
             ShowDiagnostics();
+            RaiseNodesChanged(snapshot);
+        }
+
+        internal void RaiseNodesChanged(ITextSnapshot snapshot)
+        {
             if (NodesChanged != null)
                 NodesChanged(new SnapshotSpan(snapshot, 0, snapshot.Length));
         }
@@ -160,25 +164,19 @@ namespace NDjango.Designer.Parsing
         }
 
         /// <summary>
-        /// Returns a list of nodes in the specified snapshot span
+        /// Returns a list of django syntax nodes in the specified snapshot span
         /// </summary>
         /// <param name="snapshotSpan"></param>
+        /// <param name="predicate">the predicate controlling what nodes to include in the list</param>
         /// <returns></returns>
-        private List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan, Predicate<IDjangoSnapshot> predicate)
+        internal List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan, Predicate<IDjangoSnapshot> predicate)
         {
             return GetNodes(snapshotSpan, GetNodes(snapshotSpan.Snapshot))
                 .FindAll(predicate);
         }
 
-        internal List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan)
-        {
-            return GetNodes(snapshotSpan, node => node.ContentType != ContentType.Context);
-        }
-
-
-
         /// <summary>
-        /// Traverses the node tree building a flat list of nodes intersecting with the span
+        /// Walks the syntax node tree building a flat list of nodes intersecting with the span
         /// </summary>
         /// <param name="snapshotSpan"></param>
         /// <param name="nodes"></param>
@@ -194,82 +192,16 @@ namespace NDjango.Designer.Parsing
             }
             return result;
         }
-        
+
         /// <summary>
         /// Returns a list of django syntax nodes based on the point in the text buffer
         /// </summary>
         /// <param name="point">point identifiying the desired node</param>
+        /// <param name="predicate">the predicate controlling what nodes to include in the list</param>
         /// <returns></returns>
-        private List<IDjangoSnapshot> GetNodes(SnapshotPoint point, Predicate<IDjangoSnapshot> predicate)
+        internal List<IDjangoSnapshot> GetNodes(SnapshotPoint point, Predicate<IDjangoSnapshot> predicate)
         {
             return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0), predicate);
-        }
-
-        internal List<IDjangoSnapshot> GetNodes(SnapshotPoint point)
-        {
-            return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0)
-                , node => node.ContentType != ContentType.Context);
-        }
-
-        internal List<CompletionSet> GetCompletions(SnapshotPoint point, string trigger)
-        {
-            List<IDjangoSnapshot> nodes = GetNodes(point, node=>true).FindAll(node => node.Values.Count() > 0);
-            List<CompletionSet> result = new List<CompletionSet>();
-            if (trigger.Length > 0)
-                switch (trigger)
-                {
-                    case "{%":
-                        CreateCompletionSet(nodes, result, point, 
-                                node => node.ContentType == ContentType.Context,
-                                "% ",
-                                " %}");
-                        break;
-                    case ":":
-                    case "|":
-                        CreateCompletionSet(nodes, result, point, 
-                                node => node.ContentType == ContentType.FilterName,
-                                trigger,
-                                "");
-                        break;
-                    default:
-                        if (Char.IsLetterOrDigit(trigger[0]))
-                            CreateCompletionSet(nodes, result, point, 
-                                    node => node.ContentType != ContentType.Context,
-                                    "",
-                                    "");
-                        break;
-                }
-            return result;
-        }
-
-        private void CreateCompletionSet(
-                List<IDjangoSnapshot> nodes,
-                List<CompletionSet> sets,
-                SnapshotPoint point, 
-                Predicate<IDjangoSnapshot> selector, 
-                string prefix, 
-                string suffix
-            )
-        {
-            var node = nodes.FindLast(selector);
-            if (node == null)
-                return;
-            Span span = new Span(point.Position, 0);
-            if (node.SnapshotSpan.IntersectsWith(span))
-                span = node.SnapshotSpan.Span;
-            var applicableTo = point.Snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
-            sets.Add(new CompletionSet(
-                "NDjango Completions",
-                applicableTo,
-                CompletionsForNode(node.Values, prefix, suffix),
-                null
-                ));
-        }
-
-        private IEnumerable<Completion> CompletionsForNode(IEnumerable<string> values, string prefix, string suffix)
-        {
-            foreach (string value in values)
-                yield return new Completion(value, prefix + value + suffix, value);
         }
     }
 }
