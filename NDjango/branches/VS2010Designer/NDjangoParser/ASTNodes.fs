@@ -105,7 +105,10 @@ module internal ASTNodes =
         /// produces a flattened list of all nodes and child nodes within a node list
         let rec unfold_nodes = function
         | (h:INodeImpl)::t -> 
-            h :: unfold_nodes (List.of_seq (h:?>Node).nodelist) @ unfold_nodes t
+            h :: unfold_nodes 
+                ((h:?>Node).nodelist |> 
+                    Seq.filter (fun node -> match node with | :? Node -> true | _ -> false) 
+                        |> List.of_seq ) @ unfold_nodes t
         | _ -> []
 
         // even though the extends filters its node list, we still need to filter the flattened list because of nested blocks
