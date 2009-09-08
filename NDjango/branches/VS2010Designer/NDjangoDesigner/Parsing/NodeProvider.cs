@@ -44,6 +44,16 @@ namespace NDjango.Designer.Parsing
         private ITextBuffer buffer;
         private IVsOutputWindowPane djangoDiagnostics;
         string filePath;
+        /// <summary>
+        /// indicates the delay (in milliseconds) of parser invoking. 
+        /// </summary>
+        private const int PARSING_DELAY = 1000;
+        /// <summary>
+        /// The timer for optimization the parsing process. If there would be some changes with interval 
+        /// between sequential changes less then PARSING_DELAY, then rebuild process would be invoked only once.
+        /// </summary>
+        private System.Timers.Timer parserTimer = new System.Timers.Timer(PARSING_DELAY);
+        ITextSnapshot textSnapshot;
 
         /// <summary>
         /// Creates a new node provider
@@ -58,13 +68,23 @@ namespace NDjango.Designer.Parsing
             filePath = ((ITextDocument)buffer.Properties[typeof(ITextDocument)]).FilePath;
             rebuildNodes(buffer.CurrentSnapshot);
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
+            parserTimer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
+            parserTimer.AutoReset = true;
+        }
+
+        void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            parserTimer.Stop();
+            rebuildNodes(textSnapshot);
         }
 
         public delegate void SnapshotEvent (SnapshotSpan snapshotSpan);
 
         private void buffer_Changed(object sender, TextContentChangedEventArgs e)
         {
-            rebuildNodes(e.After);
+            parserTimer.Stop();
+            parserTimer.Start();
+            textSnapshot = e.After;
         }
 
         /// <summary>
