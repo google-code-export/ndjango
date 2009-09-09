@@ -52,9 +52,8 @@ namespace NDjango.Designer.Parsing
         /// The timer for optimization the parsing process. If there would be some changes with interval 
         /// between sequential changes less then PARSING_DELAY, then rebuild process would be invoked only once.
         /// </summary>
-        private System.Timers.Timer parserTimer = new System.Timers.Timer(PARSING_DELAY);
-        ITextSnapshot textSnapshot;
-
+        private Timer parserTimer;
+        
         /// <summary>
         /// Creates a new node provider
         /// </summary>
@@ -68,34 +67,32 @@ namespace NDjango.Designer.Parsing
             filePath = ((ITextDocument)buffer.Properties[typeof(ITextDocument)]).FilePath;
             rebuildNodes(buffer.CurrentSnapshot);
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
-            parserTimer.Elapsed += new System.Timers.ElapsedEventHandler(timer_Elapsed);
-            parserTimer.AutoReset = true;
-        }
-
-        void timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            parserTimer.Stop();
-            rebuildNodes(textSnapshot);
-        }
-
-        public delegate void SnapshotEvent (SnapshotSpan snapshotSpan);
-
-        private void buffer_Changed(object sender, TextContentChangedEventArgs e)
-        {
-            parserTimer.Stop();
-            parserTimer.Start();
-            textSnapshot = e.After;
+            // we need to run rebuildNodes on a separaet thread. Using timer
+            // for this seems to be an overkill, but we need the time anyway so - why not
+            parserTimer =
+                new Timer(rebuildNodes, buffer.CurrentSnapshot, 0, Timeout.Infinite);
         }
 
         /// <summary>
-        /// Submits a request to rebuild the node list. The list is rebuilt in a separate thread
-        /// After the rebuilt is completed, the NodesChanged event is fired
+        /// Initiates the delayed parsing in response to the buffer changed event
         /// </summary>
-        /// <param name="snapshot"></param>
-        private void rebuildNodes(ITextSnapshot snapshot)
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void buffer_Changed(object sender, TextContentChangedEventArgs e)
         {
-            ThreadPool.QueueUserWorkItem(rebuildNodesAsynch, snapshot);
+            // shut down the old one 
+            parserTimer.Dispose();
+            
+            // put the call to the rebuildNodes on timer
+            parserTimer = 
+                new Timer(rebuildNodes,  e.After,  PARSING_DELAY, Timeout.Infinite);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="snapshotSpan"></param>
+        public delegate void SnapshotEvent (SnapshotSpan snapshotSpan);
 
         /// <summary>
         /// This event is fired when an updated node list is ready to use
@@ -129,7 +126,7 @@ namespace NDjango.Designer.Parsing
         /// <summary>
         /// Builds a list of syntax nodes for a snapshot. This method is called on a separate thread
         /// </summary>
-        private void rebuildNodesAsynch(object snapshotObject)
+        private void rebuildNodes(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
             List<IDjangoSnapshot> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
