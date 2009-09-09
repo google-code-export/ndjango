@@ -22,7 +22,6 @@ namespace NDjango.BistroIntegration
                                         {
                                             y.TheCallingAssembly();
                                             y.ExcludeType<BistroUrlTag>();
-                                            y.Exclude(p => (p.Namespace ?? "").StartsWith("NDjango") && !(p.Namespace ?? "").StartsWith("NDjango.BistroIntegration"));
                                             y.AssembliesFromPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin"));
                                             y.AddAllTypesOf<ISimpleFilter>();
                                             y.AddAllTypesOf<ITag>();
