@@ -323,4 +323,4 @@ type SyntaxError (message, nodes: seq<INodeImpl> option, pattern:INode list opti
     /// list of tag elements from the partially parsed tag
     member x.Pattern = match pattern with | Some p -> p | None -> []
     
-    member x.Remaining = match remaining with | Some r -> r | None -> LazyList.empty()
+    member x.Remaining = remaining

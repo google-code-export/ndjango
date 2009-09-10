@@ -142,13 +142,15 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 Some (({
                         new ErrorNode(context, Block blockToken, new Error(2, syntax_error.Message))
                             with
-                                override x.nodelist = List.of_seq syntax_error.Nodes
-                                
                                 /// Add TagName node to the list of elements
                                 override x.elements =
                                     (new TagNameNode(context, Text blockToken.Verb) :> INode)
                                      :: syntax_error.Pattern @ base.elements
-                        } :> INodeImpl), syntax_error.Remaining)
+                        } :> INodeImpl) :: List.of_seq syntax_error.Nodes, 
+                        match syntax_error.Remaining with
+                        | Some remaining -> remaining
+                        | None -> tokens
+                        )
         |_  -> None
         
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
@@ -168,30 +170,22 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         {walker with buffer = textToken.RawText}
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
-            try
-                // var.Expression is a raw string - the string as is on the template before any parsing or substitution
-                
-                let expression = new FilterExpression(context, var.Expression)
+            // var.Expression is a raw string - the string as is on the template before any parsing or substitution
+            
+            let expression = new FilterExpression(context, var.Expression)
 
-                ({new Node(token)
-                    with 
-                        override x.node_type = NodeType.Expression
+            ({new Node(token)
+                with 
+                    override x.node_type = NodeType.Expression
 
-                        override x.walk manager walker = 
-                            match expression.ResolveForOutput manager walker with
-                            | Some w -> w
-                            | None -> walker
-                            
-                        override x.elements = [(expression :> INode)]
-                } :> INodeImpl), tokens
-            with
-            | :? SyntaxError as e ->
-                if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
-                then
-                    raise (SyntaxException(e.Message, token))
-                else
-                    ((new ErrorNode(context, token, new Error(2, e.Message)) :> INodeImpl), tokens)
-            |_  -> rethrow()
+                    override x.walk manager walker = 
+                        match expression.ResolveForOutput manager walker with
+                        | Some w -> w
+                        | None -> walker
+                        
+                    override x.elements = [(expression :> INode)]
+            } :> INodeImpl), tokens
+
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb.RawText tags with 
@@ -200,7 +194,9 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             with
                 |_ as ex -> 
                     match generate_diag_for_tag ex (Some block) context tokens with
-                    | Some result -> result
+                    | Some result -> 
+                        let nodes, remainder = result
+                        List.hd nodes, remainder
                     | None -> rethrow()
         | Lexer.Comment comment -> 
             // include it in the output to cover all scenarios, but don't actually bring the comment across
@@ -325,22 +321,22 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         /// Parses the sequence of tokens until one of the given tokens is encountered
         member x.Parse parent tokens parse_until =
             let context = ParsingContext(x,parse_until)
-            try
-                let nodes, tokens = parse_internal context [] tokens parse_until
-                match nodes with
-                | [] -> [], tokens
-                | hd::_ ->
-                    let end_pos = hd.Token.Position + hd.Token.Length
-                    let result = nodes |> List.rev
-                    let start_pos = (List.hd result).Token.Position
-                    ((new ParsingContextNode(context, start_pos, end_pos - start_pos) :> INodeImpl) :: result, tokens)
-            with
-            | _ as ex -> 
-                match generate_diag_for_tag ex parent context tokens with
-                | Some result -> 
-                    let node, tokens = result
-                    ([node], tokens)
-                | None -> rethrow()
+            let nodes, tokens =
+                try
+                    parse_internal context [] tokens parse_until
+                with
+                | _ as ex -> 
+                    match generate_diag_for_tag ex parent context tokens with
+                    | Some result -> result
+                    | None -> rethrow()
+
+            match nodes with
+            | [] -> [], tokens
+            | hd::_ ->
+                let end_pos = hd.Token.Position + hd.Token.Length
+                let result = nodes |> List.rev
+                let start_pos = (List.hd result).Token.Position
+                ((new ParsingContextNode(context, start_pos, end_pos - start_pos) :> INodeImpl) :: result, tokens)
         
         /// Parses the template From the source in the reader into the node list
         member x.ParseTemplate template =

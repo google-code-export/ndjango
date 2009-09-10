@@ -68,6 +68,7 @@ module internal LoaderTags =
                                 match node with
                                 | :? BlockNode -> Some node
                                 | _ -> 
+                                    // this is a warning
                                     if (context.Provider.Settings.[NDjango.Constants.EXCEPTION_IF_ERROR] :?> bool)
                                     then None
                                     else
