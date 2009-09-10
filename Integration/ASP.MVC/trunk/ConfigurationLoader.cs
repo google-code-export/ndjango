@@ -39,7 +39,8 @@ namespace NDjango.ASPMVCIntegration
             {
                 var attributes = component.GetType().GetCustomAttributes(typeof(NameAttribute), false) as NameAttribute[];
                 if (attributes.Length == 0)
-                    throw new ApplicationException(String.Format("The type {0} is not marked with a Name attribute.", component.GetType()));
+                    continue;
+//                    throw new ApplicationException(String.Format("The type {0} is not marked with a Name attribute.", component.GetType()));
 
                 foreach (var attribute in attributes)
                     insertOp(list, attribute.Name, component);
