@@ -294,23 +294,33 @@ type SyntaxException (message: string, token: NDjango.Lexer.Token) =
 
 /// This esception is thrown if a problem encountered while parsing the template
 /// This exception will be later caught and re-thrown as the SyntaxException
-type SyntaxError (message, nodes: seq<INodeImpl> option, pattern:INode list option) = 
+type SyntaxError (message, nodes: seq<INodeImpl> option, pattern:INode list option, remaining: LazyList<NDjango.Lexer.Token> option) = 
     inherit System.ApplicationException(message)
-    new (message) = new SyntaxError(message, None, None)
+    new (message) = new SyntaxError(message, None, None, None)
 
     /// constructor to be used when the error applies to 
     /// multiple tags i.e. missing closing tag exception. Inculdes node list as an
     /// additional parameter 
     [<OverloadID("nodes")>]
-    new (message, nodes) = new SyntaxError(message, Some nodes, None)
+    new (message, nodes) = new SyntaxError(message, Some nodes, None, None)
 
+    ///constructor to be used when it is necessary 
+    ///to include nodes and remaining tokens to SyntaxError.
+    [<OverloadID("nodes, remaining")>]
+    new (message, nodes, remaining) = new SyntaxError(message, Some nodes, None, Some remaining)
+
+    [<OverloadID("remaining")>]
+    new (message, remaining) = new SyntaxError(message, None, None, Some remaining)
+    
     /// constructor to be used when the error applies to a partially parsed tag 
     /// Inculdes a list of tag elements to be associated with the error
     [<OverloadID("pattern")>]
-    new (message, pattern) = new SyntaxError(message, None, Some pattern)
-
+    new (message, pattern) = new SyntaxError(message, None, Some pattern, None)
+    
     /// list (sequence) of nodes related to the error
     member x.Nodes = match nodes with | Some n -> n | None -> seq []
     
     /// list of tag elements from the partially parsed tag
     member x.Pattern = match pattern with | Some p -> p | None -> []
+    
+    member x.Remaining = match remaining with | Some r -> r | None -> LazyList.empty()
