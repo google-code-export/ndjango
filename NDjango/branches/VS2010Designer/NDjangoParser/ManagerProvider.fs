@@ -195,7 +195,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         | Lexer.Block block -> 
             try
                 match Map.tryFind block.Verb.RawText tags with 
-                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb.RawText))
+                | None -> raise (SyntaxError ("Unknown tag: " + block.Verb.RawText, [], tokens))
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
                 |_ as ex -> 
