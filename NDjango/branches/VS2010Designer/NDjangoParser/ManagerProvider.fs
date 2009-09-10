@@ -139,14 +139,15 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             then
                 raise (SyntaxException(syntax_error.Message, Block blockToken))
             else
-                Some (({
-                        new ErrorNode(context, Block blockToken, new Error(2, syntax_error.Message))
-                            with
-                                /// Add TagName node to the list of elements
-                                override x.elements =
-                                    (new TagNameNode(context, Text blockToken.Verb) :> INode)
-                                     :: syntax_error.Pattern @ base.elements
-                        } :> INodeImpl) :: List.of_seq syntax_error.Nodes, 
+                Some ( List.of_seq syntax_error.Nodes @
+                        [({
+                            new ErrorNode(context, Block blockToken, new Error(2, syntax_error.Message))
+                                with
+                                    /// Add TagName node to the list of elements
+                                    override x.elements =
+                                        (new TagNameNode(context, Text blockToken.Verb) :> INode)
+                                         :: syntax_error.Pattern @ base.elements
+                            } :> INodeImpl)], 
                         match syntax_error.Remaining with
                         | Some remaining -> remaining
                         | None -> tokens
@@ -321,6 +322,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         /// Parses the sequence of tokens until one of the given tokens is encountered
         member x.Parse parent tokens parse_until =
             let context = ParsingContext(x,parse_until)
+            let start_pos = (tokens |> LazyList.hd).Position
             let nodes, tokens =
                 try
                     parse_internal context [] tokens parse_until
@@ -335,7 +337,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             | hd::_ ->
                 let end_pos = hd.Token.Position + hd.Token.Length
                 let result = nodes |> List.rev
-                let start_pos = (List.hd result).Token.Position
+//                let start_pos = (List.hd result).Token.Position
                 ((new ParsingContextNode(context, start_pos, end_pos - start_pos) :> INodeImpl) :: result, tokens)
         
         /// Parses the template From the source in the reader into the node list
