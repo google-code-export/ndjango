@@ -28,6 +28,7 @@ open System.Collections
 open NDjango.Lexer
 open NDjango.Interfaces
 open NDjango.Expressions
+open NDjango.ParserNodes
 open NDjango.OutputHandling
 
 module internal If = 
@@ -91,6 +92,7 @@ module internal If =
     type IfLinkType = 
         | And
         | Or
+        | Undefined
 
     /// AST TagNode representing an entire if tag, with all nested and composing tags
     type TagNode(
@@ -183,8 +185,7 @@ module internal If =
         interface ITag with 
             member this.Perform token context tokens =
 
-                let link_type, bool_vars = build_vars token false token.Args context (None,[])
-                
+
                 let node_list_true, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["else"; "endif"]
                 let node_list_false, remaining2 =
                     match node_list_true.[node_list_true.Length-1].Token with
@@ -194,7 +195,22 @@ module internal If =
                         else
                             [], remaining
                     | _ -> [], remaining
-
+                    
+                let link_type, bool_vars = 
+                    try
+                        build_vars token false token.Args context (None,[])
+                    with
+                    | :? SyntaxError as e ->
+                            raise (SyntaxError(e.Message, 
+                                                //[(new TagNode(context, token, [], node_list_true, node_list_false, IfLinkType.Undefined) :> INodeImpl)], 
+                                                [({
+                                                    new  ErrorNode(context, Block(token), Error.None)
+                                                        with
+                                                            override x.nodelist = List.append node_list_true node_list_false
+                                                  } :> INodeImpl)],
+                                                remaining2))
+                    |_ -> rethrow()
+                  
                 (({
                     new TagNode(context, token, bool_vars, node_list_true, node_list_false, link_type)
                         with

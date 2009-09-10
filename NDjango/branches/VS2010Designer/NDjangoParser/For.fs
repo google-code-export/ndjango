@@ -30,6 +30,7 @@ open NDjango.Lexer
 open NDjango.Interfaces
 open NDjango.Variables
 open NDjango.Expressions
+open NDjango.ParserNodes
 open NDjango.OutputHandling
 
 module internal For =
@@ -237,6 +238,16 @@ module internal For =
 
         interface NDjango.Interfaces.ITag with 
             member this.Perform token context tokens =
+                let node_list_body, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
+                let node_list_empty, remaining2 =
+                    match node_list_body.[node_list_body.Length-1].Token with
+                    | NDjango.Lexer.Block b -> 
+                        if b.Verb.RawText = "empty" then
+                            (context.Provider :?> IParser).Parse (Some token) remaining ["endfor"]
+                        else
+                            [], remaining
+                    | _ -> [], remaining
+                
                 let enumerator, variables, reversed = 
                     match List.rev token.Args with
                         | var::MatchToken("in")::syntax -> 
@@ -247,18 +258,16 @@ module internal For =
                             var,
                             syntax,
                             true
-                        | _ -> raise (SyntaxError ("malformed 'for' tag"))
+                        | _ -> raise (SyntaxError ("malformed 'for' tag",
+                                                    [({
+                                                        new  ErrorNode(context, Block(token), Error.None)
+                                                        with
+                                                            override x.nodelist = List.append node_list_body node_list_empty
+                                                      } :> INodeImpl)],
+                                                    remaining2))
                 let enumExpr = FilterExpression(context, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.RawText.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  
-                let node_list_body, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["empty"; "endfor"]
-                let node_list_empty, remaining2 =
-                    match node_list_body.[node_list_body.Length-1].Token with
-                    | NDjango.Lexer.Block b -> 
-                        if b.Verb.RawText = "empty" then
-                            (context.Provider :?> IParser).Parse (Some token) remaining ["endfor"]
-                        else
-                            [], remaining
-                    | _ -> [], remaining
+                
 
                 (({
                     new TagNode(context, token, enumExpr, variables, node_list_body, node_list_empty, reversed)
