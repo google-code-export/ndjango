@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{2A3CC2FE-AB0E-44F6-B1CB-3290581DA442}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -33,16 +33,20 @@
   <ItemGroup>
     <Reference Include="Bistro.Core, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\..\Program Files\Hill30\Bistro\Bistro.Core.dll</HintPath>
+      <HintPath>lib\Bistro.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Bistro.Extensions, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>lib\Bistro.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=1.9.6.16, Culture=neutral, PublicKeyToken=a19089b1c74d0809, processorArchitecture=MSIL" />
-    <Reference Include="NDjango.Core, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NDjango.Core, Version=0.9.1.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\NDjango\trunk\NDjangoParserFilters\bin\NDjango.Core.dll</HintPath>
+      <HintPath>lib\NDjango.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NDjango.Filters, Version=0.9.1.1, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="NDjango.Filters, Version=0.9.1.2, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\NDjango\trunk\NDjangoParserFilters\bin\NDjango.Filters.dll</HintPath>
+      <HintPath>lib\NDjango.Filters.dll</HintPath>
     </Reference>
     <Reference Include="StructureMap, Version=2.5.3.0, Culture=neutral, PublicKeyToken=e60ad81abae3c223, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -71,6 +75,8 @@
     <Compile Include="DjangoEngine.cs" />
     <Compile Include="DjangoController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Validation\JSEmitter.cs" />
+    <Compile Include="Validation\ValidationTag.cs" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
