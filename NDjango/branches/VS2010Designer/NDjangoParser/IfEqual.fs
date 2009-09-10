@@ -95,6 +95,13 @@ module internal IfEqual =
                             // this override is not used by the ifequal node for rendering but is necessary for the blocks to work properly
                             override x.nodelist = node_list_true @ node_list_false
                     } :> INodeImpl), remaining
-                | _ -> raise (SyntaxError (sprintf "'%s' takes two arguments" tag.RawText))
+                | _ -> raise (SyntaxError (
+                                            sprintf "'%s' takes two arguments" tag.RawText,
+                                            [({
+                                                    new  ErrorNode(context, Block(token), Error.None)
+                                                        with
+                                                            override x.nodelist = List.append node_list_true node_list_false
+                                                  } :> INodeImpl)],
+                                            remaining))
 
                 
