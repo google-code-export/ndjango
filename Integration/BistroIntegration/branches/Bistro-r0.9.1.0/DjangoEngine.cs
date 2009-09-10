@@ -98,21 +98,20 @@ namespace NDjango.BistroIntegration
         {
             get
             {
-                // lock must be here.
                 lock (lockObj)
                 {
                     if (provider == null)
                     {
                         loader = new ConfigurationLoader();
                         ITemplateLoader templateLoader = new IntegrationTemplateLoader();
-                        provider = 
+                        provider =
                             new TemplateManagerProvider()
                                 .WithLoader(templateLoader)
                                 .WithFilters(loader.GetFilters())
                                 .WithTags(loader.GetTags())
-                                
-                                // the url tag has a constructor parameter. structuremap won't pick it up for us
-                                .WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath));
+                                .WithTag("url", new BistroUrlTag(HttpRuntime.AppDomainAppVirtualPath))
+                                .WithFilters(NDjango.FiltersCS.FilterManager.GetFilters());
+
                     }
                 }
                 return provider;
