@@ -148,7 +148,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                 override x.elements =
                                     (new TagNameNode(context, Text blockToken.Verb) :> INode)
                                      :: syntax_error.Pattern @ base.elements
-                        } :> INodeImpl), tokens)
+                        } :> INodeImpl), syntax_error.Remaining)
         |_  -> None
         
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
@@ -236,7 +236,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             if not <| List.isEmpty parse_until then
                 raise (SyntaxError (
                         sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (fst acc) + (snd acc) + elem)) ("","") parse_until))
-                        , nodes))
+                        , nodes, tokens))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
