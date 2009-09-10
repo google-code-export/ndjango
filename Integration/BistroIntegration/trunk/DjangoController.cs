@@ -7,7 +7,7 @@ using Bistro.Controllers.Descriptor;
 
 namespace NDjango.BistroIntegration
 {
-    [Bind("?", ControllerBindType=BindType.Payload)]
+    [Bind("?", ControllerBindType=BindType.After)]
     [TemplateMapping(".django")]
     public class DjangoController : RenderingController
     {
