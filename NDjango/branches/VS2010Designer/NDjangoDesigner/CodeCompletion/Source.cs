@@ -26,6 +26,7 @@ using Microsoft.VisualStudio.Text;
 using System.Collections.ObjectModel;
 using NDjango.Interfaces;
 using NDjango.Designer.Parsing;
+using VSCompletionSet = Microsoft.VisualStudio.Language.Intellisense.CompletionSet;
 
 namespace NDjango.Designer.CodeCompletion
 {
@@ -51,85 +52,47 @@ namespace NDjango.Designer.CodeCompletion
         /// The location of the textspan to be replaced with 
         /// the selection so that the entire entire word would be replaced
         /// </remarks>
-        public ReadOnlyCollection<CompletionSet> GetCompletionInformation(ICompletionSession session)
+        public ReadOnlyCollection<VSCompletionSet> GetCompletionInformation(ICompletionSession session)
         {
-            Tuple<SnapshotPoint, string> origin;
-            if (session.Properties.TryGetProperty<Tuple<SnapshotPoint, string>>(typeof(Source), out origin))
+            CompletionContext context;
+            if (!session.Properties.TryGetProperty<CompletionContext>(typeof(CompletionContext), out context))
+                return null;
+
+            SnapshotPoint point = session.TriggerPoint.GetPoint(session.TriggerPoint.TextBuffer.CurrentSnapshot);
+            
+            List<IDjangoSnapshot> nodes =
+                nodeProviderBroker.GetNodeProvider(session.TriggerPoint.TextBuffer)
+                    .GetNodes(point, n => true).FindAll(n => n.Values.Count > 0);
+
+            IDjangoSnapshot node = null;
+            switch (context)
             {
-                var caretPoint = origin.Item1;
-                var triggerChars = origin.Item2;
-                List<CompletionSet> completions =
-                    GetCompletions(caretPoint, triggerChars);
-                if (completions.Count == 0)
-                    return null;
+                case CompletionContext.Tag:
+                    node = nodes.FindLast(n => n.ContentType == ContentType.Context);
+                    break;
 
-                return new ReadOnlyCollection<CompletionSet>(completions);
+                case CompletionContext.FilterName:
+                    node = nodes.FindLast(n => n.ContentType == ContentType.FilterName);
+                    break;
+
+                case CompletionContext.Other:
+                    node = nodes.FindLast(n => n.ContentType != ContentType.Context);
+                    break;
+
             }
-            return null;
-        }
 
-        private List<CompletionSet> GetCompletions(SnapshotPoint point, string trigger)
-        {
-
-            List<IDjangoSnapshot> nodes = 
-                nodeProviderBroker.GetNodeProvider(point.Snapshot.TextBuffer)
-                    .GetNodes(point, node => true).FindAll(node => node.Values.Count > 0);
-            List<CompletionSet> result = new List<CompletionSet>();
-            if (trigger.Length > 0)
-                switch (trigger)
-                {
-                    case "{%":
-                        CreateCompletionSet(nodes, result, point,
-                                node => node.ContentType == ContentType.Context,
-                                "% ",
-                                " %}");
-                        break;
-                    case ":":
-                    case "|":
-                        CreateCompletionSet(nodes, result, point,
-                                node => node.ContentType == ContentType.FilterName,
-                                trigger,
-                                "");
-                        break;
-                    default:
-                        if (Char.IsLetterOrDigit(trigger[0]))
-                            CreateCompletionSet(nodes, result, point,
-                                    node => node.ContentType != ContentType.Context,
-                                    "",
-                                    "");
-                        break;
-                }
-            return result;
-        }
-
-        private void CreateCompletionSet(
-                List<IDjangoSnapshot> nodes,
-                List<CompletionSet> sets,
-                SnapshotPoint point,
-                Predicate<IDjangoSnapshot> selector,
-                string prefix,
-                string suffix
-            )
-        {
-            var node = nodes.FindLast(selector);
             if (node == null)
-                return;
+                return null;
+
             Span span = new Span(point.Position, 0);
             if (node.SnapshotSpan.IntersectsWith(span))
                 span = node.SnapshotSpan.Span;
             var applicableTo = point.Snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
-            sets.Add(new CompletionSet(
-                "NDjango Completions",
-                applicableTo,
-                CompletionsForNode(node.Values, prefix, suffix),
-                null
-                ));
-        }
+            
+            return 
+                new ReadOnlyCollection<VSCompletionSet>
+                    (new CompletionSet[] {new CompletionSet(session, applicableTo, node, context)});
 
-        private IEnumerable<Completion> CompletionsForNode(IEnumerable<string> values, string prefix, string suffix)
-        {
-            foreach (string value in values)
-                yield return new Completion(value, prefix + value + suffix, value);
         }
     }
 }

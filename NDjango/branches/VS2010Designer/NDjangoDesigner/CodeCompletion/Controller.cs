@@ -46,6 +46,8 @@ namespace NDjango.Designer.CodeCompletion
         private ICompletionSession activeSession;
         private IEnvironment context;
         private ControllerProvider provider;
+        private int triggerPosition;
+        private ITrackingSpan completionSpan;
 
         /// <summary>
         /// Given a text view creates a new instance of the code completion controller and subscribes 
@@ -79,26 +81,49 @@ namespace NDjango.Designer.CodeCompletion
         /// <param name="e"></param>
         void VisualElement_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (activeSession != null)
+            // Make sure that this event happened on the same text view to which we're attached.
+            ITextView textView = sender as ITextView;
+            if (this.subjectTextView != textView)
+                return;
+
+            if (activeSession == null)
+                return;
+
+            ITrackingSpan span;
+            activeSession.Properties.TryGetProperty<ITrackingSpan>(typeof(Controller), out span);
+            string str = span.GetText(span.TextBuffer.CurrentSnapshot);
+
+            switch (e.Key)
             {
-                if (e.Key == Key.Escape)
-                {
+                case Key.Space:
+                case Key.Escape:
                     activeSession.Dismiss();
                     e.Handled = true;
-                }
+                    return;
 
-                if (e.Key == Key.Enter)
-                {
-                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null )
-                    {
-                        activeSession.Commit();
-                    }
-                    else
-                    {
+                case Key.Left:
+                    if (textView.Caret.Position.BufferPosition.Position <= triggerPosition)
+                        // we went too far to the left
                         activeSession.Dismiss();
-                    }
+                    return;
+
+                case Key.Right:
+                    if (textView.Caret.Position.BufferPosition.Position > 
+                            triggerPosition + completionSpan.GetSpan(completionSpan.TextBuffer.CurrentSnapshot).Length)
+                        // we went too far to the right
+                        activeSession.Dismiss();
+                    return;
+
+                case Key.Enter:
+                    if (this.activeSession.SelectedCompletionSet.SelectionStatus != null)
+                        activeSession.Commit();
+                    else
+                        activeSession.Dismiss();
                     e.Handled = true;
-                }
+                    return;
+
+                default:
+                    break;
             }
         }
 
@@ -136,30 +161,17 @@ namespace NDjango.Designer.CodeCompletion
 
             var subjectBuffer = caretPoint.Snapshot.TextBuffer;
 
-            string triggerChars = Win32.CharsOfKey(e.Key);
+            CompletionContext completionContext = 
+                CompletionSet.GetCompletionContext(e.Key, subjectBuffer, caretPoint.Position);
 
-            // return if the key pressed is not a character key
-            if (triggerChars == "")
+            if (completionContext == CompletionContext.None)
                 return;
-
-            if (triggerChars == "%" && caretPoint > 0)
-                if (subjectBuffer.CurrentSnapshot[caretPoint.Position-1] == '{')
-                    // start of a new tag
-                    triggerChars = "{%";
-                else
-                    // if it is not we can ignore it
-                    return;
-
+            
             // the invocation occurred in a subject buffer of interest to us
             ICompletionBroker broker = provider.CompletionBrokerMapService.GetBrokerForTextView(textView, subjectBuffer);
-            ITrackingPoint triggerPoint = caretPoint.Snapshot.CreateTrackingPoint(caretPoint.Position, PointTrackingMode.Positive);
-
-            //List<CompletionSet> completions = 
-            //    provider.nodeProviderBroker.GetNodeProvider(subjectBuffer).GetCompletions(caretPoint, triggerChars);
-
-            //// return if there is no information to show
-            //if (completions.Count == 0)
-            //    return;
+            triggerPosition = caretPoint.Position;
+            ITrackingPoint triggerPoint = caretPoint.Snapshot.CreateTrackingPoint(triggerPosition, PointTrackingMode.Negative);
+            completionSpan = caretPoint.Snapshot.CreateTrackingSpan(caretPoint.Position, 0, SpanTrackingMode.EdgeInclusive);
 
             // attach filter to intercept the Enter key
             attachKeyboardFilter();
@@ -167,8 +179,10 @@ namespace NDjango.Designer.CodeCompletion
             // Create a completion session
             activeSession = broker.CreateCompletionSession(triggerPoint, true);
 
-            // Put the list of completion nodes on the session so that it can be used by the completion source
-            activeSession.Properties.AddProperty(typeof(Source), new Tuple<SnapshotPoint, string>(caretPoint, triggerChars));
+            // Put the completion context and original (empty) completion span
+            // on the session so that it can be used by the completion source
+            activeSession.Properties.AddProperty(typeof(CompletionContext), completionContext);
+            activeSession.Properties.AddProperty(typeof(Controller), completionSpan);
 
             // Attach to the session events
             activeSession.Dismissed += new System.EventHandler(OnActiveSessionDismissed);
@@ -250,81 +264,5 @@ namespace NDjango.Designer.CodeCompletion
         {
             return oldFilter.QueryStatus(pguidCmdGroup, cCmds, prgCmds, pCmdText);
         }
-    }
-
-    internal class Win32
-    {
-        public static string CharsOfKey(Key key)
-        {
-            uint vk = (uint)KeyInterop.VirtualKeyFromKey(key);
-            byte[] keyState = new byte[256];
-            Win32.GetKeyboardState(keyState);
-            uint scancode = Win32.MapVirtualKey(vk, (uint)Win32.MapType.MAPVK_VK_TO_VSC);
-            char[] buffer = new char[10];
-            int count = Win32.ToUnicode(vk, scancode, keyState, buffer, buffer.Length, 0);
-            if (count < 0) 
-                count = 0;
-            char[] result = new char[count];
-            Array.Copy(buffer, result, count);
-            return new string(result);
-        }
-
-        /// <summary>The set of valid MapTypes used in MapVirtualKey
-        /// </summary>
-        /// <remarks></remarks>
-        public enum MapType : uint
-        {
-            /// <summary>uCode is a virtual-key code and is translated into a scan code.
-            /// If it is a virtual-key code that does not distinguish between left- and
-            /// right-hand keys, the left-hand scan code is returned.
-            /// If there is no translation, the function returns 0.
-            /// </summary>
-            /// <remarks></remarks>
-            MAPVK_VK_TO_VSC = 0x0,
-
-            /// <summary>uCode is a scan code and is translated into a virtual-key code that
-            /// does not distinguish between left- and right-hand keys. If there is no
-            /// translation, the function returns 0.
-            /// </summary>
-            /// <remarks></remarks>
-            MAPVK_VSC_TO_VK = 0x1,
-
-            /// <summary>uCode is a virtual-key code and is translated into an unshifted
-            /// character value in the low-order word of the return value. Dead keys (diacritics)
-            /// are indicated by setting the top bit of the return value. If there is no
-            /// translation, the function returns 0.
-            /// </summary>
-            /// <remarks></remarks>
-            MAPVK_VK_TO_CHAR = 0x2,
-
-            /// <summary>Windows NT/2000/XP: uCode is a scan code and is translated into a
-            /// virtual-key code that distinguishes between left- and right-hand keys. If
-            /// there is no translation, the function returns 0.
-            /// </summary>
-            /// <remarks></remarks>
-            MAPVK_VSC_TO_VK_EX = 0x3,
-
-            /// <summary>Not currently documented
-            /// </summary>
-            /// <remarks></remarks>
-            MAPVK_VK_TO_VSC_EX = 0x4,
-        }
-
-        [DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-        public static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-        [DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-        public static extern bool GetKeyboardState(byte[] keyState);
-
-        [DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-        public static extern int 
-            ToUnicode(
-                uint virtKey, 
-                uint scanCode, 
-                byte[] keyState,
-                char[] resultBuffer,
-                int bufSize,
-                int flags
-            );
     }
 }
