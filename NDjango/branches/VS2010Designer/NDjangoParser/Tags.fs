@@ -302,9 +302,10 @@ module internal Misc =
         let spaces_re = new Regex("(?'spaces'>\s+<)", RegexOptions.Compiled)
         interface ITag with
             member this.Perform token context tokens =
+                let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
+            
                 match token.Args with
                 | [] ->
-                    let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endspaceless"]
                     ({
                         new TagNode(context, token)
                         with 
@@ -316,7 +317,14 @@ module internal Misc =
                             override this.nodelist with get() = nodes
                     } :> INodeImpl), remaining
 
-                | _ -> raise (SyntaxError ("'spaceless' tag should not have any arguments"))
+                | _ -> raise (SyntaxError (
+                                "'spaceless' tag should not have any arguments",
+                                [({
+                                        new  ErrorNode(context, Block(token), new Error(2, "'spaceless' tag should not have any arguments"))
+                                            with
+                                                override x.nodelist = nodes
+                                      } :> INodeImpl)],
+                                remaining))
                 
                 
     ///Output one of the syntax characters used to compose template tags.
@@ -414,9 +422,9 @@ module internal Misc =
     type WithTag() =
         interface ITag with
             member this.Perform token context tokens =
+                let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endwith"]
                 match token.Args with
                 | var::MatchToken("as")::name::[] ->
-                    let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endwith"]
                     let expression = new FilterExpression(context, var)
                     (({
                         new TagNode(context, token) with
@@ -433,7 +441,14 @@ module internal Misc =
                             override x.elements = (expression :> INode)::base.elements
                        } :> INodeImpl), 
                        remaining)
-                | _ -> raise (SyntaxError ("'with' expected format is 'value as name'"))
+                | _ -> raise (SyntaxError (
+                                "'with' expected format is 'value as name'",
+                                [({
+                                        new  ErrorNode(context, Block(token), new Error(2, "'with' expected format is 'value as name'"))
+                                            with
+                                                override x.nodelist = nodes
+                                      } :> INodeImpl)],
+                                remaining))
 
 module Abstract =
     /// Returns an absolute URL matching given view with its parameters.

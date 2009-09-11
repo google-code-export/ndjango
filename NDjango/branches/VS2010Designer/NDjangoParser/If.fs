@@ -202,12 +202,12 @@ module internal If =
                     with
                     | :? SyntaxError as e ->
                             raise (SyntaxError(e.Message, 
-                                                [({
-                                                    new  ErrorNode(context, Block(token), new Error(2, e.Message))
-                                                        with
-                                                            override x.nodelist = List.append node_list_true node_list_false
-                                                  } :> INodeImpl)],
-                                                remaining2))
+                                    [({
+                                        new  ErrorNode(context, Block(token), new Error(2, e.Message))
+                                            with
+                                                override x.nodelist = List.append node_list_true node_list_false
+                                      } :> INodeImpl)],
+                                    remaining2))
                     |_ -> rethrow()
                   
                 (({
