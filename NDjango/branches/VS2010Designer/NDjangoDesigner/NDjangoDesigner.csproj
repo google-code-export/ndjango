@@ -101,6 +101,7 @@
     <Compile Include="Classifiers\ClassifierProvider.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="CodeCompletion\CompletionSet.cs" />
     <Compile Include="CodeCompletion\Controller.cs" />
     <Compile Include="CodeCompletion\ControllerProvider.cs" />
     <Compile Include="CodeCompletion\Source.cs" />
