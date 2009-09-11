@@ -96,12 +96,12 @@ module internal IfEqual =
                             override x.nodelist = node_list_true @ node_list_false
                     } :> INodeImpl), remaining
                 | _ -> raise (SyntaxError (
-                                            sprintf "'%s' takes two arguments" tag.RawText,
-                                            [({
-                                                    new  ErrorNode(context, Block(token), new Error(2, sprintf "'%s' takes two arguments" tag.RawText))
-                                                        with
-                                                            override x.nodelist = List.append node_list_true node_list_false
-                                                  } :> INodeImpl)],
-                                            remaining))
+                                sprintf "'%s' takes two arguments" tag.RawText,
+                                [({
+                                        new  ErrorNode(context, Block(token), new Error(2, sprintf "'%s' takes two arguments" tag.RawText))
+                                            with
+                                                override x.nodelist = List.append node_list_true node_list_false
+                                      } :> INodeImpl)],
+                                remaining))
 
                 
