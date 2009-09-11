@@ -202,9 +202,8 @@ module internal If =
                     with
                     | :? SyntaxError as e ->
                             raise (SyntaxError(e.Message, 
-                                                //[(new TagNode(context, token, [], node_list_true, node_list_false, IfLinkType.Undefined) :> INodeImpl)], 
                                                 [({
-                                                    new  ErrorNode(context, Block(token), Error.None)
+                                                    new  ErrorNode(context, Block(token), new Error(2, e.Message))
                                                         with
                                                             override x.nodelist = List.append node_list_true node_list_false
                                                   } :> INodeImpl)],

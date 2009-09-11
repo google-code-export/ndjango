@@ -260,7 +260,7 @@ module internal For =
                             true
                         | _ -> raise (SyntaxError ("malformed 'for' tag",
                                                     [({
-                                                        new  ErrorNode(context, Block(token), Error.None)
+                                                        new  ErrorNode(context, Block(token), new Error(2, "malformed 'for' tag"))
                                                         with
                                                             override x.nodelist = List.append node_list_body node_list_empty
                                                       } :> INodeImpl)],
