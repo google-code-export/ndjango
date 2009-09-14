@@ -114,30 +114,6 @@ type Error(severity:int, message:string) =
     member x.Message = message
     static member None = new Error(-1, "") 
 
-/// A representation of a node of the template abstract syntax tree    
-type INode =
-
-    /// TagNode type
-    abstract member NodeType: NodeType 
-    
-    /// Position of the first character of the node text
-    abstract member Position: int
-    
-    /// Length of the node text
-    abstract member Length: int
-
-    /// a list of values allowed for the node
-    abstract member Values: IEnumerable<string>
-    
-    /// message associated with the node
-    abstract member ErrorMessage: Error
-    
-    /// TagNode description (will be shown in the tooltip)
-    abstract member Description: string
-    
-    /// node lists
-    abstract member Nodes: IDictionary<string, IEnumerable<INode>>
-
 /// A no-parameter filter
 type ISimpleFilter = 
     /// Applies the filter to the value
@@ -268,12 +244,40 @@ and ITag =
 
 /// Parsing context is a container for information specific to the tag being parsed
 and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) =
-    /// List (sequence) of all allowed tag names. Includes all registered tags as well as 
-    /// a list of all closing tags for the context
-    member x.Tags = provider.Tags |> Map.to_seq |> Seq.map (fun tag -> tag |> fst) |> 
-                        Seq.append (Seq.of_list <| extra_tags)
+    
+    /// List (sequence) of all registered tag names. Includes all registered tags as well as 
+    member x.Tags = provider.Tags |> Map.to_seq |> Seq.map (fun tag -> tag |> fst) 
+
+    /// a list (sequence) of all closing tags for the context
+    member x.TagClosures = Seq.of_list extra_tags                    
+   
+   /// Parent provider owning the context
     member x.Provider = provider
     
+/// A representation of a node of the template abstract syntax tree    
+type INode =
+
+    /// TagNode type
+    abstract member NodeType: NodeType 
+    
+    /// Position of the first character of the node text
+    abstract member Position: int
+    
+    /// Length of the node text
+    abstract member Length: int
+
+    /// a list of values allowed for the node
+    abstract member Values: IEnumerable<string>
+    
+    /// message associated with the node
+    abstract member ErrorMessage: Error
+    
+    /// TagNode description (will be shown in the tooltip)
+    abstract member Description: string
+    
+    /// node lists
+    abstract member Nodes: IDictionary<string, IEnumerable<INode>>
+
 /// This exception is thrown if a problem encountered while rendering the template
 /// This exception will be later caught in the ASTWalker and re-thrown as the 
 /// RenderingException

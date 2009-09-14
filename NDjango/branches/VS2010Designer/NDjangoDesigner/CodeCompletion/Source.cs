@@ -62,37 +62,39 @@ namespace NDjango.Designer.CodeCompletion
             
             List<IDjangoSnapshot> nodes =
                 nodeProviderBroker.GetNodeProvider(session.TriggerPoint.TextBuffer)
-                    .GetNodes(point, n => true).FindAll(n => n.Values.Count > 0);
+                    .GetNodes(point, n => n.Values.Count > 0);
 
-            IDjangoSnapshot node = null;
+            CompletionSet set = CreateCompletionSet(context, nodes, point);
+
+            if (set == null)
+                return null;
+
+            return new ReadOnlyCollection<VSCompletionSet> (new CompletionSet[] { set });
+
+        }
+
+        private CompletionSet CreateCompletionSet(CompletionContext context, List<IDjangoSnapshot> nodes, SnapshotPoint point)
+        {
             switch (context)
             {
                 case CompletionContext.Tag:
-                    node = nodes.FindLast(n => n.ContentType == ContentType.Context);
-                    break;
+                    return TagCompletionSet.Create(nodes, point);
 
                 case CompletionContext.FilterName:
-                    node = nodes.FindLast(n => n.ContentType == ContentType.FilterName);
-                    break;
+                    return FilterCompletionSet.Create(nodes, point);
 
                 case CompletionContext.Other:
-                    node = nodes.FindLast(n => n.ContentType != ContentType.Context);
-                    break;
+                    IDjangoSnapshot node = nodes.FindLast(n => n.ContentType != ContentType.Context);
+                    if (node == null)
+                        return null;
+                    if (node.Node is ParserNodes.TagNameNode)
+                        return new TagNameCompletionSet(node, point);
+                    return new CompletionSet(node, point);
+
+                default:
+                    return null;
 
             }
-
-            if (node == null)
-                return null;
-
-            Span span = new Span(point.Position, 0);
-            if (node.SnapshotSpan.IntersectsWith(span))
-                span = node.SnapshotSpan.Span;
-            var applicableTo = point.Snapshot.CreateTrackingSpan(span, SpanTrackingMode.EdgeInclusive);
-            
-            return 
-                new ReadOnlyCollection<VSCompletionSet>
-                    (new CompletionSet[] {new CompletionSet(session, applicableTo, node, context)});
-
         }
     }
 }
