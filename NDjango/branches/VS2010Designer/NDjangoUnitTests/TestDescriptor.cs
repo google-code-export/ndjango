@@ -174,7 +174,7 @@ namespace NDjango.UnitTests
                 node => new DesignerData(node.Position, node.Length, new List<string>(node.Values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message))
                 .FindAll(node => (node.Values.Length != 0));
             
-            for (int i = 0; i < nodes.Count; i++)
+            for (int i = 0; i < actualResult.Count; i++)
             {
                 if (actualResult[i].Values.Length == 0)
                     continue;

@@ -28,7 +28,7 @@ namespace NDjango.UnitTests
         }
       
 
-        //[Test, TestCaseSource("GetDesignerTests")]
+        [Test, TestCaseSource("GetDesignerTests")]
         public void DesignerTests(TestDescriptor test)
         {
             InternalFilterProcess(test);
@@ -48,25 +48,34 @@ namespace NDjango.UnitTests
         {
             SetupStandartdValues();
 
-            NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}" 
-                , Nodes 
-                (
-                    Node(27, 11, "endif"),
-                    Node(15, 10, "else", "endif"),
-                    StandardNode(0, 12)
-                ));
+            //NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}" 
+            //    , Nodes 
+            //    (
+            //        Node(27, 11, "endif"),
+            //        Node(15, 10, "else", "endif"),
+            //        StandardNode(0, 12)
+            //    ));
             NewTest("ifequal-tag-designer", "{% ifequal foo bar %}yes{% else %}no{% endifequal %}"
                 , Nodes 
                 (
-                    Node(36, 16, "endifequal"),
-                    Node(24, 10, "else", "endifequal"),
-                    StandardNode(0, 21)
+                    StandardNode(0, 52),
+                    Node(34, 18, "endifequal"),
+                    Node(39, 10, "endifequal"),
+                    Node(21, 13, "else", "endifequal"),
+                    Node(27, 4, "else", "endifequal"),
+                    Node(21, 13, "else", "endifequal"),
+                    Node(27, 4, "else", "endifequal"),
+                    Node(34, 18, "endifequal"),
+                    Node(39, 10, "endifequal"),
+                    StandardFilter(14, 0),
+                    StandardFilter(18, 0),
+                    StandardNode(3, 7)
                 ));
-            NewTest("add-filter-designer", "{{ value| add:\"2\" }}"
-                , Nodes 
-                (
-                    StandardFilter(9, 3)
-                ));
+            //NewTest("add-filter-designer", "{{ value| add:\"2\" }}"
+            //    , Nodes 
+            //    (
+            //        StandardFilter(9, 3)
+            //    ));
             //NewTest("fortag-designer", "{% for i in test %}{% ifchanged %}nothing changed{%else%}same {% endifchanged %}{{ forloop.counter }},{% endfor %}"
             //    , Nodes 
             //    (
@@ -126,7 +135,7 @@ namespace NDjango.UnitTests
             return new DesignerData(position, length, standardTags.ToArray(), -1, String.Empty);
         }
 
-        //method for some node with error message
+        //method for some nodes with error message
         private DesignerData ErrorNode(int position, int length, string[] values, int errorSeverity, string errorMessage)
         {
             if (values.Length == 0)

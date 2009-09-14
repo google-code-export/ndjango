@@ -66,14 +66,21 @@ module internal Filter =
     type FilterTag() =
         interface ITag with
             member this.Perform token context tokens =
+                let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endfilter"]
                 match token.Args with
                 | filter::[] ->
 // TODO: ExpressionToken
                     let prefix = FILTER_VARIABLE_NAME + "|"
                     let map = Some [prefix.Length, false; filter.Value.Length, true]
                     let filter_expr = new FilterExpression(context, filter.WithValue(prefix + filter.Value) map)
-                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endfilter"]
                     (new FilterNode(context, token, filter_expr, node_list) :> INodeImpl), remaining
-                | _ -> raise (SyntaxError ("'filter' tag requires one argument"))
+                | _ -> raise (SyntaxError (
+                                "'filter' tag requires one argument",
+                                [({
+                                        new  ErrorNode(context, Block(token), new Error(2, "'filter' tag requires one argument"))
+                                            with
+                                                override x.nodelist = node_list
+                                      } :> INodeImpl)],
+                                remaining))
                 
                
