@@ -26,6 +26,7 @@ namespace NDjango.UnitTests
                 templates.Add("t1", "insert1--{% block b1 %}to be replaced{% endblock %}--insert2");
                 templates.Add("t22", "insert1--{% block b1 %}to be replaced22{% endblock %}{% block b2 %}to be replaced22{% endblock %}--insert2");
                 templates.Add("t21", "{% extends \"t22\" %}skip - b21{% block b1 %}to be replaced21{% endblock %}skip-b21");
+                templates.Add("t21if", "skip{% block b1 %} to be replaced {% endblock %}skip");
                 templates.Add("tBaseNested",
 @"{% block outer %}
 {% block inner1 %}
