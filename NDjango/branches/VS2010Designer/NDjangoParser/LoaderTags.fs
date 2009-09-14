@@ -55,9 +55,9 @@ module internal LoaderTags =
     type ExtendsTag() =
         interface ITag with
             member this.Perform token context tokens = 
+                let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens []
                 match token.Args with
                 | parent::[] -> 
-                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens []
                     
                     let parent_name_expr = 
                         new FilterExpression(context, parent)
@@ -87,7 +87,14 @@ module internal LoaderTags =
                                     (parent_name_expr :> INode) :: base.elements
                        } :> INodeImpl), 
                        remaining)
-                | _ -> raise (SyntaxError ("extends tag takes only one argument"))
+                | _ -> raise (SyntaxError (
+                                 "extends tag takes only one argument",
+                                 [({
+                                        new  ErrorNode(context, Block(token), new Error(2, "extends tag takes only one argument"))
+                                            with
+                                                override x.nodelist = node_list
+                                   } :> INodeImpl)],
+                                    remaining))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
     ///
