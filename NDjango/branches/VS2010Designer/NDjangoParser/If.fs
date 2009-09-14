@@ -92,7 +92,6 @@ module internal If =
     type IfLinkType = 
         | And
         | Or
-        | Undefined
 
     /// AST TagNode representing an entire if tag, with all nested and composing tags
     type TagNode(

@@ -101,11 +101,14 @@
     <Compile Include="Classifiers\ClassifierProvider.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="CodeCompletion\CompletionSet.cs" />
+    <Compile Include="CodeCompletion\CompletionSets\CompletionSet.cs" />
+    <Compile Include="CodeCompletion\CompletionSets\FilterCompletionSet.cs" />
+    <Compile Include="CodeCompletion\CompletionSets\TagNameCompletionSet.cs" />
     <Compile Include="CodeCompletion\Controller.cs" />
     <Compile Include="CodeCompletion\ControllerProvider.cs" />
     <Compile Include="CodeCompletion\Source.cs" />
     <Compile Include="CodeCompletion\SourceProvider.cs" />
+    <Compile Include="CodeCompletion\CompletionSets\TagCompletionSet.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Parsing\IDjangoSnapshot.cs" />
     <Compile Include="Parsing\NodeProvider.cs" />

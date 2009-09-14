@@ -26,7 +26,7 @@ open OutputHandling
 open Lexer
 open NDjango.Interfaces
 
-module internal ParserNodes =
+module public ParserNodes =
 
     /// Django construct bracket type
     type private BracketType = 
@@ -153,7 +153,7 @@ module internal ParserNodes =
             /// node list is empty
             member x.Nodes = Map.empty :> IDictionary<string, IEnumerable<INode>>
             
-    /// a node representing a tag name. carries alist of valid tag names 
+    /// a node representing a tag name. carries a list of valid tag names 
     type TagNameNode (context: ParsingContext, token) =
         inherit ValueListNode
             (
@@ -161,6 +161,7 @@ module internal ParserNodes =
                 token,
                 context.Tags
             )
+        member x.Context = context
             
     /// a node representing a keyword - i.e. on/off values for the autoescape tag
     type KeywordNode (token:TextToken, values:IEnumerable<string>) =
@@ -180,12 +181,17 @@ module internal ParserNodes =
                 values
             )
 
+    /// a node representing the parsing context. Carries information
+    /// necessary for the designer to show information specific to the parsing 
+    /// context as well as boundaries of the context. 
+    /// Ignore during rendering
     type ParsingContextNode (context: ParsingContext, position, length) =
+        member x.Context = context
         interface INode with
             member x.NodeType = NodeType.ParsingContext
-            /// Position - the position of the first character of the token 
+            /// Position - the position of the first character of the context 
             member x.Position = position
-            /// Length - length of the token
+            /// Length - length of the context
             member x.Length = length
             member x.Values = context.Tags
             member x.ErrorMessage = Error.None

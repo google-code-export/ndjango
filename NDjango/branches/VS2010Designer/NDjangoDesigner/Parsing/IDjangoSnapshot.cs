@@ -70,5 +70,7 @@ namespace NDjango.Designer.Parsing
         string Description { get; }
 
         Error ErrorMessage { get; }
+
+        INode Node { get; }
     }
 }
