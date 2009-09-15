@@ -184,7 +184,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         | Some w -> w
                         | None -> walker
                         
-                    override x.elements = [(expression :> INode)]
+                    override x.elements = (expression :> INode) :: base.elements
             } :> INodeImpl), tokens
 
         | Lexer.Block block -> 
@@ -232,7 +232,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        | LazyList.Nil ->  
             if not <| List.isEmpty parse_until then
                 raise (SyntaxError (
-                        sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (fst acc) + (snd acc) + elem)) ("","") parse_until))
+                        sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (snd acc) + (fst acc) + elem)) ("","") parse_until))
                         , nodes, tokens))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
@@ -249,7 +249,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         match tokens with 
         | LazyList.Nil -> 
             raise (SyntaxError (
-                    sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (fst acc) + (snd acc) + elem)) ("","") parse_until))
+                    sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (snd acc) + (fst acc) + elem)) ("","") parse_until))
                 ))
         | LazyList.Cons(token, tokens) -> 
             match token with 
