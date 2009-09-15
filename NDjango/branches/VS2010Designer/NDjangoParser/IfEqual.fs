@@ -93,7 +93,7 @@ module internal IfEqual =
                                         |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (node_list_false |> Seq.map (fun node -> (node :?> INode)))
 
                             // this override is not used by the ifequal node for rendering but is necessary for the blocks to work properly
-                            override x.nodelist = node_list_true @ node_list_false
+                            //override x.nodelist = node_list_true @ node_list_false
                     } :> INodeImpl), remaining
                 | _ -> raise (SyntaxError (
                                 sprintf "'%s' takes two arguments" tag.RawText,
