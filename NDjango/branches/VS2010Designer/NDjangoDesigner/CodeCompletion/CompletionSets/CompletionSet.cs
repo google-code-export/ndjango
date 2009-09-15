@@ -235,7 +235,9 @@ namespace NDjango.Designer.CodeCompletion
                     return CompletionContext.FilterName;
 
                 default:
-                    return CompletionContext.Other;
+                    if (Char.IsLetterOrDigit(triggerChars[0]))
+                        return CompletionContext.Other;
+                    return CompletionContext.None;
             }
 
         }
