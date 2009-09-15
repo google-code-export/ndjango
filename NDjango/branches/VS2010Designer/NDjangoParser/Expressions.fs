@@ -106,7 +106,7 @@ module Expressions =
 
     /// a filter placeholder object is included as the last element in the list of the nodes
     /// generated for every filter expression
-    type private FilterPlaceHolder(context:ParsingContext, expression_token:TextToken) =
+    type private FilterPlaceHolderr(context:ParsingContext, expression_token:TextToken) =
         let filter_token = expression_token.CreateToken(expression_token.Location.Length,0)
         let name_node = 
             new FilterNameNode (
@@ -266,7 +266,7 @@ module Expressions =
                     match variable with
                     | Some v -> [(v :> INode)] |> Seq.append elements
                     | None -> elements 
-                let elements = elements |> Seq.append [(new FilterPlaceHolder(context, expression) :> INode)] 
+                //let elements = elements |> Seq.append [(new FilterPlaceHolder(context, expression) :> INode)] 
                 new Map<string, IEnumerable<INode>>([]) 
                     |> Map.add Constants.NODELIST_TAG_ELEMENTS elements 
                         :> IDictionary<string, IEnumerable<INode>>

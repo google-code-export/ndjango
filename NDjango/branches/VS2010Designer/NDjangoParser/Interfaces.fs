@@ -253,6 +253,9 @@ and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) 
    
    /// Parent provider owning the context
     member x.Provider = provider
+   
+   /// Parent provider owning the context
+    member x.Filters = provider.Filters |> Map.to_seq |> Seq.map (fun filter -> filter |> fst)
     
 /// A representation of a node of the template abstract syntax tree    
 type INode =
