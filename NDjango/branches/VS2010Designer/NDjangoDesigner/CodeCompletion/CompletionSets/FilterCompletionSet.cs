@@ -12,22 +12,22 @@ namespace NDjango.Designer.CodeCompletion
     {
         new internal static CompletionSet Create(List<IDjangoSnapshot> nodes, SnapshotPoint point)
         {
-            IDjangoSnapshot node = nodes.FindLast(n => n.ContentType == ContentType.FilterName);
+            IDjangoSnapshot node = nodes.FindLast(n => n.ContentType == ContentType.Context);
             if (node == null)
                 return null;
             return new FilterCompletionSet(node, point);
         }
 
-        IDjangoSnapshot node;
+        ParserNodes.ParsingContextNode node;
         private FilterCompletionSet(IDjangoSnapshot node, SnapshotPoint point)
             : base(node, point)
         {
-            this.node = node;
+            this.node = node.Node as ParserNodes.ParsingContextNode;
         }
 
         protected override List<Completion> NodeCompletions
         {
-            get { return new List<Completion>(BuildCompletions(node.Values, "|", "")); }
+            get { return new List<Completion>(BuildCompletions(node.Context.Filters, "|", "")); }
         }
 
         protected override int FilterOffset { get { return 1; } }
