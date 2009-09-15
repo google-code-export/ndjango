@@ -110,6 +110,6 @@ module internal IfChanged =
                                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (nodes_ifsame |> Seq.map (fun node -> (node :?> INode)))
 
                         // this override is not used by the ifchanged node for rendering but is necessary for the blocks to work properly
-                        override x.nodelist = nodes_ifchanged @ nodes_ifsame
+                        //override x.nodelist = nodes_ifchanged @ nodes_ifsame
 
                     } :> INodeImpl), remaining)
