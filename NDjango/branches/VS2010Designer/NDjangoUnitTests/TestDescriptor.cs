@@ -169,10 +169,19 @@ namespace NDjango.UnitTests
             ITemplate template = manager.GetTemplate(Template);
             
             //the same logic responsible for retriving nodes as in NodeProvider class (DjangoDesigner).
-            List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll(node => (INode)node));
+            List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll(node => (INode)node)).FindAll(node => (node.Values.ToList().Count != 0) || (node.NodeType == NodeType.ParsingContext));
             List<DesignerData> actualResult = nodes.ConvertAll(
-                node => new DesignerData(node.Position, node.Length, new List<string>(node.Values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message))
-                .FindAll(node => (node.Values.Length != 0));
+                node =>
+                {
+                    List<string> contextValues = new List<string>(node.Values);
+                    if (node.NodeType == NodeType.ParsingContext)
+                    {
+                        contextValues.InsertRange(0 ,((ParserNodes.ParsingContextNode)node).Context.TagClosures);
+                        return new DesignerData(node.Position, node.Length, contextValues.ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message);
+                    }
+                    else
+                        return new DesignerData(node.Position, node.Length, new List<string>(node.Values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message);
+                });
             
             for (int i = 0; i < actualResult.Count; i++)
             {

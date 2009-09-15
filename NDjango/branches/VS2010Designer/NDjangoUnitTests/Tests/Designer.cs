@@ -60,13 +60,13 @@ namespace NDjango.UnitTests
                 (
                     StandardNode(0, 52),
                     Node(34, 18, "endifequal"),
-                    Node(39, 10, "endifequal"),
+                    StandardNode(39, 10),
                     Node(21, 13, "else", "endifequal"),
-                    Node(27, 4, "else", "endifequal"),
+                    StandardNode(27, 4),
                     Node(21, 13, "else", "endifequal"),
-                    Node(27, 4, "else", "endifequal"),
+                    StandardNode(27, 4),
                     Node(34, 18, "endifequal"),
-                    Node(39, 10, "endifequal"),
+                    StandardNode(39, 10),
                     StandardFilter(14, 0),
                     StandardFilter(18, 0),
                     StandardNode(3, 7)
