@@ -63,8 +63,6 @@ namespace NDjango.UnitTests
                     StandardNode(39, 10),
                     Node(21, 13, "else", "endifequal"),
                     StandardNode(27, 4),
-                    StandardFilter(14, 0),
-                    StandardFilter(18, 0),
                     StandardNode(3, 7)
                 ));
             //NewTest("add-filter-designer", "{{ value| add:\"2\" }}"
