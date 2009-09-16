@@ -20,9 +20,6 @@
  ***************************************************************************/
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.VisualStudio.Text;
 using System.ComponentModel.Composition;
 using NDjango.Interfaces;
@@ -32,9 +29,11 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace NDjango.Designer.Parsing
 {
+
     internal interface INodeProviderBroker
     {
         NodeProvider GetNodeProvider(ITextBuffer buffer);
@@ -84,24 +83,40 @@ namespace NDjango.Designer.Parsing
         /// <returns></returns>
         public NodeProvider GetNodeProvider(ITextBuffer buffer)
         {
-            if (djangoDiagnostics == null)
-                djangoDiagnostics = GetOutputPane(buffer);
+            lock (this)
+                if (!initialized)
+                {
+                    djangoDiagnostics = GetOutputPane(buffer);
+                    vsTextManager = GetService<IVsTextManager>(buffer, typeof(SVsTextManager));
+                    initialized = true;
+                }
 
             NodeProvider provider;
             if (!buffer.Properties.TryGetProperty(typeof(NodeProvider), out provider))
-                buffer.Properties.AddProperty(typeof(NodeProvider), provider 
-                    = new NodeProvider(djangoDiagnostics, parser, buffer));
+            {
+                //IVsTextBuffer vsBuffer = adaptersFactory.GetBufferAdapter(buffer);
+                //IVsEnumTextViews views;
+                //vsTextManager.EnumViews(vsBuffer, out views);
+                //IVsTextView[] vsView = new IVsTextView[1];
+                //uint fetched = 0;
+                //views.Next(1, vsView, ref fetched);
+                //ITextView view = adaptersFactory.GetWpfTextView(vsView[0]); 
+                //provider = new NodeProvider(djangoDiagnostics, view, parser, buffer);
+                provider = new NodeProvider(djangoDiagnostics, parser, buffer);
+                buffer.Properties.AddProperty(typeof(NodeProvider), provider);
+            }
             return provider;
         }
+        bool initialized = false;
         IVsOutputWindowPane djangoDiagnostics = null;
-
+        IVsTextManager vsTextManager;
 
         public IVsOutputWindowPane GetOutputPane(ITextBuffer textBuffer)
         {
             Guid page = this.GetType().GUID;
             string caption = "Django Templates";
 
-            IVsOutputWindow service = GetService(textBuffer, typeof(SVsOutputWindow)) as IVsOutputWindow;
+            IVsOutputWindow service = GetService<IVsOutputWindow>(textBuffer, typeof(SVsOutputWindow));
 
             IVsOutputWindowPane ppPane = null;
             if ((ErrorHandler.Failed(service.GetPane(ref page, out ppPane)) && (caption != null)) 
@@ -116,11 +131,11 @@ namespace NDjango.Designer.Parsing
             return ppPane;
         }
 
-        private object GetService(ITextBuffer textBuffer, Type type)
+        private T GetService<T>(ITextBuffer textBuffer, Type serviceType)
         {
             var vsBuffer = adaptersFactory.GetBufferAdapter(textBuffer);
             if (vsBuffer == null)
-                return null;
+                return default(T);
 
             Guid guidServiceProvider = VSConstants.IID_IUnknown;
             IObjectWithSite objectWithSite = vsBuffer as IObjectWithSite;
@@ -129,19 +144,19 @@ namespace NDjango.Designer.Parsing
             Microsoft.VisualStudio.OLE.Interop.IServiceProvider serviceProvider =
                 (Microsoft.VisualStudio.OLE.Interop.IServiceProvider)Marshal.GetObjectForIUnknown(ptrServiceProvider);
 
-            Guid guidService = typeof(SVsOutputWindow).GUID;
-            Guid guidInterface = typeof(IVsOutputWindow).GUID;
+            Guid guidService = serviceType.GUID;
+            Guid guidInterface = typeof(T).GUID;
             IntPtr ptrObject = IntPtr.Zero;
 
             int hr = serviceProvider.QueryService(ref guidService, ref guidInterface, out ptrObject);
             if (ErrorHandler.Failed(hr) || ptrObject == IntPtr.Zero)
-                return null;
+                return default(T);
 
-
-            IVsOutputWindow taskList = (IVsOutputWindow)Marshal.GetObjectForIUnknown(ptrObject);
+            T result = (T)Marshal.GetObjectForIUnknown(ptrObject);
             Marshal.Release(ptrObject);
 
-            return taskList;
+            return result;
         }
+        
     }
 }

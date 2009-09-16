@@ -104,26 +104,6 @@ module Expressions =
                 Map.of_list[(Constants.NODELIST_TAG_ELEMENTS, x.elements)] 
                     :> IDictionary<string, IEnumerable<INode>>
 
-    /// a filter placeholder object is included as the last element in the list of the nodes
-    /// generated for every filter expression
-    type private FilterPlaceHolderr(context:ParsingContext, expression_token:TextToken) =
-        let filter_token = expression_token.CreateToken(expression_token.Location.Length,0)
-        let name_node = 
-            new FilterNameNode (
-                filter_token,
-                context.Provider.Filters |> Map.to_seq |> Seq.map (fun f -> fst f) 
-            )
-        interface INode with
-            member x.NodeType = NodeType.Filter
-            member x.Position = filter_token.Location.Offset
-            member x.Length = filter_token.Location.Length
-            member x.Values = seq []
-            member x.ErrorMessage = Error.None
-            member x.Description = ""
-            member x.Nodes = 
-                Map.of_list[(Constants.NODELIST_TAG_ELEMENTS, seq [(name_node :> INode)])] 
-                    :> IDictionary<string, IEnumerable<INode>>
-
     /// Represents a django expression. An experssion consists of a reference followed by 
     /// zero or more filters, followed by a filter placeholder. Filter
     /// placeholder is always added as the last element so that the designer
@@ -266,7 +246,6 @@ module Expressions =
                     match variable with
                     | Some v -> [(v :> INode)] |> Seq.append elements
                     | None -> elements 
-                //let elements = elements |> Seq.append [(new FilterPlaceHolder(context, expression) :> INode)] 
                 new Map<string, IEnumerable<INode>>([]) 
                     |> Map.add Constants.NODELIST_TAG_ELEMENTS elements 
                         :> IDictionary<string, IEnumerable<INode>>

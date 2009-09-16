@@ -86,24 +86,14 @@ namespace NDjango.Designer.QuickInfo
                     )
                 ,PositionAffinity.Predecessor);
             
-            
             if (point.HasValue)
             {
                 IQuickInfoBroker broker = brokerMapService.GetBrokerForTextView(textView, point.Value.Snapshot.TextBuffer);
                 ITrackingPoint triggerPoint = point.Value.Snapshot.CreateTrackingPoint(point.Value.Position, PointTrackingMode.Positive);
 
                 activeSession = broker.CreateQuickInfoSession(triggerPoint, true);
-                activeSession.Properties.AddProperty(typeof(Controller), point.Value);
-                activeSession.Dismissed += new EventHandler(activeSession_Dismissed);
                 activeSession.Start();
             }
-        }
-
-        void activeSession_Dismissed(object sender, EventArgs e)
-        {
-            activeSession.SubjectBuffer.Properties.RemoveProperty(typeof(Source));
-            nodeProviderBroker.GetNodeProvider(activeSession.SubjectBuffer)
-                .RaiseNodesChanged(activeSession.SubjectBuffer.CurrentSnapshot);
         }
 
         public void ConnectSubjectBuffer(ITextBuffer subjectBuffer)

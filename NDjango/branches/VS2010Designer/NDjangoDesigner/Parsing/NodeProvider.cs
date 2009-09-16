@@ -27,6 +27,7 @@ using System.Threading;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using NDjango.Interfaces;
+using Microsoft.VisualStudio.Text.Editor;
 
 namespace NDjango.Designer.Parsing
 {
@@ -47,7 +48,7 @@ namespace NDjango.Designer.Parsing
         /// <summary>
         /// indicates the delay (in milliseconds) of parser invoking. 
         /// </summary>
-        private const int PARSING_DELAY = 1000;
+        private const int PARSING_DELAY = 500;
         /// <summary>
         /// The timer for optimization the parsing process. If there would be some changes with interval 
         /// between sequential changes less then PARSING_DELAY, then rebuild process would be invoked only once.
@@ -220,5 +221,6 @@ namespace NDjango.Designer.Parsing
         {
             return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0), predicate);
         }
+
     }
 }
