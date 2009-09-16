@@ -101,6 +101,7 @@
     <Compile Include="Classifiers\ClassifierProvider.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Classifiers\Highlighter.cs" />
     <Compile Include="CodeCompletion\CompletionSets\CompletionSet.cs" />
     <Compile Include="CodeCompletion\CompletionSets\FilterCompletionSet.cs" />
     <Compile Include="CodeCompletion\CompletionSets\TagNameCompletionSet.cs" />

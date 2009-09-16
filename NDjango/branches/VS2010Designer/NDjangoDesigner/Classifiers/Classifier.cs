@@ -77,7 +77,7 @@ namespace NDjango.Designer.Classifiers
 
             IDjangoSnapshot selection;
             if (span.Snapshot.TextBuffer.Properties
-                .TryGetProperty<IDjangoSnapshot>(typeof(QuickInfo.Source), out selection))
+                .TryGetProperty<IDjangoSnapshot>(typeof(Highlighter), out selection) && selection != null)
             {
                 classifications.Add(
                     new ClassificationSpan(
