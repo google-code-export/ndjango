@@ -169,7 +169,11 @@ namespace NDjango.UnitTests
             ITemplate template = manager.GetTemplate(Template);
             
             //the same logic responsible for retriving nodes as in NodeProvider class (DjangoDesigner).
-            List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll(node => (INode)node)).FindAll(node => (node.Values.ToList().Count != 0) || (node.NodeType == NodeType.ParsingContext));
+            List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll
+                (node => (INode)node)).FindAll(node =>
+                    (node.Values.ToList().Count != 0) 
+                    || (node.NodeType == NodeType.ParsingContext) 
+                    || (node.ErrorMessage.Message != ""));
             List<DesignerData> actualResult = nodes.ConvertAll(
                 node =>
                 {

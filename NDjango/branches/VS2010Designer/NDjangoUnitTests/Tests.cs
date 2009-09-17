@@ -69,6 +69,7 @@ this is inner2
         }
 
         NDjango.Interfaces.ITemplateManager manager;
+        NDjango.Interfaces.ITemplateManager managerForDesigner;
         TemplateManagerProvider provider;
         public ICollection<string> standardTags = new List<string>();
         public ICollection<string> standardFilters = new List<string>();
@@ -84,6 +85,7 @@ this is inner2
                 ;
             provider = FilterManager.Initialize(provider);
             manager = provider.GetNewManager();
+            managerForDesigner = provider.WithSetting(Constants.EXCEPTION_IF_ERROR, false).GetNewManager();
         }
 
         public struct StringTest 
