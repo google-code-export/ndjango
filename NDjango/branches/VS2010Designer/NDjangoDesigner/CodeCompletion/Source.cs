@@ -62,7 +62,7 @@ namespace NDjango.Designer.CodeCompletion
             
             List<IDjangoSnapshot> nodes =
                 nodeProviderBroker.GetNodeProvider(session.TriggerPoint.TextBuffer)
-                    .GetNodes(point, n => n.Values.Count > 0);
+                    .GetNodes(point, n => n.Node.Values.GetEnumerator().MoveNext());
 
             CompletionSet set = CreateCompletionSet(context, nodes, point);
 

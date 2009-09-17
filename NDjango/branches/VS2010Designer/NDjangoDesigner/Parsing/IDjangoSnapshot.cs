@@ -33,6 +33,7 @@ namespace NDjango.Designer.Parsing
     {
         Default,
         Tag,
+        CloseTag,
         FilterName,
         TagName,
         Context
@@ -53,24 +54,14 @@ namespace NDjango.Designer.Parsing
 
         IEnumerable<IDjangoSnapshot> Children { get; }
 
-        IEnumerable<IDjangoSnapshot> Contexts { get; }
-
-        string Type { get; }
-
         void TranslateTo(ITextSnapshot snapshot);
 
         void ShowDiagnostics(IVsOutputWindowPane djangoDiagnostics, string filePath);
 
-        bool IsPlaceholder { get; }
-
         ContentType ContentType { get; }
 
-        IList<string> Values { get; }
-
-        string Description { get; }
-
-        Error ErrorMessage { get; }
-
         INode Node { get; }
+
+        IDjangoSnapshot Parent { get; }
     }
 }

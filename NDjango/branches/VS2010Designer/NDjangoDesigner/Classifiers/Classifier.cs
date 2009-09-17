@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using Microsoft.VisualStudio.Text.Classification;
 using Microsoft.VisualStudio.Text;
 using NDjango.Designer.Parsing;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Classifiers
 {
@@ -75,33 +76,76 @@ namespace NDjango.Designer.Classifiers
         {
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
+            // create classifiers for currently selected tag (if any)
             IDjangoSnapshot selection;
             if (span.Snapshot.TextBuffer.Properties
                 .TryGetProperty<IDjangoSnapshot>(typeof(Highlighter), out selection) && selection != null)
             {
+                
+                // colorize the selected tag name
                 classifications.Add(
                     new ClassificationSpan(
                         selection.SnapshotSpan,
+                        classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAGNAME)
+                        )
+                    );
+
+                // colorize the selected tag itself
+                IDjangoSnapshot tag = selection.Parent;
+                classifications.Add(
+                    new ClassificationSpan(
+                        tag.SnapshotSpan,
                         classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAG)
                         )
                     );
-                foreach (IDjangoSnapshot context in selection.Contexts)
-                    classifications.Add(
-                        new ClassificationSpan(
-                            context.ExtensionSpan,
-                            classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAG)
-                            )
-                        );
+
+                // for every context defined in the tag
+                foreach (IDjangoSnapshot child in tag.Children)
+                {
+                    // colorize the context
+                    if (child.ContentType == ContentType.Context)
+                        classifications.Add(
+                            new ClassificationSpan(
+                                child.ExtensionSpan,
+                                classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAG)
+                                )
+                            );
+                    // locate the closing tag for context
+                    if (child.ContentType == ContentType.CloseTag)
+                    {
+                        foreach (IDjangoSnapshot t in child.Children)
+                            if (t.ContentType == ContentType.TagName)
+                            {
+                                // colorize the closing tag name
+                                classifications.Add(
+                                    new ClassificationSpan(
+                                        t.SnapshotSpan,
+                                        classificationTypeRegistry.GetClassificationType(Constants.DJANGO_SELECTED_TAGNAME)
+                                        )
+                                    );
+                                break;
+                            }
+                    }
+                }
             }
 
+            // create standard classifiers for tags
             nodeProvider.GetNodes(span, node => node.ContentType != ContentType.Context)
                 .ForEach(
                 node =>
-                classifications.Add(
-                    new ClassificationSpan(
-                        node.SnapshotSpan,
-                        classificationTypeRegistry.GetClassificationType(node.Type)
-                        ))
+                {
+                    switch (node.Node.NodeType) {
+                        case NodeType.Marker:
+                            classifications.Add(
+                                new ClassificationSpan(
+                                    node.SnapshotSpan,
+                                    classificationTypeRegistry.GetClassificationType(Constants.MARKER_CLASSIFIER)
+                                    ));
+                            break;
+                        default:
+                            break;
+                    };
+                }
                         );
 
             return classifications;

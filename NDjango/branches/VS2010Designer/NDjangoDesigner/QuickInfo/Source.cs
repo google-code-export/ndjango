@@ -71,12 +71,12 @@ namespace NDjango.Designer.QuickInfo
                     node =>
                     {
                         // include the node description at the top of the list
-                        if (!String.IsNullOrEmpty(node.Description))
-                            message.Insert(0, node.Description + "\n");
-                        if (node.ErrorMessage.Severity >= 0)
+                        if (!String.IsNullOrEmpty(node.Node.Description))
+                            message.Insert(0, node.Node.Description + "\n");
+                        if (node.Node.ErrorMessage.Severity >= 0)
                         {
                             // include the error message text at the bottom
-                            message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
+                            message.Append(errorSeparator + "\n\t" + node.Node.ErrorMessage.Message);
                             errorSeparator = "";
                         }
                         if (node.SnapshotSpan.Length > length)

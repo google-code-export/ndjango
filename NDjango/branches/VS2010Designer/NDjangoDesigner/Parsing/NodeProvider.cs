@@ -50,7 +50,7 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         private const int PARSING_DELAY = 500;
         /// <summary>
-        /// The timer for optimization the parsing process. If there would be some changes with interval 
+        /// The timer for optimization the parsing process. If there would be some changes with time 
         /// between sequential changes less then PARSING_DELAY, then rebuild process would be invoked only once.
         /// </summary>
         private Timer parserTimer;
@@ -69,7 +69,7 @@ namespace NDjango.Designer.Parsing
             rebuildNodes(buffer.CurrentSnapshot);
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
             // we need to run rebuildNodes on a separaet thread. Using timer
-            // for this seems to be an overkill, but we need the time anyway so - why not
+            // for this seems to be an overkill, but we need the timer anyway so - why not
             parserTimer =
                 new Timer(rebuildNodes, buffer.CurrentSnapshot, 0, Timeout.Infinite);
         }
@@ -133,7 +133,7 @@ namespace NDjango.Designer.Parsing
             List<IDjangoSnapshot> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
                 .ToList()
                     .ConvertAll<IDjangoSnapshot>
-                        (node => new NodeSnapshot(snapshot, (INode)node));
+                        (node => new NodeSnapshot(null, snapshot, (INode)node));
             lock (node_lock)
             {
                 this.nodes = nodes;
