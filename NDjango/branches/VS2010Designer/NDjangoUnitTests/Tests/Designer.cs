@@ -20,8 +20,8 @@ namespace NDjango.UnitTests
                 .WithLoader(new Loader())
                 .WithTag("non-nested", new TestDescriptor.SimpleNonNestedTag())
                 .WithTag("nested", new TestDescriptor.SimpleNestedTag())
-                .WithTag("url", new TestUrlTag())
-                ;
+                .WithTag("url", new TestUrlTag()).WithSetting(Constants.EXCEPTION_IF_ERROR, false);
+
             provider = FilterManager.Initialize(provider);
             this.standardTags = ((IDictionary<string, ITag>)((ITemplateManagerProvider)provider).Tags).Keys;
             this.standardFilters = ((IDictionary<string, ISimpleFilter>)((ITemplateManagerProvider)provider).Filters).Keys;
@@ -31,7 +31,12 @@ namespace NDjango.UnitTests
         [Test, TestCaseSource("GetDesignerTests")]
         public void DesignerTests(TestDescriptor test)
         {
-            InternalFilterProcess(test);
+            DesignerTest(test);
+        }
+
+        private void DesignerTest(TestDescriptor test)
+        {
+            test.Run(managerForDesigner);
         }
 
         private DesignerData[] Nodes(params DesignerData[] nodes) { return nodes; }
@@ -48,13 +53,26 @@ namespace NDjango.UnitTests
         {
             SetupStandartdValues();
 
-            //NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}" 
-            //    , Nodes 
-            //    (
-            //        Node(27, 11, "endif"),
-            //        Node(15, 10, "else", "endif"),
-            //        StandardNode(0, 12)
-            //    ));
+            NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}"
+                , Nodes
+                (
+                    StandardNode(0, 38),
+                    Node(25, 13, "endif"),
+                    StandardNode(30, 5),
+                    Node(12, 13, "else", "endif"),
+                    StandardNode(18, 4),
+                    StandardNode(3, 2)
+                ));
+            NewTest("if-tag-designer-error", "{% if foo or bar and baz %}yes{% else %}no{% endif %}"
+                , Nodes
+                (
+                    StandardNode(0, 53),
+                    ErrorNode(0, 27, EmptyList, 2, "'if' tags can't mix 'and' and 'or'"),
+                    Node(27, 13, "else", "endif"),
+                    StandardNode(33, 4),
+                    Node(40, 13, "endif"),
+                    StandardNode(45, 5)
+                ));
             NewTest("ifequal-tag-designer", "{% ifequal foo bar %}yes{% else %}no{% endifequal %}"
                 , Nodes 
                 (
