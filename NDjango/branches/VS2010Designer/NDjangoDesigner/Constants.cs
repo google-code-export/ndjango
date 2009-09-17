@@ -35,30 +35,8 @@ namespace NDjango.Designer
 
         internal const string NDJANGO = "text"; //"ndjango";
 
-//        /// <summary>
-//        /// Classifier definition for django tags 
-//        /// </summary>
-//        internal const string DJANGO_CONSTRUCT = "ndjango.tag";
-//        [Export]
-//        [Name(DJANGO_CONSTRUCT)]
-//        private static ClassificationTypeDefinition DjangoConstruct;
-
-//        [Export(typeof(EditorFormatDefinition))]
-//        [Name("ndjango.tag.format")]
-//        [DisplayName("NDjango Tag Format")]
-//        [UserVisible(true)]
-//        [ClassificationType(ClassificationTypeNames = DJANGO_CONSTRUCT)]
-//        [Order]
-//        internal sealed class NDjangoTagFormat : ClassificationFormatDefinition
-//        {
-//            public NDjangoTagFormat()
-//            {
-////                BackgroundColor = Colors.Yellow;
-//            }
-//        }
-
         /// <summary>
-        /// Classifier definition for django tags 
+        /// Classifier definition for selected tags 
         /// </summary>
         internal const string DJANGO_SELECTED_TAG = "ndjango.selected.tag";
         [Export]
@@ -75,7 +53,26 @@ namespace NDjango.Designer
         {
             public NDjangoSelectedTagFormat()
             {
-                BackgroundColor = Colors.Gainsboro;
+                BackgroundColor = Color.FromArgb(0xff, 0xee, 0xee, 0xee);//Colors.AliceBlue;
+            }
+        }
+
+        internal const string DJANGO_SELECTED_TAGNAME = "ndjango.selected.tagname";
+        [Export]
+        [Name(DJANGO_SELECTED_TAGNAME)]
+        private static ClassificationTypeDefinition DjangoSelectedTagName;
+
+        [Export(typeof(EditorFormatDefinition))]
+        [Name("ndjango.selected.tagname.format")]
+        [DisplayName("NDjango Selected Tag Name Format")]
+        [UserVisible(true)]
+        [ClassificationType(ClassificationTypeNames = DJANGO_SELECTED_TAGNAME)]
+        [Order]
+        internal sealed class NDjangoSelectedTagNameFormat : ClassificationFormatDefinition
+        {
+            public NDjangoSelectedTagNameFormat()
+            {
+                BackgroundColor = Colors.LightGray;
             }
         }
 

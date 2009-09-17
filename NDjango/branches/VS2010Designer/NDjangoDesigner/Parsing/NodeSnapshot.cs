@@ -35,16 +35,16 @@ namespace NDjango.Designer.Parsing
         private SnapshotSpan extensionSpan;
         private INode node;
         private List<NodeSnapshot> children = new List<NodeSnapshot>();
+        public IDjangoSnapshot Parent { get; private set; }
 
-        public NodeSnapshot(ITextSnapshot snapshot, INode node)
+        public NodeSnapshot(NodeSnapshot parent, ITextSnapshot snapshot, INode node)
         {
-
+            Parent = parent;
             this.node = node;
             if (node.NodeType == NodeType.ParsingContext)
             {
                 snapshotSpan = new SnapshotSpan(snapshot, node.Position + node.Length, 0);
                 extensionSpan = new SnapshotSpan(snapshot, node.Position, node.Length);
-
             }
             else
             {
@@ -74,7 +74,7 @@ namespace NDjango.Designer.Parsing
             }
             foreach (IEnumerable<INode> list in node.Nodes.Values)
                 foreach (INode child in list)
-                    children.Add(new NodeSnapshot(snapshot, child));
+                    children.Add(new NodeSnapshot(this, snapshot, child));
         }
 
         /// <summary>
@@ -97,36 +97,7 @@ namespace NDjango.Designer.Parsing
             } 
         }
 
-        public IEnumerable<IDjangoSnapshot> Contexts
-        {
-            get
-            {
-                foreach (NodeSnapshot child in children)
-                    if (child.ContentType == ContentType.Context)
-                        yield return child;
-                    else
-                        continue;
-            }
-        }
-
         public INode Node { get { return node; } }
-
-        /// <summary>
-        /// Returns the classification type for the node
-        /// </summary>
-        public string Type
-        {
-            get
-            {
-                switch (node.NodeType)
-                {
-                    case NodeType.Marker:
-                        return Constants.MARKER_CLASSIFIER;
-                    default:
-                        return "text";
-                }
-            }
-        }
 
         /// <summary>
         /// Translates the NodeSnapshot to a newer snapshot
@@ -165,11 +136,6 @@ namespace NDjango.Designer.Parsing
                 child.ShowDiagnostics(djangoDiagnostics, filePath);
         }
 
-        public bool IsPlaceholder
-        {
-            get { return node.Length == 0; }
-        }
-
         public ContentType ContentType
         {
             get 
@@ -177,6 +143,7 @@ namespace NDjango.Designer.Parsing
                 switch (node.NodeType)
                 {
                     case NodeType.Construct: return ContentType.Tag;
+                    case NodeType.CloseTag: return ContentType.CloseTag;
                     case NodeType.TagName: return ContentType.TagName;
                     case NodeType.FilterName: return ContentType.FilterName;
                     case NodeType.ParsingContext: return ContentType.Context;
@@ -185,19 +152,5 @@ namespace NDjango.Designer.Parsing
             }
         }
 
-        public IList<string> Values
-        {
-            get { return new List<string>(node.Values); }
-        }
-
-        public string Description
-        {
-            get { return node.Description; }
-        }
-
-        public Error ErrorMessage
-        {
-            get { return node.ErrorMessage; }
-        }
     }
 }

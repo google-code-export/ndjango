@@ -106,6 +106,11 @@ type NodeType =
         /// </summary>
         | ParsingContext = 0x000d
 
+        /// <summary>
+        /// A closing node terminating the list of the nested tags
+        /// </summary>
+        | CloseTag = 0x000e
+
 /// Error message
 type Error(severity:int, message:string) =
     /// indicates the severity of the error with 0 being the information message

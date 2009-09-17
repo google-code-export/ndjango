@@ -228,6 +228,14 @@ module public ParserNodes =
                 let attrs = tag.GetType().GetCustomAttributes(typeof<DescriptionAttribute>, false)
                 attrs |> Array.fold (fun text attr -> text + (attr :?> DescriptionAttribute).Description ) ""
             
+    /// Base class for all syntax nodes representing django tags
+    type CloseTagNode(context: ParsingContext, token: BlockToken) =
+        inherit TagNode(context, token)
+
+        override x.node_type = NodeType.CloseTag   
+
+        override x.Description = "end of the nested node list"
+            
     /// Error nodes
     type ErrorNode(context: ParsingContext, token: Token, error: Error) =
         inherit Node(token)

@@ -111,6 +111,7 @@
     <Compile Include="CodeCompletion\SourceProvider.cs" />
     <Compile Include="CodeCompletion\CompletionSets\TagCompletionSet.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Parsing\ActiveViewMonitor.cs" />
     <Compile Include="Parsing\IDjangoSnapshot.cs" />
     <Compile Include="Parsing\NodeProvider.cs" />
     <Compile Include="Parsing\NodeProviderBroker.cs" />

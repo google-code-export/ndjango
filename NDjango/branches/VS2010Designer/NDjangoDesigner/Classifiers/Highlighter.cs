@@ -33,7 +33,7 @@ namespace NDjango.Designer.Classifiers
         {
             SnapshotPoint point = position.BufferPosition;
 
-            List<IDjangoSnapshot> tags = provider.GetNodes(point, node => node.ContentType == ContentType.Tag);
+            List<IDjangoSnapshot> tags = provider.GetNodes(point, node => node.ContentType == ContentType.TagName);
             IDjangoSnapshot selected = tags.Count == 0 ? null : tags[0];
 
             IDjangoSnapshot highlighted = null;

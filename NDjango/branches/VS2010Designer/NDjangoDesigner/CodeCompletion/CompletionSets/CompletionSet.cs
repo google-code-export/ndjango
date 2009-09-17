@@ -57,7 +57,7 @@ namespace NDjango.Designer.CodeCompletion
         /// </summary>
         protected virtual List<Completion> NodeCompletions 
         {
-            get { return new List<Completion>(BuildCompletions(node.Values, "", "")); }
+            get { return new List<Completion>(BuildCompletions(node.Node.Values, "", "")); }
         }
         protected virtual List<Completion> NodeCompletionBuilders { get { return new List<Completion>(); } }
         protected virtual int FilterOffset { get { return 0; } }

@@ -94,14 +94,6 @@ namespace NDjango.Designer.Parsing
             NodeProvider provider;
             if (!buffer.Properties.TryGetProperty(typeof(NodeProvider), out provider))
             {
-                //IVsTextBuffer vsBuffer = adaptersFactory.GetBufferAdapter(buffer);
-                //IVsEnumTextViews views;
-                //vsTextManager.EnumViews(vsBuffer, out views);
-                //IVsTextView[] vsView = new IVsTextView[1];
-                //uint fetched = 0;
-                //views.Next(1, vsView, ref fetched);
-                //ITextView view = adaptersFactory.GetWpfTextView(vsView[0]); 
-                //provider = new NodeProvider(djangoDiagnostics, view, parser, buffer);
                 provider = new NodeProvider(djangoDiagnostics, parser, buffer);
                 buffer.Properties.AddProperty(typeof(NodeProvider), provider);
             }

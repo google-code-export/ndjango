@@ -238,7 +238,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
        | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Value.Equals ->
-                 ((new TagNode(context, block) :> INodeImpl) :: nodes, tokens)
+                 ((new CloseTagNode(context, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
                 let node, tokens = parse_token context tokens token
                 parse_internal context (node :: nodes) tokens parse_until
