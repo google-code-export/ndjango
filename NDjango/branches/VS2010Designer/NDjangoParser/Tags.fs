@@ -42,10 +42,16 @@ module internal Misc =
             member this.Perform token context tokens =
                 let nodes, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endautoescape"]
 
-                let fail token =
+                let fail (fail_token:TextToken) =
                         raise (SyntaxError(
                                 "invalid arguments for 'Autoescape' tag", 
-                                [(new KeywordNode(token, ["on";"off"]) :> INode)]
+                                (Seq.of_list [({
+                                                new  ErrorNode(context, Text(token), new Error(1, "invalid arguments for 'Autoescape' tag"))
+                                                    with
+                                                        override x.nodelist = nodes
+                                                        override x.elements = (new KeywordNode(fail_token, ["on";"off"]) :> INode) :: base.elements
+                                                } :> INodeImpl)]),
+                                remaining
                                 ))
 
                 let autoescape_flag = 
@@ -53,8 +59,8 @@ module internal Misc =
                     | MatchToken("on")::[] -> true
                     | MatchToken("off")::[] -> false
                     | arg::list -> fail arg
-                    | _ -> fail <| token.CreateToken (token.Location.Length - 2, 0)
-                    
+                    | _ -> fail <| token.CreateToken(token.Location.Length - 2, 0)
+
                 (({
                     new TagNode(context, token) with
                         override x.walk manager walker = 
