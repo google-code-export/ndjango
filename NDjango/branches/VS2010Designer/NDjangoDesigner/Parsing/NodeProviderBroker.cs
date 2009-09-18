@@ -20,16 +20,19 @@
  ***************************************************************************/
 
 using System;
-using Microsoft.VisualStudio.Text;
+using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using NDjango.Interfaces;
+using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.ApplicationModel.Environments;
 using Microsoft.VisualStudio.Editor;
-using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.OLE.Interop;
-using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.TextManager.Interop;
+using NDjango.Interfaces;
 
 namespace NDjango.Designer.Parsing
 {
@@ -47,8 +50,54 @@ namespace NDjango.Designer.Parsing
     internal class NodeProviderBroker : INodeProviderBroker
     {
 
-        IParser parser = new NDjango.TemplateManagerProvider()
-            .WithSetting(NDjango.Constants.EXCEPTION_IF_ERROR, false); // {get; set;}
+        private static IParser InitializeParser()
+        {
+            string path = typeof(TemplateManagerProvider).Assembly.CodeBase;
+            List<Tag> tags = new List<Tag>();
+            List<Filter> filters = new List<Filter>();
+            if (path.StartsWith("file:///"))
+                foreach (string file in
+                    Directory.EnumerateFiles(
+                        Path.GetDirectoryName(path.Substring(8)), 
+                        "*.NDjangoExtension.dll", 
+                        SearchOption.AllDirectories))
+                {
+                    AssemblyName name = new AssemblyName();
+                    name.CodeBase = file;
+                    foreach (Type t in Assembly.Load(name).GetExportedTypes())
+                    {
+                        if (typeof(ITag).IsAssignableFrom(t))
+                            CreateEntry<Tag>(tags, t);
+                        if (typeof(ISimpleFilter).IsAssignableFrom(t))
+                            CreateEntry<Filter>(filters, t);
+                    }
+                }
+
+            TemplateManagerProvider parser = new TemplateManagerProvider();
+            return parser
+                    .WithTags(tags)
+                    .WithFilters(filters)
+                    .WithSetting(NDjango.Constants.EXCEPTION_IF_ERROR, false);
+        }
+
+        private static void CreateEntry<T>(List<T> list, Type t) where T:class
+        {
+            if (t.IsAbstract)
+                return;
+            if (t.IsInterface)
+                return;
+
+            var attrs = t.GetCustomAttributes(typeof(NameAttribute), false) as NameAttribute[];
+            if (attrs.Length == 0)
+                return;
+
+            if (t.GetConstructor(new Type[] { }) == null)
+                return;
+
+            list.Add((T)Activator.CreateInstance(typeof(T), attrs[0].Name, Activator.CreateInstance(t)));
+        }
+
+        IParser parser = InitializeParser();
 
         [Import]
         internal IVsEditorAdaptersFactoryService adaptersFactory { get; set; }
