@@ -126,12 +126,19 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     /// global lock
     let lockProvider = new obj()
 
+    /// global map of loaded templates shared among all template managers
     let templates = ref Map.Empty
 
+    /// function used to validate if a template needs to be reloaded
+    /// it is calculated when the template manager provider is created
     let validate_template = 
         if (settings.[Constants.RELOAD_IF_UPDATED] :?> bool) then loader.IsUpdated
         else (fun (name,ts) -> false) 
 
+    /// converts an exception into a syntax node to make diagnostic messages the exception
+    /// carries available to the designer. The exception can carry additional infromation
+    /// about the elements of the node at fault in form of additional nodes. It is
+    /// passed on to the designer by making these nodes children of the error node
     let generate_diag_for_tag (ex: System.Exception) token context tokens =
         match (token, ex) with
         | (Some blockToken, (:? SyntaxError as syntax_error)) ->
@@ -172,7 +179,6 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             } :> INodeImpl), tokens
         | Lexer.Variable var ->
             // var.Expression is a raw string - the string as is on the template before any parsing or substitution
-            
             let expression = new FilterExpression(context, var.Expression)
 
             ({new Node(token)
@@ -193,7 +199,10 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                 | None -> raise (SyntaxError ("Unknown tag: " + block.Verb.RawText, None, None, Some tokens))
                 | Some (tag: ITag) -> tag.Perform block context tokens
             with
-                |_ as ex -> 
+                |_ as ex ->
+                    // here we need to squeeze all available information into the mold
+                    // of the return value expected from this function. In other words 
+                    // the node list returned by diag here should always have only one node
                     match generate_diag_for_tag ex (Some block) context tokens with
                     | Some result -> 
                         let nodes, remainder = result
@@ -223,17 +232,24 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                                                 :> INode) :: base.elements
                                     | _ -> base.elements
                         } :> INodeImpl), tokens
+       
+    /// builds diagnostic message from the list of possibke closing tags  
+    let fail_closing parse_until =
+                sprintf "Missing closing tag. Available tags: %s" 
+                    (snd 
+                        (List.fold 
+                            (fun acc elem -> (", ", (snd acc) + (fst acc) + elem)) 
+                            ("","") 
+                            parse_until))
                         
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
-    /// this function returns the node list and the unparsed remainder of the token stream
-    /// the list is returned in the reversed order
+    /// this function returns the node list and the unparsed remainder of the token stream.
+    /// The list is returned in the reversed order
     let rec parse_internal context (nodes:INodeImpl list) (tokens : LazyList<Lexer.Token>) parse_until =
        match tokens with
        | LazyList.Nil ->  
-            if not <| List.isEmpty parse_until then
-                raise (SyntaxError (
-                        sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (snd acc) + (fst acc) + elem)) ("","") parse_until))
-                        , nodes, tokens))
+            if not <| List.isEmpty parse_until 
+                then raise (SyntaxError(fail_closing parse_until, nodes, tokens))
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
@@ -248,9 +264,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     let rec seek_internal parse_until tokens = 
         match tokens with 
         | LazyList.Nil -> 
-            raise (SyntaxError (
-                    sprintf "Missing closing tag. Available tags: %s" (snd (List.fold (fun acc elem -> (", ", (snd acc) + (fst acc) + elem)) ("","") parse_until))
-                ))
+            raise (SyntaxError (fail_closing parse_until))
         | LazyList.Cons(token, tokens) -> 
             match token with 
             | Lexer.Block block when parse_until |> List.exists block.Verb.Value.Equals ->
@@ -321,8 +335,17 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
         
         /// Parses the sequence of tokens until one of the given tokens is encountered
         member x.Parse parent tokens parse_until =
+            
+            // Create a new parsing context to include the current list of closing tags (parse_until)
             let context = ParsingContext(x,parse_until)
+            
+            // take a note of the current position - this will be the
+            // start position for the parsing context being built
             let start_pos = (tokens |> LazyList.hd).Position
+            
+            // do the parsing. If an exception is thrown we still need 
+            // a list of all nodes with as much info about the template 
+            // as the parser could squeeze out of the source
             let nodes, tokens =
                 try
                     parse_internal context [] tokens parse_until
@@ -333,11 +356,16 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                     | None -> rethrow()
 
             match nodes with
+            // no nodes - empty template. I do not think it can happen, still...
             | [] -> [], tokens
+            // wrap up the parsing by building the ParsingContextNode.
             | hd::_ ->
+                // calculate the end position for the context as a position of the first character
+                // after the last token. Keep in mind that the nodes are added to the node list 
+                // in REVERESED order - the first node is the last added, hence it corresponds to the last 
+                // token
                 let end_pos = hd.Token.Position + hd.Token.Length
                 let result = nodes |> List.rev
-//                let start_pos = (List.hd result).Token.Position
                 ((new ParsingContextNode(context, start_pos, end_pos - start_pos) :> INodeImpl) :: result, tokens)
         
         /// Parses the template From the source in the reader into the node list
