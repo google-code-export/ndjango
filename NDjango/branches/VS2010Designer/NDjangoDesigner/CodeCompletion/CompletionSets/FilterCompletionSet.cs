@@ -10,7 +10,7 @@ namespace NDjango.Designer.CodeCompletion
 {
     class FilterCompletionSet : CompletionSet
     {
-        new internal static CompletionSet Create(List<IDjangoSnapshot> nodes, SnapshotPoint point)
+        internal static CompletionSet Create(List<IDjangoSnapshot> nodes, SnapshotPoint point)
         {
             IDjangoSnapshot node = nodes.FindLast(n => n.ContentType == ContentType.Context);
             if (node == null)

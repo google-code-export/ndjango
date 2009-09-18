@@ -339,3 +339,9 @@ type SyntaxError (message, nodes: seq<INodeImpl> option, pattern:INode list opti
     member x.Pattern = match pattern with | Some p -> p | None -> []
     
     member x.Remaining = remaining
+
+/// Tags and/or filters marked with this attribute will be registered under the name
+/// supplied by the attribute unless the name will be provided explicitly during the registartion
+type NameAttribute(name:string) = 
+    inherit System.Attribute() 
+    member x.Name = name
