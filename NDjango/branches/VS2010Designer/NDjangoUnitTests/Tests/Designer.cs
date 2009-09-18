@@ -63,6 +63,32 @@ namespace NDjango.UnitTests
                     StandardNode(18, 4),
                     StandardNode(3, 2)
                 ));
+            NewTest("for-tag-designer", "{% for a, b in c %}whatever{% endfor %}"
+                , Nodes
+                (
+                    StandardNode(0, 39),
+                    Node(19, 20, "empty", "endfor"),
+                    StandardNode(30, 6),
+                    StandardNode(3, 3)
+                ));
+
+            NewTest("cycle-tag-designer", "{% cycle a,b,c as abc %}{% cycle abc %}{% cycle abc %}"
+                , Nodes
+                (
+                    StandardNode(0, 54),
+                    StandardNode(3, 5),
+                    StandardNode(27, 5),
+                    StandardNode(42, 5)
+                ));
+
+            NewTest("with-tag-designer", "{% with var.otherclass.method as newvar %}{{ newvar }}{% endwith %}"
+                , Nodes
+                (
+                    StandardNode(0, 67),
+                    Node(42, 25, "endwith"),
+                    StandardNode(57, 7),
+                    StandardNode(3, 4)
+                ));
             NewTest("if-tag-designer-error", "{% if foo or bar and baz %}yes{% else %}no{% endif %}"
                 , Nodes
                 (
@@ -83,6 +109,16 @@ namespace NDjango.UnitTests
                     StandardNode(27, 4),
                     StandardNode(3, 7)
                 ));
+            NewTest("autoescape-tag-designer-error", "{% autoescape %}whatever{% endautoescape %}"
+                , Nodes
+                (
+                    StandardNode(0, 43),
+                    ErrorNode(0, 16, EmptyList, 2, "invalid arguments for 'Autoescape' tag"),
+                    Node(16, 27, "endautoescape"),
+                    StandardNode(27, 13),
+                    KeywordNode(14, 0, "on", "off")
+                ));
+
             //NewTest("add-filter-designer", "{{ value| add:\"2\" }}"
             //    , Nodes 
             //    (
@@ -124,6 +160,11 @@ namespace NDjango.UnitTests
             //    ));
 
             return tests;
+        }
+
+        private DesignerData KeywordNode(int position, int length, params string[] keyWords)
+        {
+            return new DesignerData(position, length, keyWords, -1, String.Empty);
         }
 
         //The following 'standard' methods are for nodes, which have standard Values list without any additions.
