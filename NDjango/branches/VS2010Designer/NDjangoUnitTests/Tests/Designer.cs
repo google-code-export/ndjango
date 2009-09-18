@@ -22,7 +22,6 @@ namespace NDjango.UnitTests
                 .WithTag("nested", new TestDescriptor.SimpleNestedTag())
                 .WithTag("url", new TestUrlTag()).WithSetting(Constants.EXCEPTION_IF_ERROR, false);
 
-            provider = FilterManager.Initialize(provider);
             this.standardTags = ((IDictionary<string, ITag>)((ITemplateManagerProvider)provider).Tags).Keys;
             this.standardFilters = ((IDictionary<string, ISimpleFilter>)((ITemplateManagerProvider)provider).Filters).Keys;
         }
