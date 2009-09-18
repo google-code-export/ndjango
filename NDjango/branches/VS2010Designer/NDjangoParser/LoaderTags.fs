@@ -42,7 +42,16 @@ module internal LoaderTags =
                 | name::[] -> 
                     let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"; "endblock " + name.RawText]
                     (new BlockNode(context, token, name.RawText, node_list) :> INodeImpl), remaining
-                | _ -> raise (SyntaxError ("block tag takes only one argument"))
+                | _ ->
+                    let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"]
+                    raise (SyntaxError("block tag takes only one argument", 
+                            [({
+                                new  ErrorNode(context, Block(token), new Error(2, "block tag takes only one argument"))
+                                    with
+                                        override x.nodelist = node_list
+                               } :> INodeImpl)],
+                            remaining))
+                
 
     /// Signal that this template extends a parent template.
     /// 
@@ -66,18 +75,22 @@ module internal LoaderTags =
                         node_list |> List.choose 
                             (fun node ->
                                 match node with
+                                | :? ParsingContextNode -> None
                                 | :? BlockNode -> Some node
                                 | _ -> 
-                                    // this is a warning
+//                                    if ((node :?> INode).NodeType = NodeType.Text)// && ((node.Token :?> TextToken).RawText = "")
+//                                    then None
+//                                    else
                                     if (context.Provider.Settings.[NDjango.Constants.EXCEPTION_IF_ERROR] :?> bool)
                                     then None
                                     else
-                                        Some ({
-                                                new ErrorNode(context, node.Token, 
-                                                    new Error(1, "All tags except 'block' tag inside inherited template are ignored"))
-                                                with 
-                                                    override x.nodelist = [node]
-                                            } :> INodeImpl)
+                                        raise (SyntaxError("All tags except 'block' tag inside inherited template are ignored", 
+                                                [({
+                                                    new  ErrorNode(context, Block(token), new Error(1, "All tags except 'block' tag inside inherited template are ignored"))
+                                                        with
+                                                            override x.nodelist = node_list
+                                                   } :> INodeImpl)],
+                                                remaining))
                             )   
                     
                     (({

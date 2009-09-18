@@ -329,6 +329,9 @@ type SyntaxError (message, nodes: seq<INodeImpl> option, pattern:INode list opti
     [<OverloadID("pattern")>]
     new (message, pattern) = new SyntaxError(message, None, Some pattern, None)
     
+    [<OverloadID("pattern, remaining")>]
+    new (message, pattern, remaining) = new SyntaxError(message, None, Some pattern, Some remaining)
+    
     /// list (sequence) of nodes related to the error
     member x.Nodes = match nodes with | Some n -> n | None -> seq []
     
