@@ -68,9 +68,11 @@ module internal LoaderTags =
                 match token.Args with
                 | parent::[] -> 
                     
+                    /// expression yielding the name of the parent block
                     let parent_name_expr = 
                         new FilterExpression(context, parent)
                         
+                    /// a list of all blocks in the template starting with the extends tag
                     let node_list = 
                         node_list |> List.choose 
                             (fun node ->
@@ -78,26 +80,21 @@ module internal LoaderTags =
                                 | :? ParsingContextNode -> None
                                 | :? BlockNode -> Some node
                                 | _ -> 
-//                                    if ((node :?> INode).NodeType = NodeType.Text)// && ((node.Token :?> TextToken).RawText = "")
-//                                    then None
-//                                    else
                                     if (context.Provider.Settings.[NDjango.Constants.EXCEPTION_IF_ERROR] :?> bool)
                                     then None
                                     else
-                                        raise (SyntaxError("All tags except 'block' tag inside inherited template are ignored", 
-                                                [({
-                                                    new  ErrorNode(context, Block(token), new Error(1, "All tags except 'block' tag inside inherited template are ignored"))
-                                                        with
-                                                            override x.nodelist = node_list
-                                                   } :> INodeImpl)],
-                                                remaining))
+                                        Some ({new ErrorNode
+                                                (context, 
+                                                 Block(token), 
+                                                 new Error(1, "All tags except 'block' tag inside inherited template are ignored"))
+                                                 with
+                                                    override x.nodelist = [node]
+                                                   } :> INodeImpl)
                             )   
                     
                     (({
                         new ExtendsNode(context, token, node_list, parent_name_expr) with
-                            override this.elements
-                                with get()=
-                                    (parent_name_expr :> INode) :: base.elements
+                            override this.elements = (parent_name_expr :> INode) :: base.elements
                        } :> INodeImpl), 
                        remaining)
                 | _ -> raise (SyntaxError (

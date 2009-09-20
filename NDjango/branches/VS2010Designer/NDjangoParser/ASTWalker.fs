@@ -38,8 +38,10 @@ module internal ASTWalker =
         /// Retrieves current character from the walker buffer, getting as necessary new walkers 
         /// from the nodes
         let rec getChar() = 
-            if walker.bufferIndex >= walker.buffer.Length then
+            if walker.bufferIndex >= walker.buffer.Length 
+            then
                 // processing of the buffer in the current walker is completed - get a new one
+                // and then get our character from the new buffer by recursive call to itself
                 match walker.nodes with
                 | [] ->
                     // we are done with the nodes of the current walker - pop the parent from the stack
@@ -55,7 +57,9 @@ module internal ASTWalker =
                 | node :: nodes ->
                     try
                         // get a new walker from the node at the head of the node list
-                        // and advance the list to the next node 
+                        // and advance the list to the next node
+                        if not <| node.GetType().Name.Equals("ParsingContextNode") then
+                            System.Diagnostics.Debug.WriteLine ("walking " + node.Token.DiagInfo )
                         walker <- node.walk manager {walker with nodes = nodes; buffer=""; bufferIndex = 0}
                     with
                         // intercept rendering errors and rethrow them with additional diagnostic info

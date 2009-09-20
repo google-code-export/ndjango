@@ -73,7 +73,7 @@ module internal ASTNodes =
             | Some (children: BlockNode list) -> 
                 match children with
                 | active::parents ->
-                    active.nodelist, (match parents with | [] -> [x] | _ -> parents), true
+                    active.nodelist, (*[x], true //*) (match parents with | [] -> [x] | _ -> parents), true
                 | [] -> x.nodelist, [], true
             | None -> x.nodelist, [], false
         
@@ -111,7 +111,8 @@ module internal ASTNodes =
                         |> List.of_seq ) @ unfold_nodes t
         | _ -> []
 
-        // even though the extends filters its node list, we still need to filter the flattened list because of nested blocks
+        // even though the extends filters its node list, 
+        // we still need to filter the flattened list because the list should also include nested blocks
         let blocks = Map.of_list <| List.choose 
                         (fun (node: INodeImpl) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
                         (unfold_nodes nodelist)
