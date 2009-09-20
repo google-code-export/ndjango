@@ -55,9 +55,15 @@ namespace NDjango.UnitTests
             lst.Add(new TestDescriptor("extends 01-bis", "{% extends 't1' %} skip1--{% block b1 %}the replacement{% endblock %}--skip2", null, ContextObjects.p("insert1--the replacement--insert2")));
             lst.Add(new TestDescriptor("extends 02", "{% extends \"t21\" %} skip1--{% block b1 %}the replacement1{% endblock %}{% block b2 %} the replacement2{% endblock %}--skip2", null, ContextObjects.p("insert1--the replacement1 the replacement2--insert2")));
             lst.Add(new TestDescriptor("extends 03", "{% extends \"t21\" %} skip1--{% block b1 %}the replacement1{% endblock %}--skip2", null, ContextObjects.p("insert1--the replacement1to be replaced22--insert2")));
-            lst.Add(new TestDescriptor("extends 04", "{% extends \"t21\" %} skip1--{% block b1 %}the replacement1++{{ block.super }}++{% endblock %}--skip2", null, ContextObjects.p("insert1--the replacement1++to be replaced21++to be replaced22--insert2")));
+            lst.Add(new TestDescriptor("extends 04", "{% extends \"t21\" %} skip1--{% block b1 %}the replacement1++{{ block.super }}++{% endblock %}--skip2", null, 
+                ContextObjects.p("insert1--the replacement1++to be replaced21++to be replaced22--insert2")));
+
+            lst.Add(new TestDescriptor("extends 04 - breaking parents", "{% extends \"t21-withif\" %} skip1--{% block b1 %}the replacement1++{{ block.super }}++{% endblock %}--skip2", null,
+                ContextObjects.p("insert1--the replacement1++to be replaced21++to be replaced22--insert2")));
 
             lst.Add(new TestDescriptor("extends 05", "{% extends \"t21middle\" %} {% block b2 %} child {% endblock %}", null, ContextObjects.p("text child text")));
+//            lst.Add(new TestDescriptor("extends 05", "{% extends \"t21middle\" %} {% block b2 %} child {% endblock %}", null, ContextObjects.p("text child text")));
+//            lst.Add(new TestDescriptor("extends 05-nested", "{% extends \"t21top\" %} {% block b3 %} {{block.super.super}} {% endblock %} {% block b4 %} *{{block.super}}* {% endblock %}", null, ContextObjects.p("text child text")));
             
             // Nested block tags
             lst.Add(new TestDescriptor("nestedblocks 01",

@@ -153,7 +153,7 @@ module internal If =
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (node_list_false |> Seq.map (fun node -> (node :?> INode)))
                     
         // this override is not used by the if node for rendering but is necessary for the blocks to work properly
-        //override x.nodelist = node_list_true @ node_list_false
+        override x.nodelist = node_list_true @ node_list_false
     
     [<NDjango.ParserNodes.Description("Outputs the content of enclosed tags based on expression evaluation result.")>]
     type Tag() =
