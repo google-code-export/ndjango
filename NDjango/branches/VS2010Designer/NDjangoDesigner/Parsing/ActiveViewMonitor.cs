@@ -6,6 +6,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.ApplicationModel.Environments;
+using Microsoft.VisualStudio.Text;
 
 namespace NDjango.Designer.Parsing
 {
@@ -22,9 +23,17 @@ namespace NDjango.Designer.Parsing
         void textView_GotAggregateFocus(object sender, EventArgs e)
         {
             IWpfTextView view = sender as IWpfTextView;
+            if (view == null)
+                return;
+
             NodeProvider provider;
-            if (view != null && view.TextBuffer.Properties.TryGetProperty(typeof(NodeProvider), out provider))
-                provider.ShowDiagnostics();
+            foreach (ITextBuffer buffer in view.BufferGraph.GetTextBuffers(b => true))
+                if (buffer.Properties.TryGetProperty(typeof(NodeProvider), out provider))
+                {
+                    provider.ShowDiagnostics();
+                    return;
+                }
+
         }
     }
 }
