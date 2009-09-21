@@ -33,11 +33,11 @@ namespace NDjango.Designer.Classifiers
         {
             SnapshotPoint point = position.BufferPosition;
 
-            List<IDjangoSnapshot> tags = provider.GetNodes(point, node => node.ContentType == ContentType.TagName);
-            IDjangoSnapshot selected = tags.Count == 0 ? null : tags[0];
+            List<DesignerNode> tags = provider.GetNodes(point, node => node.NodeType == NDjango.Interfaces.NodeType.TagName);
+            DesignerNode selected = tags.Count == 0 ? null : tags[0];
 
-            IDjangoSnapshot highlighted = null;
-            point.Snapshot.TextBuffer.Properties.TryGetProperty<IDjangoSnapshot>(typeof(Highlighter), out highlighted);
+            DesignerNode highlighted = null;
+            point.Snapshot.TextBuffer.Properties.TryGetProperty<DesignerNode>(typeof(Highlighter), out highlighted);
             if (selected != highlighted)
             {
                 point.Snapshot.TextBuffer.Properties[typeof(Highlighter)] = selected;

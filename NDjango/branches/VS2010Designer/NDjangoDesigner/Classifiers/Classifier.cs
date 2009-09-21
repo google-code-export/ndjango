@@ -77,9 +77,9 @@ namespace NDjango.Designer.Classifiers
             List<ClassificationSpan> classifications = new List<ClassificationSpan>();
 
             // create classifiers for currently selected tag (if any)
-            IDjangoSnapshot selection;
+            DesignerNode selection;
             if (span.Snapshot.TextBuffer.Properties
-                .TryGetProperty<IDjangoSnapshot>(typeof(Highlighter), out selection) && selection != null)
+                .TryGetProperty<DesignerNode>(typeof(Highlighter), out selection) && selection != null)
             {
                 
                 // colorize the selected tag name
@@ -91,7 +91,7 @@ namespace NDjango.Designer.Classifiers
                     );
 
                 // colorize the selected tag itself
-                IDjangoSnapshot tag = selection.Parent;
+                DesignerNode tag = selection.Parent;
                 classifications.Add(
                     new ClassificationSpan(
                         tag.SnapshotSpan,
@@ -100,10 +100,10 @@ namespace NDjango.Designer.Classifiers
                     );
 
                 // for every context defined in the tag
-                foreach (IDjangoSnapshot child in tag.Children)
+                foreach (DesignerNode child in tag.Children)
                 {
                     // colorize the context
-                    if (child.ContentType == ContentType.Context)
+                    if (child.NodeType == NodeType.ParsingContext)
                         classifications.Add(
                             new ClassificationSpan(
                                 child.ExtensionSpan,
@@ -111,10 +111,10 @@ namespace NDjango.Designer.Classifiers
                                 )
                             );
                     // locate the closing tag for context
-                    if (child.ContentType == ContentType.CloseTag)
+                    if (child.NodeType == NodeType.CloseTag)
                     {
-                        foreach (IDjangoSnapshot t in child.Children)
-                            if (t.ContentType == ContentType.TagName)
+                        foreach (DesignerNode t in child.Children)
+                            if (t.NodeType == NodeType.TagName)
                             {
                                 // colorize the closing tag name
                                 classifications.Add(
@@ -130,11 +130,11 @@ namespace NDjango.Designer.Classifiers
             }
 
             // create standard classifiers for tags
-            nodeProvider.GetNodes(span, node => node.ContentType != ContentType.Context)
+            nodeProvider.GetNodes(span, node => node.NodeType != NodeType.ParsingContext)
                 .ForEach(
                 node =>
                 {
-                    switch (node.Node.NodeType) {
+                    switch (node.NodeType) {
                         case NodeType.Marker:
                             classifications.Add(
                                 new ClassificationSpan(

@@ -27,7 +27,7 @@ namespace NDjango.Designer.CodeCompletion
         /// Starts at the beginning of the word and ends at the left most position of the user input
         /// </summary>
         private ITrackingSpan filterSpan;
-        private IDjangoSnapshot node;
+        private DesignerNode node;
         private List<Completion> completions;
         private List<Completion> completionBuilders;
 
@@ -36,7 +36,7 @@ namespace NDjango.Designer.CodeCompletion
         /// </summary>
         /// <param name="node"></param>
         /// <param name="point"></param>
-        internal CompletionSet(IDjangoSnapshot node, SnapshotPoint point)
+        internal CompletionSet(DesignerNode node, SnapshotPoint point)
             : base("Django Completions", null, null, null)
         {
             // calculate the span to be replaced with user selection
@@ -51,13 +51,15 @@ namespace NDjango.Designer.CodeCompletion
             this.node = node;
         }
 
+        protected DesignerNode Node { get { return node; } }
+
         /// <summary>
         /// Returns the list of completions for the node. Called only once the first time
         /// the list is accessed
         /// </summary>
         protected virtual List<Completion> NodeCompletions 
         {
-            get { return new List<Completion>(BuildCompletions(node.Node.Values, "", "")); }
+            get { return new List<Completion>(BuildCompletions(node.Values, "", "")); }
         }
         protected virtual List<Completion> NodeCompletionBuilders { get { return new List<Completion>(); } }
         protected virtual int FilterOffset { get { return 0; } }

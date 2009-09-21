@@ -59,10 +59,10 @@ namespace NDjango.Designer.CodeCompletion
                 return null;
 
             SnapshotPoint point = session.TriggerPoint.GetPoint(session.TriggerPoint.TextBuffer.CurrentSnapshot);
-            
-            List<IDjangoSnapshot> nodes =
+
+            List<DesignerNode> nodes =
                 nodeProviderBroker.GetNodeProvider(session.TriggerPoint.TextBuffer)
-                    .GetNodes(point, n => n.Node.Values.GetEnumerator().MoveNext());
+                    .GetNodes(point, n => n.Values.GetEnumerator().MoveNext());
 
             CompletionSet set = CreateCompletionSet(context, nodes, point);
 
@@ -73,7 +73,7 @@ namespace NDjango.Designer.CodeCompletion
 
         }
 
-        private CompletionSet CreateCompletionSet(CompletionContext context, List<IDjangoSnapshot> nodes, SnapshotPoint point)
+        private CompletionSet CreateCompletionSet(CompletionContext context, List<DesignerNode> nodes, SnapshotPoint point)
         {
             switch (context)
             {
@@ -84,10 +84,10 @@ namespace NDjango.Designer.CodeCompletion
                     return FilterCompletionSet.Create(nodes, point);
 
                 case CompletionContext.Other:
-                    IDjangoSnapshot node = nodes.FindLast(n => n.ContentType != ContentType.Context);
+                    DesignerNode node = nodes.FindLast(n => n.NodeType != NodeType.ParsingContext);
                     if (node == null)
                         return null;
-                    if (node.Node is ParserNodes.TagNameNode)
+                    if (node.NodeType == NodeType.TagName)
                         return new TagNameCompletionSet(node, point);
                     return new CompletionSet(node, point);
 
