@@ -38,8 +38,9 @@ namespace NDjango.Designer.Parsing
     {
         // it can take some time for the parser to build the token list.
         // for now let us initialize it to an empty list
-        private List<IDjangoSnapshot> nodes = new List<IDjangoSnapshot>();
+        private List<DesignerNode> nodes = new List<DesignerNode>();
         
+        // this lock is used to synchronize access to the nodes list
         private object node_lock = new object();
         private IParser parser;
         private ITextBuffer buffer;
@@ -130,10 +131,10 @@ namespace NDjango.Designer.Parsing
         private void rebuildNodes(object snapshotObject)
         {
             ITextSnapshot snapshot = (ITextSnapshot)snapshotObject;
-            List<IDjangoSnapshot> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
+            List<DesignerNode> nodes = parser.ParseTemplate(new SnapshotReader(snapshot))
                 .ToList()
-                    .ConvertAll<IDjangoSnapshot>
-                        (node => new NodeSnapshot(null, snapshot, (INode)node));
+                    .ConvertAll<DesignerNode>
+                        (node => new DesignerNode(null, snapshot, (INode)node));
             lock (node_lock)
             {
                 this.nodes = nodes;
@@ -150,13 +151,13 @@ namespace NDjango.Designer.Parsing
 
         internal void ShowDiagnostics()
         {
-            List<IDjangoSnapshot> nodes;
+            List<DesignerNode> nodes;
             lock (node_lock)
             {
                 nodes = this.nodes;
             }
             djangoDiagnostics.Clear();
-            nodes.ForEach(node=>node.ShowDiagnostics(djangoDiagnostics, filePath));
+            nodes.ForEach(node => node.ShowDiagnostics(djangoDiagnostics, filePath));
             djangoDiagnostics.FlushToTaskList();
         }
 
@@ -165,9 +166,9 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         /// <param name="snapshotSpan"></param>
         /// <returns></returns>
-        internal List<IDjangoSnapshot> GetNodes(ITextSnapshot snapshot)
+        internal List<DesignerNode> GetNodes(ITextSnapshot snapshot)
         {
-            List<IDjangoSnapshot> nodes;
+            List<DesignerNode> nodes;
             lock (node_lock)
             {
                 nodes = this.nodes;
@@ -175,7 +176,7 @@ namespace NDjango.Designer.Parsing
                 // just in case if while the tokens list was being rebuilt
                 // another modification was made
                 if (nodes.Count > 0 && this.nodes[0].SnapshotSpan.Snapshot != snapshot)
-                    this.nodes.ForEach(token => token.TranslateTo(snapshot));
+                    this.nodes.ForEach(node => node.TranslateTo(snapshot));
             }
 
             return nodes;
@@ -187,7 +188,7 @@ namespace NDjango.Designer.Parsing
         /// <param name="snapshotSpan"></param>
         /// <param name="predicate">the predicate controlling what nodes to include in the list</param>
         /// <returns></returns>
-        internal List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan, Predicate<IDjangoSnapshot> predicate)
+        internal List<DesignerNode> GetNodes(SnapshotSpan snapshotSpan, Predicate<DesignerNode> predicate)
         {
             return GetNodes(snapshotSpan, GetNodes(snapshotSpan.Snapshot))
                 .FindAll(predicate);
@@ -199,10 +200,10 @@ namespace NDjango.Designer.Parsing
         /// <param name="snapshotSpan"></param>
         /// <param name="nodes"></param>
         /// <returns></returns>
-        private List<IDjangoSnapshot> GetNodes(SnapshotSpan snapshotSpan, IEnumerable<IDjangoSnapshot> nodes)
+        private List<DesignerNode> GetNodes(SnapshotSpan snapshotSpan, IEnumerable<DesignerNode> nodes)
         {
-            List<IDjangoSnapshot> result = new List<IDjangoSnapshot>();
-            foreach (IDjangoSnapshot node in nodes)
+            List<DesignerNode> result = new List<DesignerNode>();
+            foreach (DesignerNode node in nodes)
             {
                 if (node.SnapshotSpan.IntersectsWith(snapshotSpan) || node.ExtensionSpan.IntersectsWith(snapshotSpan))
                     result.Add(node);
@@ -217,7 +218,7 @@ namespace NDjango.Designer.Parsing
         /// <param name="point">point identifiying the desired node</param>
         /// <param name="predicate">the predicate controlling what nodes to include in the list</param>
         /// <returns></returns>
-        internal List<IDjangoSnapshot> GetNodes(SnapshotPoint point, Predicate<IDjangoSnapshot> predicate)
+        internal List<DesignerNode> GetNodes(SnapshotPoint point, Predicate<DesignerNode> predicate)
         {
             return GetNodes(new SnapshotSpan(point.Snapshot, point.Position, 0), predicate);
         }

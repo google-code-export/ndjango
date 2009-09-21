@@ -1,43 +1,21 @@
-﻿/****************************************************************************
- * 
- *  NDjango Parser Copyright © 2009 Hill30 Inc
- *
- *  This file is part of the NDjango Designer.
- *
- *  The NDjango Parser is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  The NDjango Parser is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with NDjango Parser.  If not, see <http://www.gnu.org/licenses/>.
- *  
- ***************************************************************************/
-
-using Microsoft.VisualStudio.Text;
-using NDjango.Interfaces;
+﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using NDjango.Interfaces;
+using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace NDjango.Designer.Parsing
 {
-    /// <summary>
-    /// Maps a ndjango syntax node to the corresponding snapshotspan in the snapshot
-    /// </summary>
-    class NodeSnapshot :IDjangoSnapshot
+    class DesignerNode : INode
     {
+        private INode node;
         private SnapshotSpan snapshotSpan;
         private SnapshotSpan extensionSpan;
-        private INode node;
-        private List<NodeSnapshot> children = new List<NodeSnapshot>();
-        public IDjangoSnapshot Parent { get; private set; }
+        private List<DesignerNode> children = new List<DesignerNode>();
 
-        public NodeSnapshot(NodeSnapshot parent, ITextSnapshot snapshot, INode node)
+        public DesignerNode(DesignerNode parent, ITextSnapshot snapshot, INode node)
         {
             Parent = parent;
             this.node = node;
@@ -74,8 +52,10 @@ namespace NDjango.Designer.Parsing
             }
             foreach (IEnumerable<INode> list in node.Nodes.Values)
                 foreach (INode child in list)
-                    children.Add(new NodeSnapshot(this, snapshot, child));
+                    children.Add(new DesignerNode(this, snapshot, child));
         }
+
+        public DesignerNode Parent { get; private set; }
 
         /// <summary>
         /// Span covering the source the INode was created from
@@ -88,17 +68,6 @@ namespace NDjango.Designer.Parsing
         /// </summary>
         public SnapshotSpan ExtensionSpan { get { return extensionSpan; } }
 
-        public IEnumerable<IDjangoSnapshot> Children 
-        { 
-            get 
-            {
-                foreach (NodeSnapshot child in children)
-                    yield return child; 
-            } 
-        }
-
-        public INode Node { get { return node; } }
-
         /// <summary>
         /// Translates the NodeSnapshot to a newer snapshot
         /// </summary>
@@ -107,7 +76,7 @@ namespace NDjango.Designer.Parsing
         {
             snapshotSpan = snapshotSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
             extensionSpan = extensionSpan.TranslateTo(snapshot, SpanTrackingMode.EdgeExclusive);
-            foreach (NodeSnapshot child in children)
+            foreach (DesignerNode child in children)
                 child.TranslateTo(snapshot);
         }
 
@@ -132,25 +101,61 @@ namespace NDjango.Designer.Parsing
                     node.ErrorMessage.Message + "\n"
                     );
             }
-            foreach (NodeSnapshot child in children)
+            foreach (DesignerNode child in children)
                 child.ShowDiagnostics(djangoDiagnostics, filePath);
         }
 
-        public ContentType ContentType
+        public List<DesignerNode> Children { get { return children; } }
+
+        public ParsingContext ParsingContext 
         {
             get 
             {
-                switch (node.NodeType)
-                {
-                    case NodeType.Construct: return ContentType.Tag;
-                    case NodeType.CloseTag: return ContentType.CloseTag;
-                    case NodeType.TagName: return ContentType.TagName;
-                    case NodeType.FilterName: return ContentType.FilterName;
-                    case NodeType.ParsingContext: return ContentType.Context;
-                    default: return ContentType.Default;
-                }
+                if (node is NDjango.ParserNodes.ParsingContextNode)
+                    return (node as NDjango.ParserNodes.ParsingContextNode).Context;
+                if (node is NDjango.ParserNodes.TagNameNode)
+                    return (node as NDjango.ParserNodes.TagNameNode).Context;
+                throw new Exception("Context - not implemented");
             }
         }
 
+        #region INode Members
+
+        public string Description
+        {
+            get { return node.Description; }
+        }
+
+        public Error ErrorMessage
+        {
+            get { return node.ErrorMessage; }
+        }
+
+        public int Length
+        {
+            get { return node.Length; }
+        }
+
+        public NodeType NodeType
+        {
+            get { return node.NodeType; }
+        }
+
+        public IDictionary<string, IEnumerable<INode>> Nodes
+        {
+            get { return node.Nodes; }
+        }
+
+        public int Position
+        {
+            get { return node.Position; }
+        }
+
+        public IEnumerable<string> Values
+        {
+            get { return node.Values; }
+        }
+
+        #endregion
     }
 }

@@ -34,11 +34,11 @@ namespace NDjango.Designer.QuickInfo
     [Name("NDjango Completion Controller")]
     [Order]
     [ContentType(Constants.NDJANGO)]
-    internal class CompletionControllerProvider : IIntellisenseControllerProvider
+    internal class ControllerProvider : IIntellisenseControllerProvider
     {
 
         [Import(typeof(IQuickInfoBrokerMapService))]
-        private IQuickInfoBrokerMapService brokerMapService { get; set; }
+        internal IQuickInfoBrokerMapService brokerMapService { get; set; }
 
         [Import]
         internal INodeProviderBroker nodeProviderBroker { get; set; }
@@ -56,7 +56,7 @@ namespace NDjango.Designer.QuickInfo
             // There may not be a broker for any of the subject buffers for this text view.  This can happen if there are no providers available.
             if (brokerCreated)
             {
-                return new Controller(nodeProviderBroker, subjectBuffers, textView, brokerMapService, context);
+                return new Controller(this, subjectBuffers, textView, context);
             }
 
             return null;

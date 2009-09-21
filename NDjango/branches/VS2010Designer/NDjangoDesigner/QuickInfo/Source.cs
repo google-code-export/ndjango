@@ -39,7 +39,6 @@ namespace NDjango.Designer.QuickInfo
 
         public Source(INodeProviderBroker nodeProviderBroker)
         {
-            // TODO: Complete member initialization
             this.nodeProviderBroker = nodeProviderBroker;
         }
         /// <summary>
@@ -61,22 +60,22 @@ namespace NDjango.Designer.QuickInfo
             SnapshotPoint point = session.TriggerPoint.GetPoint(session.TriggerPoint.TextBuffer.CurrentSnapshot);
             NodeProvider nodeProvider = nodeProviderBroker.GetNodeProvider(point.Snapshot.TextBuffer);
 
-            List<IDjangoSnapshot> quickInfoNodes = nodeProvider
-                .GetNodes(point, node => node.ContentType != ContentType.Context);
+            List<DesignerNode> quickInfoNodes = nodeProvider
+                .GetNodes(point, node => node.NodeType != NodeType.ParsingContext);
 
-            if (quickInfoNodes.Count > 0)
+            if (quickInfoNodes.Count > 0 && !session.Properties.ContainsProperty(typeof(Source)))
             {
                 string errorSeparator = "\nError:";
                 quickInfoNodes.ForEach(
                     node =>
                     {
                         // include the node description at the top of the list
-                        if (!String.IsNullOrEmpty(node.Node.Description))
-                            message.Insert(0, node.Node.Description + "\n");
-                        if (node.Node.ErrorMessage.Severity >= 0)
+                        if (!String.IsNullOrEmpty(node.Description))
+                            message.Insert(0, node.Description + "\n");
+                        if (node.ErrorMessage.Severity >= 0)
                         {
                             // include the error message text at the bottom
-                            message.Append(errorSeparator + "\n\t" + node.Node.ErrorMessage.Message);
+                            message.Append(errorSeparator + "\n\t" + node.ErrorMessage.Message);
                             errorSeparator = "";
                         }
                         if (node.SnapshotSpan.Length > length)
@@ -85,6 +84,7 @@ namespace NDjango.Designer.QuickInfo
                             position = node.SnapshotSpan.Start;
                     }
                         );
+                session.Properties.AddProperty(typeof(Source), null);
             }
 
             applicableToSpan = session.SubjectBuffer.CurrentSnapshot.CreateTrackingSpan(

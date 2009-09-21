@@ -10,24 +10,21 @@ namespace NDjango.Designer.CodeCompletion
 {
     class FilterCompletionSet : CompletionSet
     {
-        internal static CompletionSet Create(List<IDjangoSnapshot> nodes, SnapshotPoint point)
+        internal static CompletionSet Create(List<DesignerNode> nodes, SnapshotPoint point)
         {
-            IDjangoSnapshot node = nodes.FindLast(n => n.ContentType == ContentType.Context);
+            DesignerNode node = nodes.FindLast(n => n.NodeType == NDjango.Interfaces.NodeType.ParsingContext);
             if (node == null)
                 return null;
             return new FilterCompletionSet(node, point);
         }
 
-        ParserNodes.ParsingContextNode node;
-        private FilterCompletionSet(IDjangoSnapshot node, SnapshotPoint point)
+        private FilterCompletionSet(DesignerNode node, SnapshotPoint point)
             : base(node, point)
-        {
-            this.node = node.Node as ParserNodes.ParsingContextNode;
-        }
+        { }
 
         protected override List<Completion> NodeCompletions
         {
-            get { return new List<Completion>(BuildCompletions(node.Context.Filters, "|", "")); }
+            get { return new List<Completion>(BuildCompletions(Node.ParsingContext.Filters, "|", "")); }
         }
 
         protected override int FilterOffset { get { return 1; } }

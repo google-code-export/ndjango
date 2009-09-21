@@ -120,6 +120,7 @@ namespace NDjango.Designer.Parsing
             {
                 case "text":
                 case "HTML":
+                case "XML":
                     return true;
                 default: return false;
             }
@@ -136,7 +137,6 @@ namespace NDjango.Designer.Parsing
                 if (!initialized)
                 {
                     djangoDiagnostics = GetOutputPane(buffer);
-                    vsTextManager = GetService<IVsTextManager>(buffer, typeof(SVsTextManager));
                     initialized = true;
                 }
 
@@ -150,7 +150,6 @@ namespace NDjango.Designer.Parsing
         }
         bool initialized = false;
         IVsOutputWindowPane djangoDiagnostics = null;
-        IVsTextManager vsTextManager;
 
         public IVsOutputWindowPane GetOutputPane(ITextBuffer textBuffer)
         {

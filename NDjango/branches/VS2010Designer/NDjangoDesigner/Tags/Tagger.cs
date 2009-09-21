@@ -52,9 +52,9 @@ namespace NDjango.Designer.Tags
         {
             foreach (SnapshotSpan span in spans)
             {
-                foreach (NodeSnapshot node in nodeProvider.GetNodes(span, node => node.ContentType != ContentType.Context))
+                foreach (DesignerNode node in nodeProvider.GetNodes(span, node => node.NodeType != NDjango.Interfaces.NodeType.ParsingContext))
                 {
-                    if (node.Node.ErrorMessage.Severity > -1)
+                    if (node.ErrorMessage.Severity > -1)
                         yield return new TagSpan<Constants.ErrorTag>(node.SnapshotSpan, new Constants.ErrorTag());
                 }
             }

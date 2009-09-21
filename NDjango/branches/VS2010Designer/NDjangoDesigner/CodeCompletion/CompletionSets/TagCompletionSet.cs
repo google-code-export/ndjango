@@ -10,29 +10,27 @@ namespace NDjango.Designer.CodeCompletion
 {
     class TagCompletionSet : CompletionSet
     {
-        internal static CompletionSet Create(List<IDjangoSnapshot> nodes, SnapshotPoint point)
+        internal static CompletionSet Create(List<DesignerNode> nodes, SnapshotPoint point)
         {
-            IDjangoSnapshot node = nodes.FindLast(n => n.ContentType == ContentType.Context);
+            DesignerNode node = nodes.FindLast(n => n.NodeType == NDjango.Interfaces.NodeType.ParsingContext);
             if (node == null)
                 return null;
             return new TagCompletionSet(node, point);
         }
 
-        ParserNodes.ParsingContextNode node;
-        private TagCompletionSet(IDjangoSnapshot node, SnapshotPoint point)
+        private TagCompletionSet(DesignerNode node, SnapshotPoint point)
             : base (node, point)
         {
-            this.node = node.Node as NDjango.ParserNodes.ParsingContextNode;
         }
 
         protected override List<Completion> NodeCompletions
         {
-            get { return new List<Completion>(BuildCompletions(node.Context.Tags)); }
+            get { return new List<Completion>(BuildCompletions(Node.ParsingContext.Tags)); }
         }
 
         protected override List<Completion> NodeCompletionBuilders
         {
-            get { return new List<Completion>(BuildCompletions(node.Context.TagClosures)); }
+            get { return new List<Completion>(BuildCompletions(Node.ParsingContext.TagClosures)); }
         }
 
         private IEnumerable<Completion> BuildCompletions(IEnumerable<string> values)
