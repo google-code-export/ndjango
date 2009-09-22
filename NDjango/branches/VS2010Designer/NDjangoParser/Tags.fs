@@ -45,13 +45,9 @@ module internal Misc =
                 let fail (fail_token:TextToken) =
                         raise (SyntaxError(
                                 "invalid arguments for 'Autoescape' tag", 
-                                (Seq.of_list [({
-                                                new  ErrorNode(context, Text(token), new Error(1, "invalid arguments for 'Autoescape' tag"))
-                                                    with
-                                                        override x.nodelist = nodes
-                                                        override x.elements = (new KeywordNode(fail_token, ["on";"off"]) :> INode) :: base.elements
-                                                } :> INodeImpl)]),
-                                remaining
+                                Some (Seq.of_list nodes),
+                                Some [(new KeywordNode(fail_token, ["on";"off"]) :> INode)],
+                                Some remaining
                                 ))
 
                 let autoescape_flag = 
@@ -325,11 +321,7 @@ module internal Misc =
 
                 | _ -> raise (SyntaxError (
                                 "'spaceless' tag should not have any arguments",
-                                [({
-                                        new  ErrorNode(context, Block(token), new Error(2, "'spaceless' tag should not have any arguments"))
-                                            with
-                                                override x.nodelist = nodes
-                                      } :> INodeImpl)],
+                                nodes,
                                 remaining))
                 
                 
@@ -449,11 +441,7 @@ module internal Misc =
                        remaining)
                 | _ -> raise (SyntaxError (
                                 "'with' expected format is 'value as name'",
-                                [({
-                                        new  ErrorNode(context, Block(token), new Error(2, "'with' expected format is 'value as name'"))
-                                            with
-                                                override x.nodelist = nodes
-                                      } :> INodeImpl)],
+                                nodes,
                                 remaining))
 
 module Abstract =

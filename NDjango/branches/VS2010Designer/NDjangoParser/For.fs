@@ -259,11 +259,7 @@ module internal For =
                             syntax,
                             true
                         | _ -> raise (SyntaxError ("malformed 'for' tag",
-                                        [({
-                                            new  ErrorNode(context, Block(token), new Error(2, "malformed 'for' tag"))
-                                            with
-                                                override x.nodelist = List.append node_list_body node_list_empty
-                                          } :> INodeImpl)],
+                                        List.append node_list_body node_list_empty,
                                         remaining2))
                 let enumExpr = FilterExpression(context, enumerator)
                 let variables = variables |> List.rev |>  List.fold (fun l item -> (List.append l (Array.to_list( item.RawText.Split([|','|], StringSplitOptions.RemoveEmptyEntries))))) []  

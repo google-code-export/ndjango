@@ -76,11 +76,7 @@ module internal Filter =
                     (new FilterNode(context, token, filter_expr, node_list) :> INodeImpl), remaining
                 | _ -> raise (SyntaxError (
                                 "'filter' tag requires one argument",
-                                [({
-                                        new  ErrorNode(context, Block(token), new Error(2, "'filter' tag requires one argument"))
-                                            with
-                                                override x.nodelist = node_list
-                                      } :> INodeImpl)],
+                                node_list,
                                 remaining))
                 
                

@@ -115,7 +115,8 @@ module internal ASTNodes =
         // we still need to filter the flattened list because the list should also include nested blocks
         let blocks = Map.of_list <| List.choose 
                         (fun (node: INodeImpl) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
-                        (unfold_nodes nodelist)
+                        /// this nodelist will have some ParsingContextNodes, therefore we need to filter these nodes.
+                        (nodelist |> List.choose(fun node -> match node with | :? ParsingContextNode -> None | _ -> Some node) |> unfold_nodes)
                               
 
         let add_if_missing key value map = 
