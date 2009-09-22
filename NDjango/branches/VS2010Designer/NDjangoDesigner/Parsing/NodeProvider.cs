@@ -67,9 +67,9 @@ namespace NDjango.Designer.Parsing
             this.parser = parser;
             this.buffer = buffer;
             filePath = ((ITextDocument)buffer.Properties[typeof(ITextDocument)]).FilePath;
-            rebuildNodes(buffer.CurrentSnapshot);
+
             buffer.Changed += new EventHandler<TextContentChangedEventArgs>(buffer_Changed);
-            // we need to run rebuildNodes on a separaet thread. Using timer
+            // we need to run rebuildNodes on a separate thread. Using timer
             // for this seems to be an overkill, but we need the timer anyway so - why not
             parserTimer =
                 new Timer(rebuildNodes, buffer.CurrentSnapshot, 0, Timeout.Infinite);
