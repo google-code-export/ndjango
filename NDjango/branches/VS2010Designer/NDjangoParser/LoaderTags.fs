@@ -45,11 +45,7 @@ module internal LoaderTags =
                 | _ ->
                     let node_list, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["endblock"]
                     raise (SyntaxError("block tag takes only one argument", 
-                            [({
-                                new  ErrorNode(context, Block(token), new Error(2, "block tag takes only one argument"))
-                                    with
-                                        override x.nodelist = node_list
-                               } :> INodeImpl)],
+                            node_list,
                             remaining))
                 
 
@@ -77,15 +73,16 @@ module internal LoaderTags =
                         node_list |> List.choose 
                             (fun node ->
                                 match node with
-                                | :? ParsingContextNode -> None
+                                /// we need ParsingContextNode in the nodelist for code completion issues
+                                | :? ParsingContextNode -> Some node
                                 | :? BlockNode -> Some node
+                                | :? INode when (node :?> INode).NodeType = NodeType.Text -> Some node
                                 | _ -> 
                                     if (context.Provider.Settings.[NDjango.Constants.EXCEPTION_IF_ERROR] :?> bool)
                                     then None
                                     else
                                         Some ({new ErrorNode
-                                                (context, 
-                                                 Block(token), 
+                                                (Block(token), 
                                                  new Error(1, "All tags except 'block' tag inside inherited template are ignored"))
                                                  with
                                                     override x.nodelist = [node]
@@ -95,16 +92,13 @@ module internal LoaderTags =
                     (({
                         new ExtendsNode(context, token, node_list, parent_name_expr) with
                             override this.elements = (parent_name_expr :> INode) :: base.elements
+                            override this.nodelist = node_list
                        } :> INodeImpl), 
                        remaining)
                 | _ -> raise (SyntaxError (
                                  "extends tag takes only one argument",
-                                 [({
-                                        new  ErrorNode(context, Block(token), new Error(2, "extends tag takes only one argument"))
-                                            with
-                                                override x.nodelist = node_list
-                                   } :> INodeImpl)],
-                                    remaining))
+                                 node_list,
+                                 remaining))
 
     /// Loads a template and renders it with the current context. This is a way of "including" other templates within a template.
     ///

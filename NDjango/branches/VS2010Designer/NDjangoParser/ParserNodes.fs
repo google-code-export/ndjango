@@ -235,9 +235,13 @@ module public ParserNodes =
         override x.node_type = NodeType.CloseTag   
 
         override x.Description = "end of the nested node list"
+    
+    
+         
+         
             
     /// Error nodes
-    type ErrorNode(context: ParsingContext, token: Token, error: Error) =
+    type ErrorNode(token: Token, error: Error) =
         inherit Node(token)
 
         // in some cases (like an empty tag) we need this for proper colorization

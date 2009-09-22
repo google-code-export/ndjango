@@ -184,7 +184,6 @@ module internal If =
         interface ITag with 
             member this.Perform token context tokens =
 
-
                 let node_list_true, remaining = (context.Provider :?> IParser).Parse (Some token) tokens ["else"; "endif"]
                 let node_list_false, remaining2 =
                     match node_list_true.[node_list_true.Length-1].Token with
@@ -201,11 +200,7 @@ module internal If =
                     with
                     | :? SyntaxError as e ->
                             raise (SyntaxError(e.Message, 
-                                    [({
-                                        new  ErrorNode(context, Block(token), new Error(2, e.Message))
-                                            with
-                                                override x.nodelist = List.append node_list_true node_list_false
-                                      } :> INodeImpl)],
+                                    node_list_true @ node_list_false,
                                     remaining2))
                     |_ -> rethrow()
                   

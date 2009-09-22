@@ -138,7 +138,37 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
     /// converts an exception into a syntax node to make diagnostic messages the exception
     /// carries available to the designer. The exception can carry additional infromation
     /// about the elements of the node at fault in form of additional nodes. It is
-    /// passed on to the designer by making these nodes children of the error node
+    /// passed on to the designer by making these nodes children of the error node.
+    /// This function is used inside 'parse_token' function, where we need just one node,
+    /// carrying all necessary information. All already parsed nodes are contained 
+    /// in the nodelist of just created ErrorNode. 
+    let generate_error_node_for_tag (ex: System.Exception) token context tokens =
+        match (token, ex) with
+        | (Some blockToken, (:? SyntaxError as syntax_error)) ->
+            if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
+            then
+                raise (SyntaxException(syntax_error.Message, Block blockToken))
+            else
+                Some ( ({
+                            new ErrorNode(Block blockToken, new Error(2, syntax_error.Message))
+                                with
+                                    /// Add TagName node to the list of elements
+                                    override x.elements =
+                                        (new TagNameNode(context, Text blockToken.Verb) :> INode)
+                                         :: syntax_error.Pattern @ base.elements
+                                    /// Add parsed nodes, gathered from syntax_error to the nodelist of
+                                    /// this ErrorNode
+                                    override x.nodelist = List.of_seq syntax_error.Nodes
+                            } :> INodeImpl), 
+                        match syntax_error.Remaining with
+                        | Some remaining -> remaining
+                        | None -> tokens
+                        )
+        |_  -> None
+        
+    ///This function is used inside 'parse' function, where we need the list of nodes.
+    ///The head of this list is a node with token necessary to create ParsingContextNode.
+    ///We also create ErrorNode with some diag information, but nodelist of this ErrorNode is empty
     let generate_diag_for_tag (ex: System.Exception) token context tokens =
         match (token, ex) with
         | (Some blockToken, (:? SyntaxError as syntax_error)) ->
@@ -148,19 +178,18 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             else
                 Some ( List.of_seq syntax_error.Nodes @
                         [({
-                            new ErrorNode(context, Block blockToken, new Error(2, syntax_error.Message))
+                            new ErrorNode(Block blockToken, new Error(2, syntax_error.Message))
                                 with
                                     /// Add TagName node to the list of elements
                                     override x.elements =
                                         (new TagNameNode(context, Text blockToken.Verb) :> INode)
                                          :: syntax_error.Pattern @ base.elements
-                            } :> INodeImpl)], 
+                            } :> INodeImpl)],
                         match syntax_error.Remaining with
                         | Some remaining -> remaining
                         | None -> tokens
                         )
-        |_  -> None
-        
+        |_  -> None    
     /// parses a single token, returning an AST TagNode list. this function may advance the token stream if an 
     /// element consuming multiple tokens is encountered. In this scenario, the TagNode list returned will
     /// contain nodes for all of the advanced tokens.
@@ -203,10 +232,10 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                     // here we need to squeeze all available information into the mold
                     // of the return value expected from this function. In other words 
                     // the node list returned by diag here should always have only one node
-                    match generate_diag_for_tag ex (Some block) context tokens with
+                    match generate_error_node_for_tag ex (Some block) context tokens with
                     | Some result -> 
-                        let nodes, remainder = result
-                        List.hd nodes, remainder
+                        let node, remainder = result
+                        node, remainder
                     | None -> rethrow()
         | Lexer.Comment comment -> 
             // include it in the output to cover all scenarios, but don't actually bring the comment across
@@ -219,7 +248,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             if (settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then raise (SyntaxException(error.ErrorMessage, Error error))
             ({
-                        new ErrorNode(context, token, new Error(2, error.ErrorMessage))
+                        new ErrorNode(token, new Error(2, error.ErrorMessage))
                             with
                                 override x.elements =
                                     match error.RawText.[0..1] with
