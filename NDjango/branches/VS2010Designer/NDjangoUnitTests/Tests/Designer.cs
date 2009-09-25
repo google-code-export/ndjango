@@ -53,7 +53,7 @@ namespace NDjango.UnitTests
             SetupStandartdValues();
 
 
-            /* IF */
+            /* IF BLOCK */
             NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}"
                 , Nodes
                 (
@@ -183,6 +183,59 @@ namespace NDjango.UnitTests
                 ));
             /* END OF FOR BLOCK */
 
+            /* IFEQUAL */
+            NewTest("ifequal-tag-designer", "{% ifequal foo bar %}yes{% else %}no{% endifequal %}"
+                , Nodes
+                (
+                    StandardNode(0, 52),
+                    Node(34, 18, "endifequal"),
+                    StandardNode(39, 10),
+                    Node(21, 13, "else", "endifequal"),
+                    StandardNode(27, 4),
+                    StandardNode(3, 7)
+                ));
+            NewTest("ifequal-tag-designer-error1", "{% ifequal foo bar %}yes{% else %}no"
+                , Nodes
+                (
+                    StandardNode(0, 21),
+                    Node(34, 2, "endifequal"),
+                    ErrorNode(0, 21, EmptyList, 2, "Missing closing tag. Available tags: endifequal"),
+                    StandardNode(3, 7),
+                    Node(21, 13, "else", "endifequal"),
+                    StandardNode(27, 4),
+                    StandardNode(3, 7)
+                ));
+            NewTest("ifequal-tag-designer-error2", "{% ifequal foo %}% endifequal %}"
+                , Nodes
+                (
+                    StandardNode(0, 17),
+                    ErrorNode(0, 17, EmptyList, 2, "'ifequal' takes two arguments"),
+                    Node(17, 15, "else", "endifequal"),
+                    ErrorNode(0, 17, EmptyList, 2, "Missing closing tag. Available tags: endifequal"),
+                    StandardNode(3, 7),
+                    StandardNode(3, 7)
+                ));
+            NewTest("ifequal-tag-designer-error3", "{% ifequal %}"
+                , Nodes
+                (
+                    StandardNode(0, 13),
+                    ErrorNode(0, 13, EmptyList, 2, "'ifequal' takes two arguments"),
+                    Node(13, 0, "else", "endifequal"),
+                    ErrorNode(0, 13, EmptyList, 2, "Missing closing tag. Available tags: endifequal"),
+                    StandardNode(3, 7),
+                    StandardNode(3, 7)
+                ));
+            NewTest("ifequal-tag-designer-error4", "{% ifequal foo bar %}yes{% mess %}no{% endifequal %}"
+                , Nodes
+                (
+                    StandardNode(0, 52),
+                    Node(21, 31, "else", "endifequal"),
+                    ErrorNode(24, 10, EmptyList, 2, "Unknown tag: mess"),
+                    StandardNode(27, 4),
+                    StandardNode(39, 10),
+                    StandardNode(3, 7)
+                ));
+            /* END OF IFEQUAL BLOCK */
 
             NewTest("cycle-tag-designer", "{% cycle a,b,c as abc %}{% cycle abc %}{% cycle abc %}"
                 , Nodes
