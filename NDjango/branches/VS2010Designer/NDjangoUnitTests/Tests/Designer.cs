@@ -119,10 +119,20 @@ namespace NDjango.UnitTests
                    StandardNode(28, 4),
                    StandardNode(3, 2)
                ));
-
+            /* END OF IF BLOCK /*
 
             /* FOR BLOCK */
-            NewTest("for-tag-designer", "{% for a, b in c %}whatever{% endfor %}"
+            NewTest("for-tag-designer", "{% for a, b in c %}whatever{% empty %} {% endfor %}"
+                , Nodes
+                (
+                    StandardNode(0, 51),
+                    Node(38, 13, "endfor"),
+                    StandardNode(42, 6),
+                    Node(19, 19, "empty", "endfor"),
+                    StandardNode(30, 5),
+                    StandardNode(3, 3)
+                ));
+            NewTest("for-tag-designer2", "{% for a, b in c %}whatever{% endfor %}"
                 , Nodes
                 (
                     StandardNode(0, 39),
@@ -130,6 +140,49 @@ namespace NDjango.UnitTests
                     StandardNode(30, 6),
                     StandardNode(3, 3)
                 ));
+            NewTest("for-tag-designer-error1", "{% for a, b in c %}whatever{% empty %}"
+                , Nodes
+                (
+                    StandardNode(0, 19),
+                    Node(38, 0, "endfor"),
+                    StandardNode(0, 19),
+                    StandardNode(3, 3),
+                    Node(19, 19, "empty", "endfor"),
+                    StandardNode(30, 5),
+                    StandardNode(3, 3)
+                ));
+            NewTest("for-tag-designer-error2", "{% for a, b c %}whatever{% empty %}"
+                , Nodes
+                (
+                    StandardNode(0, 16),
+                    ErrorNode(0, 16, EmptyList, 2, "malformed 'for' tag"),
+                    Node(16, 19, "empty", "endfor"),
+                    StandardNode(27, 5),
+                    Node(35, 0, "endfor"),
+                    ErrorNode(0, 16, EmptyList, 2, "Missing closing tag. Available tags: endfor"),
+                    StandardNode(3, 3),
+                    StandardNode(3, 3)
+                ));
+            NewTest("for-tag-designer-error3", "{% for a, b c %}whatever {% endfor %}"
+                , Nodes
+                (
+                    StandardNode(0, 37),
+                    ErrorNode(0, 16, EmptyList, 2, "malformed 'for' tag"),
+                    Node(16, 21, "empty", "endfor"),
+                    StandardNode(28, 6),
+                    StandardNode(3, 3)
+                ));
+            NewTest("for-tag-designer-error4", "{% for a, b in c d %}whatever{% endfor %}"
+                , Nodes
+                (
+                    StandardNode(0, 41),
+                    ErrorNode(0, 21, EmptyList, 2, "malformed 'for' tag"),
+                    Node(21, 20, "empty", "endfor"),
+                    StandardNode(32, 6),
+                    StandardNode(3, 3)
+                ));
+            /* END OF FOR BLOCK */
+
 
             NewTest("cycle-tag-designer", "{% cycle a,b,c as abc %}{% cycle abc %}{% cycle abc %}"
                 , Nodes
