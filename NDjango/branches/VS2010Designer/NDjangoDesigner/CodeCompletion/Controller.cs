@@ -201,9 +201,11 @@ namespace NDjango.Designer.CodeCompletion
         void OnActiveSessionCommitted(object sender, System.EventArgs e)
         {
             detachKeyboardFilter();
-            if (activeSession.SelectedCompletionSet.SelectionStatus.Completion.InsertionText.EndsWith("%}"))
+            string just_inserted = activeSession.SelectedCompletionSet.SelectionStatus.Completion.InsertionText;
+            if (just_inserted.EndsWith("%}") || just_inserted.EndsWith("}}"))
             {
                 var textView = activeSession.TextView;
+                textView.Caret.MoveToPreviousCaretPosition();
                 textView.Caret.MoveToPreviousCaretPosition();
                 textView.Caret.MoveToPreviousCaretPosition();
             }

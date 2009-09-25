@@ -80,6 +80,9 @@ namespace NDjango.Designer.CodeCompletion
                 case CompletionContext.Tag:
                     return TagCompletionSet.Create(nodes, point);
 
+                case CompletionContext.Variable:
+                    return VariableCompletionSet.Create(nodes, point);
+
                 case CompletionContext.FilterName:
                     return FilterCompletionSet.Create(nodes, point);
 
