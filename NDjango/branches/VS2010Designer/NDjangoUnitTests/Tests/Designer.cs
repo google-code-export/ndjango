@@ -52,6 +52,8 @@ namespace NDjango.UnitTests
         {
             SetupStandartdValues();
 
+
+            /* IF */
             NewTest("if-tag-designer", "{% if foo %}yes{% else %}no{% endif %}"
                 , Nodes
                 (
@@ -62,6 +64,64 @@ namespace NDjango.UnitTests
                     StandardNode(18, 4),
                     StandardNode(3, 2)
                 ));
+            NewTest("if-tag-designer-error1", "{% if %}yes{% else %}no{% endif %}"
+                , Nodes
+                (
+                    StandardNode(0, 34),
+                    ErrorNode(0, 8, EmptyList, 2, "invalid conditional expression in 'if' tag"),
+                    Node(8, 13, "else", "endif"),
+                    StandardNode(14, 4),
+                    Node(21, 13, "endif"),
+                    StandardNode(26, 5),
+                    StandardNode(3, 2)
+                ));
+            NewTest("if-tag-designer", "{% if foo or b or c %}yes{% else %}no{% endif %}"
+                , Nodes
+                (
+                    StandardNode(0, 48),
+                    Node(35, 13, "endif"),
+                    StandardNode(40, 5),
+                    Node(22, 13, "else", "endif"),
+                    StandardNode(28, 4),
+                    StandardNode(3, 2)
+                ));
+            NewTest("if-tag-designer-error2", "{% if foo or b and c %}yes{% else %}no{% endif %}"
+                , Nodes
+                (
+                    StandardNode(0, 49),
+                    ErrorNode(0, 27, EmptyList, 2, "'if' tags can't mix 'and' and 'or'"),
+                    Node(23, 13, "else", "endif"),
+                    StandardNode(29, 4),
+                    Node(36, 13, "endif"),
+                    StandardNode(41, 5),
+                    StandardNode(3, 2)
+                ));
+            NewTest("if-tag-designer-error3", "{% if foo or b and c %}yes{% else %}no"
+               , Nodes
+               (
+                   StandardNode(0, 23),
+                   ErrorNode(0, 23, EmptyList, 2, "'if' tags can't mix 'and' and 'or'"),
+                   Node(23, 13, "else", "endif"),
+                   StandardNode(29, 4),
+                   Node(36, 2, "endif"),
+                   ErrorNode(0, 23, EmptyList, 2, "Missing closing tag. Available tags: endif"),
+                   StandardNode(3, 2),
+                   StandardNode(3, 2)
+               ));
+            NewTest("if-tag-designer-error4", "{% if foo or b or c %}yes{% else %}no"
+               , Nodes
+               (
+                   StandardNode(0, 22),
+                   Node(35, 2, "endif"),
+                   ErrorNode(0, 23, EmptyList, 2, "Missing closing tag. Available tags: endif"),
+                   StandardNode(3, 2),
+                   Node(22, 13, "else", "endif"),
+                   StandardNode(28, 4),
+                   StandardNode(3, 2)
+               ));
+
+
+            /* FOR BLOCK */
             NewTest("for-tag-designer", "{% for a, b in c %}whatever{% endfor %}"
                 , Nodes
                 (
@@ -88,16 +148,7 @@ namespace NDjango.UnitTests
                     StandardNode(57, 7),
                     StandardNode(3, 4)
                 ));
-            NewTest("if-tag-designer-error", "{% if foo or bar and baz %}yes{% else %}no{% endif %}"
-                , Nodes
-                (
-                    StandardNode(0, 53),
-                    ErrorNode(0, 27, EmptyList, 2, "'if' tags can't mix 'and' and 'or'"),
-                    Node(27, 13, "else", "endif"),
-                    StandardNode(33, 4),
-                    Node(40, 13, "endif"),
-                    StandardNode(45, 5)
-                ));
+            
             NewTest("ifequal-tag-designer", "{% ifequal foo bar %}yes{% else %}no{% endifequal %}"
                 , Nodes 
                 (
@@ -115,6 +166,7 @@ namespace NDjango.UnitTests
                     ErrorNode(0, 16, EmptyList, 2, "invalid arguments for 'Autoescape' tag"),
                     Node(16, 27, "endautoescape"),
                     StandardNode(27, 13),
+                    StandardNode(3, 10),
                     KeywordNode(14, 0, "on", "off")
                 ));
 
