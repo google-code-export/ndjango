@@ -233,6 +233,14 @@ namespace NDjango.Designer.CodeCompletion
                         // if it is not we can ignore it
                         return CompletionContext.None;
 
+                case '{':
+                    if (position > 0 && buffer.CurrentSnapshot[position - 1] == '{')
+                        // it is start of a new variable 
+                        return CompletionContext.Variable;
+                    else
+                        // if it is not we can ignore it
+                        return CompletionContext.None;
+
                 case '|':
                     return CompletionContext.FilterName;
 
@@ -255,10 +263,16 @@ namespace NDjango.Designer.CodeCompletion
         /// A new tag context - triggered if a '%' is entered right after '{'
         /// </summary>
         Tag,
+
         /// <summary>
         /// A filter name context - triggered by '|'
         /// </summary>
         FilterName,
+
+        /// <summary>
+        /// A new variable context - triggered if a '{' is entered right after '{'
+        /// </summary>
+        Variable,
 
         /// <summary>
         /// Other is a context covering typeing inside a word - a tag name, a filter name a keyword, etc
