@@ -99,25 +99,24 @@ module internal ASTNodes =
             
         override x.nodelist = nodelist
        
-    and ExtendsNode(parsing_context: ParsingContext, token: BlockToken, nodelist: INodeImpl list, parent: Expressions.FilterExpression) =
+    and ExtendsNode(parsing_context: ParsingContext, token: BlockToken, nodes: INode list, parent: Expressions.FilterExpression) =
         inherit TagNode(parsing_context, token)
-            
-        /// produces a flattened list of all nodes and child nodes within a node list
+        
+        /// produces a flattened list of all nodes and child nodes within a 'node list'.
+        /// the 'node list' is a list of all nodes collected from Nodes property of the INode interface
         let rec unfold_nodes = function
-        | (h:INodeImpl)::t -> 
+        | (h:INode)::t -> 
             h :: unfold_nodes 
-                ((h:?>Node).nodelist |> 
-                    Seq.filter (fun node -> match node with | :? Node -> true | _ -> false) 
-                        |> List.of_seq ) @ unfold_nodes t
+                (h.Nodes.Values |> Seq.cast |> Seq.map(fun (seq) -> (Seq.to_list seq)) |>
+                    List.concat |>
+                        List.filter (fun node -> match node with | :? Node -> true | _ -> false))
+                             @ unfold_nodes t
         | _ -> []
 
-        // even though the extends filters its node list, 
-        // we still need to filter the flattened list because the list should also include nested blocks
+        // even though the extends filters its node list, we still need to filter the flattened list because of nested blocks
         let blocks = Map.of_list <| List.choose 
-                        (fun (node: INodeImpl) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
-                        /// this nodelist will have some ParsingContextNodes, therefore we need to filter these nodes.
-                        (nodelist |> List.choose(fun node -> match node with | :? ParsingContextNode -> None | _ -> Some node) |> unfold_nodes)
-                              
+                        (fun (node: INode) ->  match node with | :? BlockNode as block -> Some (block.Name,[block]) | _ -> None) 
+                        (unfold_nodes nodes)                      
 
         let add_if_missing key value map = 
             match Map.tryFind key map with
