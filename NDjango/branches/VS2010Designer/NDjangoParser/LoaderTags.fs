@@ -87,10 +87,12 @@ module internal LoaderTags =
                                                  with
                                                     override x.nodelist = [node]
                                                    } :> INodeImpl)
-                            )   
+                            )
+                    
+                    let (nodes : INode list) = List.map(fun (node : INodeImpl) -> node :?> INode) node_list
                     
                     (({
-                        new ExtendsNode(context, token, node_list, parent_name_expr) with
+                        new ExtendsNode(context, token, nodes, parent_name_expr) with
                             override this.elements = (parent_name_expr :> INode) :: base.elements
                             override this.nodelist = node_list
                        } :> INodeImpl), 
