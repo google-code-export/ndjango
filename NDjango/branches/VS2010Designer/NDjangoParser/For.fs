@@ -166,12 +166,7 @@ module internal For =
             |Some o ->
                 match o with
                 | :? IEnumerable as loop when not (loop |> Seq.cast |> Seq.isEmpty) -> 
-//                    let size =
-//                        match loop with
-//                        | :? System.Array as array -> Some (array.GetLength(0))
-//                        | :? System.Collections.IList as list -> Some (list.Count)
-//                        | _ -> None
-//                    let size = Some ((loop.OfType<Object>()).Count<Object>())
+
                     let size = Some (Seq.length(loop |> Seq.cast))
                     
                     /// create context with the loop variables and the forloop 
@@ -216,9 +211,6 @@ module internal For =
                 base.Nodes 
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (bodyNodes |> Seq.map (fun node -> (node :?> INode)))
                     |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (emptyNodes |> Seq.map (fun node -> (node :?> INode)))
-                    
-        // this override is not used by the for node for rendering but is necessary for the blocks to work properly
-        //override x.nodelist = bodyNodes @ emptyNodes
  
     /// this is a for loop helper node. The real loop node <see cref="TagNode"/> places a list of nodes
     /// for the loop body into the walker, it adds the Repeater as the last one. The repeater checks for
