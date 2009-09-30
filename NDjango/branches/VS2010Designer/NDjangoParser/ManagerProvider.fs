@@ -271,6 +271,11 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                             ("","") 
                             parse_until))
                         
+    /// builds a string, that consists of block's verb and arguments, separated with whitespace(s).
+    /// i.e. {% endif a  b %} -> "endif a b"                    
+    let inner_tokens (block : BlockToken) =
+        String.concat " " ((block.Verb :: block.Args) |> List.map(fun text_token -> text_token.Value))                    
+                        
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
     /// this function returns the node list and the unparsed remainder of the token stream.
     /// The list is returned in the reversed order
@@ -282,11 +287,12 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
-            | Lexer.Block block when parse_until |> List.exists block.Verb.Value.Equals ->
+            | Lexer.Block block when parse_until |> List.exists (inner_tokens block).Equals ->
                  ((new CloseTagNode(context, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
                 let node, tokens = parse_token context tokens token
                 parse_internal context (node :: nodes) tokens parse_until
+    
             
     /// tries to return a list positioned just after one of the elements of parse_until. Returns None
     /// if no such element was found.
