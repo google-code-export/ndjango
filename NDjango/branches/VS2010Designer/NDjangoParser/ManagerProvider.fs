@@ -273,7 +273,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
                         
     /// builds a string, that consists of block's verb and arguments, separated with whitespace(s).
     /// i.e. {% endif a  b %} -> "endif a b"                    
-    let inner_tokens (block : BlockToken) =
+    let terminals (block : BlockToken) =
         String.concat " " ((block.Verb :: block.Args) |> List.map(fun text_token -> text_token.Value))                    
                         
     /// recursively parses the token stream until the token(s) listed in parse_until are encountered.
@@ -287,7 +287,7 @@ type TemplateManagerProvider (settings:Map<string,obj>, tags, filters, loader:IT
             (nodes, LazyList.empty<Lexer.Token>())
        | LazyList.Cons(token, tokens) -> 
             match token with 
-            | Lexer.Block block when parse_until |> List.exists (inner_tokens block).Equals ->
+            | Lexer.Block block when parse_until |> List.exists (terminals block).Equals ->
                  ((new CloseTagNode(context, block) :> INodeImpl) :: nodes, tokens)
             | _ ->
                 let node, tokens = parse_token context tokens token
