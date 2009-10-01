@@ -185,7 +185,7 @@ module internal For =
                                 | _ ->
                                     variables |> List.fold 
                                         (fun context var -> 
-                                            let value = match resolve_lookup item [var] with | Some o -> o | None -> None :> obj
+                                            let value = match resolve_members item [var] with | Some o -> o | None -> None :> obj
                                             context.add(var, value))
                                         walker.context
                         

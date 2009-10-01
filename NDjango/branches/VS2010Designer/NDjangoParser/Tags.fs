@@ -245,7 +245,7 @@ module internal Misc =
                                             // this function takes a tuple with the first element representing the grouper
                                             // currently under construction and the second the list of groupers built so far
                                             (fun (groupers:Grouper option*Grouper list) item -> 
-                                                match resolve_lookup item [grouper.RawText] with
+                                                match resolve_members item [grouper.RawText] with
                                                 | Some value ->  // this is the current value to group by
                                                     match fst groupers with
                                                     | Some group -> // group is a group currently being built

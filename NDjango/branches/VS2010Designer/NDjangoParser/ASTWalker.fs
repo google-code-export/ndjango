@@ -58,8 +58,8 @@ module internal ASTWalker =
                     try
                         // get a new walker from the node at the head of the node list
                         // and advance the list to the next node
-                        if not <| node.GetType().Name.Equals("ParsingContextNode") then
-                            System.Diagnostics.Debug.WriteLine ("walking " + node.Token.DiagInfo )
+//                        if not <| node.GetType().Name.Equals("ParsingContextNode") then
+//                            System.Diagnostics.Debug.WriteLine ("walking " + node.Token.DiagInfo )
                         walker <- node.walk manager {walker with nodes = nodes; buffer=""; bufferIndex = 0}
                     with
                         // intercept rendering errors and rethrow them with additional diagnostic info
