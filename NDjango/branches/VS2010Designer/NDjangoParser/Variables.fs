@@ -33,83 +33,150 @@ open Utilities
 open Lexer
 
 module Variables =
-
-    /// Finds and invokes the first property, field or 0-parameter method in the list.
-    let rec private find_and_invoke_member (members: MemberInfo list) current bit =
-        match members with 
-        | h::t ->
-            match h with
-            | :? MethodInfo as mtd -> 
-                // only call methods that don't have any parameters
-                match mtd.GetParameters().Length with 
-                | 0 -> Some <| mtd.Invoke(current, null)
-                | _ -> find_and_invoke_member t current bit
-            | :? FieldInfo as fld -> Some <| fld.GetValue(current)
-            | :? PropertyInfo as prop -> 
-                match prop.GetIndexParameters().Length with
-                | 0 -> Some <| prop.GetValue(current, null)     // non-indexed property
-                | 1 -> Some <| prop.GetValue(current, [|bit|])  // indexed property
-                | _ -> None                                     // indexed property with more indeces that we can handle
-            | _ -> failwith <| sprintf "%A is unexpected." current // this shouldn't happen, as all other types would be filtered out
-        | [] -> None
+        
+    /// <summary>
+    /// Tries to resolve current bit as a member of the current object        
+    /// </summary>
+    /// <remarks>
+    /// Goes through a list of all members with the name matching the value of bit
+    /// and looks for the first one to return a value. The list of members 
+    /// includes fields, parameterless methods and properties
+    /// </remarks>
+    let private member_resolver bit (current:obj) =
+        
+        /// determine the type we need to use with the object
+        /// in case if the bit references an explicit interface implementation
+        /// the type will come in the tuple, otherwise the type of the object itself 
+        /// is used
+        let object_type, object_instance = 
+            match current with
+            | :? (System.Type*obj) as a  -> a
+            | _ -> (current.GetType(), current)
+        
+        object_type.GetMember(bit, 
+                    MemberTypes.Field ||| 
+                    MemberTypes.Method ||| 
+                    MemberTypes.Property, 
+                    BindingFlags.Public ||| 
+                    BindingFlags.NonPublic ||| 
+                    BindingFlags.Instance) 
+                |> Array.tryPick 
+                (fun member_info -> 
+                    match member_info with
+                    | :? MethodInfo as m -> 
+                        if m.GetParameters().Length = 0 
+                        then Some <| m.Invoke(object_instance, null) else None
+                    | :? FieldInfo as f -> Some <| f.GetValue(object_instance)
+                    | :? PropertyInfo as p -> 
+                        if p.GetIndexParameters().Length = 0
+                        then Some <| p.GetValue(object_instance, null)
+                        else None
+                    | _ -> None
+                )
     
+    /// <summary>
+    /// Tries to resolve current bit as an interface implemented by the current object        
+    /// </summary>
+    /// <remarks>
+    /// This resolver takes care of explicit interface method implementations
+    /// If the name of the bit is recognized as a name of interface implemente by the
+    /// object, it returns a tuple with the interface type as the first member and the 
+    /// original object as the second one 
+    /// </remarks>
+    let private interface_resolver bit (current:obj) =
+        let itype = current.GetType().GetInterface(bit) 
+        if itype = null then None
+        else Some ((itype, current) :> obj)
+
+    /// <summary>
+    /// Tries to resolve current bit as an index using the indexer on the current object        
+    /// </summary>
+    /// <remarks>
+    /// Among other things takes care of lists and dictionaries through their indexers<br/>
+    /// before attempting to resolve the index value converts the value to the type
+    /// required by the property index type<br/>
+    /// If it fails to resolve the index value in its origianl form (string)
+    /// tries to convert it to an integer and repeats the attempt
+    /// </remarks>
+    let private indexer_resolver bit (current:obj) =
+    
+        /// determine the type we need to use with the object
+        /// in case if the bit references an explicit interface implementation
+        /// the type will come in the tuple, otherwise the type of the object itself 
+        /// is used
+        let object_type, object_instance = 
+            match current with
+            | :? (System.Type*obj) as a  -> a
+            | _ -> (current.GetType(), current)
+
+        /// try to resolve current bit against and indexer
+        let resolve_indexer value (indexer:MemberInfo) = 
+            match indexer with
+            | :? PropertyInfo as p ->
+                let parms = p.GetIndexParameters()
+                // we are only interested in indexers with a single parameter
+                if parms.Length = 1
+                then
+                    try
+                        Some <| p.GetValue(object_instance, [|System.Convert.ChangeType(value, parms.[0].ParameterType)|])
+                    with
+                    |_ -> None
+                else None
+            | _ -> None
+            
+        /// an array of all indexer properties
+        let indexers = 
+            object_type.GetMember("Item", 
+                        MemberTypes.Property, 
+                        BindingFlags.Public ||| 
+                        BindingFlags.NonPublic ||| 
+                        BindingFlags.Instance) 
+        
+        match indexers |> Array.tryPick (resolve_indexer bit) with
+        | Some result -> Some result
+        | None -> 
+            // convert the bit to integer and try again
+            match bit |> string |> System.Int32.TryParse with
+            | true, int_bit -> 
+                indexers |> Array.tryPick (resolve_indexer int_bit)
+            | _ -> None 
+
+    /// <summary>
+    /// Tries to resolve current bit by calling avary resolver in turn
+    /// and returning after the first one returning some value        
+    /// </summary>
+    let private resolve_member bit current =
+        let resolvers = [member_resolver; interface_resolver; indexer_resolver] 
+        match current with
+        | null -> None
+        | _ -> 
+            resolvers |> 
+                List.tryPick 
+                    (fun resolver -> 
+                        try
+                            resolver bit current
+                        with
+                        | _ -> None
+                    )
+    
+    /// <summary>
     /// recurses through the supplied list and attempts to navigate the "current" object graph using
     /// name elements provided by the list. This function will invoke method and evaluate properties and members
-    let rec internal resolve_lookup (current: obj) = function
-        | h::t ->
-            // tries to invoke a member in the members list, calling f if find_and_invoke_member returned None
-            let try_invoke = fun (members: array<MemberInfo>) bit (f: unit -> obj option) ->
-                match find_and_invoke_member (List.of_array members) current bit with
-                | Some v -> Some v
-                | None -> f()
-                
-            let find_intermediate = fun bit (current: obj) ->        
-                match current with 
-                | :? IDictionary as dict ->
-                    match dict with
-                    | Utilities.Contains (Some bit) v -> Some v
-                    | Utilities.Contains (Some (String.concat System.String.Empty [OutputHandling.django_ns; bit])) v -> Some v
-                    | Utilities.Contains (Utilities.try_int bit) v -> Some v
-                    | _ ->
-                        let (dict_members: array<MemberInfo>) = current.GetType().GetMember(bit, MemberTypes.Field ||| MemberTypes.Method ||| MemberTypes.Property, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
-                        find_and_invoke_member (List.of_array dict_members) current bit
-                | :? IList as list ->
-                    match bit with 
-                    | Utilities.Int i when list.Count > i -> Some list.[i]
-                    | _ -> None
-                | null -> None
-                | _ ->
-                    let (members: array<MemberInfo>) = current.GetType().GetMember(bit, MemberTypes.Field ||| MemberTypes.Method ||| MemberTypes.Property, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
-                    let indexed_members = lazy ( current.GetType().GetMember("Item", MemberTypes.Property, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance))
-                    let as_array = fun () -> 
-                        try 
-                            // bit is an index into an array
-                            if (Utilities.is_int bit) && current.GetType().IsArray && Array.length (current :?> array<obj>) > (int bit) then
-                                Some <| Array.get (current :?> array<obj>) (int bit)
-                            // no clue
-                            else
-                                None
-                        // any number of issues as the result trying to parse an unknown value
-                        with | _ -> None
-                                           
-                    // this bit of trickery needs explanation. try_invoke tries to find and invoke a member in the
-                    // members array. if it doesn't, it will call the supplied function f. here, we're chaining together
-                    // a search across all members, followed by a search for indexed members. the second search is 
-                    // supplied as the "f" to the first search. also, indexed members are defined as lazy so that we
-                    // don't take the reflection hit if we dont' need it
-                    try_invoke members bit (fun () -> try_invoke (indexed_members.Force()) bit (fun () -> as_array()))
+    /// </summary>
+    let rec internal resolve_members current = function
+        | [] -> None
+        | h::[] -> resolve_member h current
+        | h::tail ->
+            match resolve_member h current with
+            | Some v -> resolve_members v (tail)
+            | None -> None
 
-            if not (t = []) then
-                match find_intermediate h current with
-                | Some v -> resolve_lookup v t
-                | None -> None
-            else
-                find_intermediate h current
-        | [] ->  None
-            
+    /// <summary>
     /// A template variable, resolvable against a given context. The variable may be
     /// a hard-coded string (if it begins and ends with single or double quote
     /// marks)::
+    /// </summary>
+    /// <remarks>
     /// 
     ///     >>> c = {'article': {'section':u'News'}}
     ///     >>> Variable('article.section').resolve(c)
@@ -123,6 +190,7 @@ module Variables =
     ///     >>> Variable('article.section').resolve(c)
     ///     u'News'
     /// (The example assumes VARIABLE_ATTRIBUTE_SEPARATOR is '.')
+    /// </remarks>
     type Variable(context: ParsingContext, token:Lexer.TextToken) =
 
         /// Returns a tuple of (var * value * needs translation)
@@ -166,33 +234,30 @@ module Variables =
         
         let template_string_if_invalid = context.Provider.Settings.TryFind(Constants.TEMPLATE_STRING_IF_INVALID)
 
+        /// <summary>
         /// Resolves this variable against a given context
+        /// </summary>
         member this.Resolve (context: IContext) =
             match lookups with
             | None -> (literal.Value, false)
             | Some lkp ->
-                try
-                    let result =
-                        match 
-                            match context.tryfind (List.hd <| lkp) with
-                            | Some v -> 
-                                match lkp |> List.tl with
-                                | h::t -> 
-                                    // make sure we don't end up with a 'Some null'
-                                    resolve_lookup v (h::t) |> clean_nulls
-                                | _ -> Some v |> clean_nulls
-                            | None -> None
-                            with
-                            | Some v1 -> v1
-                            | None -> 
-                                match template_string_if_invalid with
-                                | Some o -> o
-                                | None -> "" :> obj
-
-                    (result, context.Autoescape)
-                with
-                    | _ as exc -> 
-                        raise (RenderingError((sprintf "Exception occured while processing variable '%s'" token.RawText), exc))
+                let result =
+                    match 
+                        match context.tryfind (List.hd lkp) with
+                        | Some v -> 
+                            match List.tl lkp with
+                            // make sure we don't end up with a 'Some null'
+                            | [] -> Some v |> clean_nulls
+                            | list -> 
+                                resolve_members v (list) |> clean_nulls
+                        | None -> None
+                        with
+                    | Some v1 -> v1
+                    | None -> 
+                        match template_string_if_invalid with
+                        | Some o -> o
+                        | None -> "" :> obj
+                (result, context.Autoescape)
 
         member this.IsLiteral with get() = lookups.IsNone
 

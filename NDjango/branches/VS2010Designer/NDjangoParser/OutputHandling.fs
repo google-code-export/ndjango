@@ -60,11 +60,6 @@ module OutputHandling =
     let internal escape text = 
         (string text).Replace("&","&amp;").Replace("<","&lt;").Replace(">","&gt;").Replace("'","&#39;").Replace("\"","&quot;")    
 
-    let internal django_ns = "__ndjango__variable:"
-
-    /// Produces a variable name placed into the django variable namespace
-    let internal django_var var = django_ns + var
-
     /// used to set defaults for optional parameters. retunrs o.Value if o.IsSome, v otherwise
     let internal defaultArg o v = match o with | Some o -> o | _ -> v
 
