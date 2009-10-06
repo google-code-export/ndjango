@@ -1,0 +1,1 @@
+Place corresponding NDjango.Core, Ndjango.Filters, NDjango.BistroIntegration, Bistro.Core libraries into bin directory to launch application and test parser performance.

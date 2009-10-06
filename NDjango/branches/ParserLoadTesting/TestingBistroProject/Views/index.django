@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+    <title>
+        {% block Title %}
+            Home Page
+        {% endblock %}
+    </title>
+</head>
+
+    <h2>{{ Message }}</h2>
+    <p>
+        To learn more about Bistro visit <a href="http://www.bistroframework.org" title="The Bistro Wiki">http://bistroframework.org</a>.
+    </p>
+
+
+{% if foo %}
+  smth 
+{% endif %}
+
+
+{% if foo and bar %}
+	{% ifequal "1" "1" %}
+		yes
+		{% autoescape off %}{{value3|default:"nothing"}}{% endautoescape %}
+
+	{{value2|add:"1"}}
+	{% else %}
+		no
+	{% endifequal %}
+{% else %}
+	{{ value|add:"1"|add:"1"|add:"1"|add:"1"|add:"1"|add:"1"}}
+	
+{% endif %}
+
+{% autoescape off %}{{value4|addslashes}}{% endautoescape %}
+
+{% for i in range %}{% cycle 'a' 'b' %}{{ i }},{% endfor %}
+
+before <{{ lt }} {% autoescape off %}inside <{{ lt }}{{ gt }}>{% filter escape %} inside filter <{{ lt }}{{ gt }}>{% endfilter %}{% endautoescape %} after {{ gt }}>
+
+Long nested:
+
+{% if foo %}
+    {% firstof v1 v2 v3 "fallback" %}
+		{% if foo %}
+		    {% now "D,d F Y G:i:s O" %}
+		    {% spaceless %}templatetag<h1>  \r\n   </h1> !\r\n <h2> </h2>{% endspaceless %}
+			{% if foo %}
+			    {{ now|date:"D,d F Y G:i:s O" }}
+				{% if foo %}
+						{% for FirstName in heroes %}{{ FirstName }} {% endfor %}
+				{%endif%}
+			{%endif%}
+		{%endif%}
+
+{%endif%}
+
+{% ifequal "1" "1" %}
+{% ifequal "1" "1" %}
+{% ifequal "1" "1" %}
+{% ifequal "1" "1" %}
+{% if foo %}
+{% if foo %}
+{% if foo %}
+{% if foo %}
+{% for FirstName in heroes %}{{ FirstName }} {% endfor %}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endif %}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+{% endifequal %}
+</body>
+</html>
+
+
