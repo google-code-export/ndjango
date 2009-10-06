@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestingBistroProject", "TestingBistroProject\TestingBistroProject.csproj", "{83F89614-3AA5-4158-906C-C056A982E441}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParserLoadTestProject", "ParserLoadTestProject.csproj", "{83F89614-3AA5-4158-906C-C056A982E441}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
