@@ -1,0 +1,5 @@
+C:\Hill30\TestingBistroProject\TestingBistroProject\bin\TestingBistroProject.dll
+C:\Hill30\TestingBistroProject\TestingBistroProject\bin\TestingBistroProject.pdb
+C:\Hill30\TestingBistroProject\TestingBistroProject\obj\Debug\ResolveAssemblyReference.cache
+C:\Hill30\TestingBistroProject\TestingBistroProject\obj\Debug\TestingBistroProject.dll
+C:\Hill30\TestingBistroProject\TestingBistroProject\obj\Debug\TestingBistroProject.pdb
