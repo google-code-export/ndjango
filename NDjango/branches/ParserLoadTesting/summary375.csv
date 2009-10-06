@@ -1,3 +1,7 @@
 sampler_label,aggregate_report_count,average,aggregate_report_min,aggregate_report_max,aggregate_report_stddev,aggregate_report_error%,aggregate_report_rate,aggregate_report_bandwidth,average_bytes
 index page,20000,580,3,2791,324.32433766584643,0.0,179.75104480294792,167.81445198400215,956.0
 TOTAL,20000,580,3,2791,324.32433766584643,0.0,179.75104480294792,167.81445198400215,956.0
+
+
+Average: 580
+Throughput: 179,8/sec
