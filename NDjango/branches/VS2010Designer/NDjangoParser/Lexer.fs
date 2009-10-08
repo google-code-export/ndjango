@@ -32,31 +32,46 @@ open NDjango.OutputHandling
 
 module Lexer =
 
+    /// <summary>
     /// This esception is thrown if a problem encountered while lexing the template
     /// Lexer errors never leave the lexer, they are caught and converted into Error tokens
+    /// </summary>
     type LexerError (message) = 
         inherit System.ApplicationException(message)
 
+    /// <summary>
     /// Object describing the token location in the original source string
+    /// </summary>
     type Location(offset:int, length:int, line:int, position:int) = 
 
         public new(parent:Location, (offset:int, length:int)) =
             Location(parent.Offset + offset, length, parent.Line, parent.Position + offset) 
                 
+        /// <summary>
         /// 0 based offset of the text from the begining of the source file
+        /// </summary>
         member x.Offset = offset
         
+        /// <summary>
         /// Length of the text fragment from which the token was generated 
         /// may or may not match the length of the actual text
+        /// </summary>
         member x.Length = length
         
+        /// <summary>
         /// 0 based line number
+        /// </summary>
         member x.Line = line
 
+        /// <summary>
         /// 0 based position of the starting position of the text within the line it belongs to
+        /// </summary>
         member x.Position = position
         
+    /// <summary>
     /// Provides mapping from the spans of the actual text to the spans of the original text
+    /// </summary>
+    /// <remarks>
     /// Mapping is only provided for the purposes of diagnostic to accomodate the situations where 
     /// some of the text is coming from a template source, while some of it is generated, i.e. for filter
     /// tag the name of the variable is generated, while filters are coming directly from the template
@@ -68,6 +83,7 @@ module Lexer =
     /// mapped mapping spans
     /// there should be no adjacent mapping spans with the same value of 'mapped'. Also mapping a span into 
     /// more than one original span is not supported
+    /// </remarks>
     type private SpanMap (map :(int*bool) list) =
         member x.Map (position, length) = 
             let _, offset, mapped_length, new_map = 
@@ -111,36 +127,53 @@ module Lexer =
                     
             (offset, mapped_length), List.rev new_map
 
-    /// Base class for text tokens. Its main purpose is to keep track of bits of text
+    /// <summary>
+    /// Base class for text tokens. 
+    /// </summary>
+    /// <remarks>Its main purpose is to keep track of bits of text
     /// participating in the template parsing in their relationship with the original 
     /// location of the text in the template. As the text is going through various 
     /// stages of parsing it may or may not differ from the original text in the source
+    /// </remarks>
     type TextToken(text:string, value:string, location: Location, map:(int*bool) list option) =
         let map = 
             match map with
             | Some mapping -> Some (new SpanMap(mapping))
             | None -> None
   
+        /// <summary>
+        /// Builds a location object based on a regexp match
+        /// </summary>
         let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
 
         new (text:string, location: Location, ?map) =
             new TextToken(text, text, location, map)
             
+        /// <summary>
         /// The original, unmodified text as it is in the source
+        /// </summary>
         member x.RawText = text
         
+        /// <summary>
         /// The value after modifications
+        /// </summary>
         member x.Value = value
 
+        /// <summary>
         /// Token location
+        /// </summary>
         member x.Location = location
         
+        /// <summary>
         /// Creates a new token from the existing one 
         /// Use this method when you need to create a new token from a part of the text of an existing one 
+        /// </summary>
         member x.CreateToken (capture:Capture) = x.CreateToken (capture.Index, capture.Length)
         
+        /// <summary>
         /// Creates a new token from the existing one 
-        /// Use this method when you need to create a new token from a part of the text of an existing one                 
+        /// Use this method when you need to create a new token from a part of the text of an existing one 
+        /// </summary>
         member x.CreateToken (offset, length) = 
                 match map with 
                 | Some m -> 
@@ -148,54 +181,85 @@ module Lexer =
                     new TextToken(value.Substring(offset, length), new Location(x.Location, mapped_location), new_map)
                 | None ->
                     new TextToken(value.Substring(offset, length), new Location(x.Location, (offset, length)))
-                
         
+        /// <summary>
         /// Creates a new token bound to the same location in the source, but with a different value
         /// Use this method when you need to modify the token value but keep its binding to the source                
+        /// </summary>
         member x.WithValue new_value map = new TextToken(text, new_value, location, map)
         
+        /// <summary>
+        /// Creates a list of new tokens by applying a regular expression to the text of the existing one
+        /// </summary>
         member x.Tokenize (regex:Regex) = 
             [for m in regex.Matches(text) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
 
+    /// <summary>
     /// generates a list of tokens by applying the regexp
-    let tokenize_for_token location (regex:Regex) value =
+    /// </summary>
+    /// <remarks>
+    /// Compare this function with the Tokenize method. The do the same thing. The reason I have both is that
+    /// the method is better from the encapsulation standpoint, but I could not find a way to call it from 
+    /// within the BlockToken constructor - and it is needed there. If you find a way around this - kill 
+    /// the function
+    /// </remarks>
+    let private tokenize_for_token location (regex:Regex) value =
             let location_ofMatch (m:Match) = new Location(location, (m.Groups.[0].Index, m.Groups.[0].Length))
             [for m in regex.Matches(value) -> new TextToken(m.Groups.[0].Value, location_ofMatch m)]
     
+    /// <summary>
     /// Determines the text of the tag body by stripping off
     /// the first two and the last two characters
+    /// </summary>
     let block_body (text:string) (location:Location) = 
         let body = text.[2..text.Length-3].Trim()
         body, new Location(location, (text.IndexOf body, body.Length))
     
-    /// Locates the tag fragments: the tag name and tag arguments by splitting the text into pieces by whitespaces
+    /// <summary>
+    /// RegExp to locate the tag fragments: the tag name and tag arguments by splitting the text into pieces by whitespaces
     /// Whitespaces inside strings in double- or single quotes remain unaffected
+    /// </summary>
     let private split_tag_re = new Regex(@"(""(?:[^""\\]*(?:\\.[^""\\]*)*)""|'(?:[^'\\]*(?:\\.[^'\\]*)*)'|[^\s]+)", RegexOptions.Compiled)
     
-    /// Represents a token  for a django tag block 
+    /// <summary>
+    /// Represents a token for a django tag block 
+    /// </summary>
     type BlockToken(text, location) =
         inherit TextToken(text, location)
         
+        // parse the token body to extract the verb (tag name) and the tag arguments
         let verb,args =
             let body, location = block_body text location
             match tokenize_for_token location split_tag_re body with
             | [] -> raise (LexerError("Empty tag block"))
             | verb::args -> verb, args
         
+        /// <summary>
         /// A.K.A. tag name
+        /// </summary>
         member x.Verb = verb
+
+        /// <summary>
         /// List of arguments - can be empty
+        /// </summary>
         member x.Args = args 
     
+    /// <summary>
     /// Represents a syntax error in the syntax node tree. These tokens are generated in response
     /// to exceptions thrown during lexing of the template, so that the actual exception throwing can be delayed
     /// till parsing stage
+    /// </summary>
     type ErrorToken(text, error:string, location) =
         inherit TextToken(text, location)
-        /// Error message  
+        
+        /// <summary>
+        /// Error message taken from the exception
+        /// </summary>
         member x.ErrorMessage = error
 
+    /// <summary>
     /// Represents a token for a variable django block
+    /// </summary>
     type VariableToken(text:string, location) =
         inherit TextToken(text, location)
 
@@ -204,14 +268,20 @@ module Lexer =
             if (body = "") then raise (LexerError("Empty variable block"))
             new TextToken(body, location)
         
+        /// <summary>
         /// token representing the expression
+        /// </summary>
         member x.Expression = expression
     
+    /// <summary>
     /// Represents a token for a django comment tag
+    /// </summary>
     type CommentToken(text, location) =
         inherit TextToken(text, location) 
         
+    /// <summary>
     /// A generic lexer token produced through the tokenize function
+    /// </summary>
     type Token =
         | Block of BlockToken
         | Variable of VariableToken
@@ -230,12 +300,16 @@ module Lexer =
         member x.Position = x.TextToken.Location.Offset
         member x.Length = x.TextToken.Location.Length
             
+        /// <summary>
         /// provides additional diagnostic information for the token 
+        /// </summary>
         member x.DiagInfo = 
             sprintf " in token: \"%s\" at line %d pos %d " 
                 x.TextToken.RawText x.TextToken.Location.Line x.TextToken.Location.Position
 
-   /// Active Pattern matching the Token to a string constant. Uses the Token.RawText to do the match
+    /// <summary>
+    /// Active Pattern matching the Token to a string constant. Uses the Token.RawText to do the match
+    /// </summary>
     let (|MatchToken|) (t:TextToken) = t.RawText
     
     /// <summary> generates sequence of tokens out of template TextReader </summary>
@@ -251,11 +325,13 @@ module Lexer =
         let mutable tail = ""
         let buffer = Array.create 4096 ' '
         
+        /// <summary>
         /// converts supplied string into an appropriate token. It is assumed that
         /// the strings representing django tags in the template are identified
         /// before calling of this function.
         /// Every string passed to this function will be converted into a single
         /// token based on the 1st two characters of the string. 
+        /// </summary>
         let create_token in_tag (text:string) = 
             in_tag := not !in_tag
             let currentPos = pos
@@ -285,6 +361,9 @@ module Lexer =
                     Error (new ErrorToken(text, ex.Message, location))
                 | _ -> rethrow()
         
+        /// <summary>
+        /// 
+        /// </summary>
         interface IEnumerator<Token seq> with
             member this.Current = Seq.of_list current
         
@@ -325,6 +404,8 @@ module Lexer =
         interface IDisposable with
             member this.Dispose() = ()
 
+    /// <summary>
     /// Produces a sequence of token objects based on the template text
+    /// </summary>
     let internal tokenize (template:TextReader) =
         LazyList.of_seq <| Seq.fold (fun (s:Token seq) (item:Token seq) -> Seq.append s item) (seq []) (new Tokenizer(template))

@@ -206,11 +206,10 @@ module internal For =
                 | _ -> {walker with parent=Some walker; nodes=emptyNodes}
             | None -> {walker with parent=Some walker; nodes=emptyNodes}
         
-        override this.Nodes 
-            with get() =
+        override this.Nodes =
                 base.Nodes 
-                    |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFTRUE) (bodyNodes |> Seq.map (fun node -> (node :?> INode)))
-                    |> Map.add (NDjango.Constants.NODELIST_IFTAG_IFFALSE) (emptyNodes |> Seq.map (fun node -> (node :?> INode)))
+                    |> Map.add (NDjango.Constants.NODELIST_FOR_BODY) (bodyNodes |> Seq.map (fun node -> (node :?> INode)))
+                    |> Map.add (NDjango.Constants.NODELIST_FOR_EMPTY) (emptyNodes |> Seq.map (fun node -> (node :?> INode)))
  
     /// this is a for loop helper node. The real loop node <see cref="TagNode"/> places a list of nodes
     /// for the loop body into the walker, it adds the Repeater as the last one. The repeater checks for
