@@ -26,8 +26,10 @@ open System.Text.RegularExpressions
 
 module OutputHandling =
 
+    /// <summary>
     /// determines whether the given string is either single or double quoted, escaped or un-escaped.
     /// returnes whether it is quoted, and the number of characters the quote string occupies
+    /// </summary>
     let internal is_quoted (text: string) = 
         if text.Length < 2 then (false, 0)
         else
@@ -36,7 +38,9 @@ module OutputHandling =
             | '\'' | '"' when text.[0] = text.[text.Length-1] -> (true, 1)
             | _ -> (false, 0)
         
+    /// <summary>
     /// determines whether the given string is marked as requiring translation
+    /// </summary>
     let internal is_i18n (text: string) = 
         if text.Length < 3 then false
         else
@@ -46,8 +50,10 @@ module OutputHandling =
             
     let internal unescape_quotes (text: string) = text.Replace("\\'", "'").Replace("\\\"", "\"")
             
+    /// <summary>
     /// strips off translation and outer quote characters. returns the stripped string,
     /// was the string quoted and was it marked for internationalization
+    /// </summary>
     let internal strip_markers (text:string) = 
         let v, was_i18n = if is_i18n text then text.[2..text.Length-2], true else text, false
         let quoted, count = is_quoted v
@@ -56,7 +62,9 @@ module OutputHandling =
         then None, Some (unescape_quotes v.[count..v.Length-2*count] :> obj), was_i18n
         else Some v, None , was_i18n
 
+    /// <summary>
     /// escapes html sensitive elements from the string
+    /// </summary>
     let internal escape text = 
         (string text).Replace("&","&amp;").Replace("<","&lt;").Replace(">","&gt;").Replace("'","&#39;").Replace("\"","&quot;")    
 
