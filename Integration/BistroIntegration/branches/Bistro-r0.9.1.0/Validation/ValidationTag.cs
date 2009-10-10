@@ -30,6 +30,9 @@ namespace NDjango.BistroIntegration.Validation
                     ValidationRepository.Instance.GetValidatorForNamespace(ns) :
                     v.Merge(ValidationRepository.Instance.GetValidatorForNamespace(ns));
 
+            if (v == null)
+                throw new ArgumentException("Provided namespaces aren't valid", parms.Aggregate("[", (s, e) => s + e + ";") + "]");
+
             return
                 new StringBuilder()
                     .AppendLine("\r\n<script type=\"text/javascript\">")
