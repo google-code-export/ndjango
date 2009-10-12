@@ -126,10 +126,10 @@ namespace NDjango.UnitTests
                 , Nodes
                 (
                     StandardNode(0, 51),
-                    Node(38, 13, "endfor"),
-                    StandardNode(42, 6),
                     Node(19, 19, "empty", "endfor"),
                     StandardNode(30, 5),
+                    Node(38, 13, "endfor"),
+                    StandardNode(42, 6),
                     StandardNode(3, 3)
                 ));
             NewTest("for-tag-designer2", "{% for a, b in c %}whatever{% endfor %}"
@@ -144,11 +144,11 @@ namespace NDjango.UnitTests
                 , Nodes
                 (
                     StandardNode(0, 19),
+                    Node(19, 19, "empty", "endfor"),
+                    StandardNode(30, 5),
                     Node(38, 0, "endfor"),
                     StandardNode(0, 19),
                     StandardNode(3, 3),
-                    Node(19, 19, "empty", "endfor"),
-                    StandardNode(30, 5),
                     StandardNode(3, 3)
                 ));
             NewTest("for-tag-designer-error2", "{% for a, b c %}whatever{% empty %}"
