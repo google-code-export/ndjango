@@ -40,13 +40,14 @@
       <Name>FSharp.Core</Name>
       <AssemblyName>FSharp.Core.dll</AssemblyName>
       <SpecificVersion>True</SpecificVersion>
+      <Private>True</Private>
     </Reference>
     <Reference Include="FSharp.PowerPack, Version=3.9.9.995, Culture=neutral, PublicKeyToken=a19089b1c74d0809">
       <Name>FSharp.PowerPack</Name>
       <AssemblyName>FSharp.PowerPack.dll</AssemblyName>
       <SpecificVersion>True</SpecificVersion>
       <HintPath>..\..\..\..\Program Files\Microsoft F#\v4.0\FSharp.PowerPack.dll</HintPath>
-      <Private>False</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
