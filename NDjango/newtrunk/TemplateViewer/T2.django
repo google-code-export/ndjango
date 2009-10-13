@@ -1,1 +1,0 @@
-{% for i in test %}{% cycle a,b %}{{ i }},{% endfor %}
