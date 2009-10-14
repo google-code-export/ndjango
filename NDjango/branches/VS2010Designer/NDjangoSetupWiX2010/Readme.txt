@@ -3,6 +3,9 @@ NDjango Requirements:
  *Visual Studio 2008
  *F# CTP v.1.9.6.16 (You can download it from:  http://download.microsoft.com/download/F/7/4/F74A3170-261C-4E8F-B1A8-2E352C61A89B/InstallFSharp.msi)
 
+New in 0.9.5.0
+ *New NDjango Editor for Microsoft Visual Studio 2010 beta 1. 
+
 New in 0.9.1.3
  *Integration project Bistro Integration is now bound to the Bistro.Core version 0.9.1.0 instead of 0.9.0.0
  *NDjango.Core and NDjango.Filters hasn't changed since 0.9.1.2
