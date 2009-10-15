@@ -1,3 +1,0 @@
-{% with a|wordwrap|bbb as b %}
-{%endwith%}
-{%debug%}
