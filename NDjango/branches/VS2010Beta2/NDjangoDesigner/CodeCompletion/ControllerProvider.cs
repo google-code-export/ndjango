@@ -47,7 +47,10 @@ namespace NDjango.Designer.CodeCompletion
         
         public IIntellisenseController TryCreateIntellisenseController(ITextView textView, IList<ITextBuffer> subjectBuffers)
         {
-            return new Controller(this, subjectBuffers, textView);
+            foreach (ITextBuffer buffer in subjectBuffers)
+                if (nodeProviderBroker.IsNDjango(buffer))
+                    return new Controller(this, buffer, textView);
+            return null;
         }
     }
 }

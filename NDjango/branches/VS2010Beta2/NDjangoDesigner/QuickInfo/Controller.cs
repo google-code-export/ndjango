@@ -39,7 +39,7 @@ namespace NDjango.Designer.QuickInfo
     class Controller : IIntellisenseController
     {
         private ControllerProvider provider;
-        private IList<ITextBuffer> subjectBuffers;
+        private ITextBuffer buffer;
         private ITextView textView;
         private IQuickInfoSession activeSession;
 
@@ -50,10 +50,10 @@ namespace NDjango.Designer.QuickInfo
         /// <param name="subjectBuffers"></param>
         /// <param name="textView"></param>
         /// <param name="brokerMapService"></param>
-        public Controller(ControllerProvider provider, IList<ITextBuffer> subjectBuffers, ITextView textView)
+        public Controller(ControllerProvider provider, ITextBuffer buffer, ITextView textView)
         {
             this.provider = provider;
-            this.subjectBuffers = subjectBuffers;
+            this.buffer = buffer;
             this.textView = textView;
 
             textView.MouseHover += new EventHandler<MouseHoverEventArgs>(textView_MouseHover);
@@ -73,8 +73,7 @@ namespace NDjango.Designer.QuickInfo
             SnapshotPoint? point = e.TextPosition.GetPoint(
                 textBuffer => 
                     (
-                        subjectBuffers.Contains(textBuffer)
-                        && provider.nodeProviderBroker.IsNDjango(textBuffer)
+                        buffer == textBuffer
                                 // only text buffers require expilicit session activation
                                 // XML and HTML already have quickInfo session activation code
                                 // adding our own would cause 'double vision' - our source would be hit

@@ -108,19 +108,17 @@ namespace NDjango.Designer.Parsing
         /// <returns><b>true</b> if this is a ndjango buffer</returns>
         public bool IsNDjango(ITextBuffer buffer)
         {
-            // we do not need to mess with the text buffers for tooltips
-            //var formatMap = new VariableDescription();
-            //formatMap.Name = "FormatMap";
-            //var formatMapName = context.Get(formatMap);
-            //if (Convert.ToString(formatMapName) == "tooltip")
-            //    return false;
 
             switch (buffer.ContentType.TypeName)
             {
                 case "plaintext":
-                case "text":
                 case "HTML":
                 case "XML":
+                    // there is no file associated with the buffer
+                    // it looks like a buffer created for a tool tip 
+                    // we do not need to mess with those
+                    if (!buffer.Properties.ContainsProperty(typeof(ITextDocument)))
+                        return false;
                     return true;
                 default: return false;
             }
