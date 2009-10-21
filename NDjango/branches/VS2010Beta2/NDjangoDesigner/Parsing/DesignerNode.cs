@@ -111,7 +111,7 @@ namespace NDjango.Designer.Parsing
                     node.ErrorMessage.Message + "\n",
                     VSTASKPRIORITY.TP_HIGH,
                     VSTASKCATEGORY.CAT_BUILDCOMPILE,
-                    "",
+                    "something",
                     (int)_vstaskbitmap.BMP_COMPILE,
                     filePath,
                     (uint)line.LineNumber,

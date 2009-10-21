@@ -7,6 +7,7 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Utilities;
 using NDjango.Designer.Parsing;
 using Microsoft.VisualStudio.Text;
+using Microsoft.VisualStudio.Text.Classification;
 
 namespace NDjango.Designer.Classifiers
 {

@@ -36,12 +36,12 @@ namespace NDjango.Designer.CodeCompletion
     /// </summary>
     internal class Source : ICompletionSource
     {
-        private INodeProviderBroker nodeProviderBroker;
-
-        public Source(INodeProviderBroker nodeProviderBroker)
+        private NodeProvider nodeProvider;
+        private ITextBuffer textBuffer;
+        public Source(INodeProviderBroker nodeProviderBroker, ITextBuffer textBuffer)
         {
-            // TODO: Complete member initialization
-            this.nodeProviderBroker = nodeProviderBroker;
+            this.textBuffer = textBuffer;
+            nodeProvider = nodeProviderBroker.GetNodeProvider(textBuffer);
         }
         /// <summary>
         /// Gets the completion information
@@ -50,7 +50,7 @@ namespace NDjango.Designer.CodeCompletion
         /// <returns></returns>
         /// <remarks>
         /// The location of the textspan to be replaced with 
-        /// the selection so that the entire entire word would be replaced
+        /// the selection so that the entire word would be replaced
         /// </remarks>
         public ReadOnlyCollection<VSCompletionSet> GetCompletionInformation(ICompletionSession session)
         {
@@ -58,12 +58,9 @@ namespace NDjango.Designer.CodeCompletion
             if (!session.Properties.TryGetProperty<CompletionContext>(typeof(CompletionContext), out context))
                 return null;
 
-            ITextBuffer buffer = session.TextView.TextBuffer;
+            SnapshotPoint point = session.GetTriggerPoint(textBuffer).GetPoint(textBuffer.CurrentSnapshot);
 
-            SnapshotPoint point = session.GetTriggerPoint(buffer).GetPoint(buffer.CurrentSnapshot);
-
-            List<DesignerNode> nodes =
-                nodeProviderBroker.GetNodeProvider(buffer)
+            List<DesignerNode> nodes = nodeProvider
                     .GetNodes(point, n => n.Values.GetEnumerator().MoveNext());
 
             CompletionSet set = CreateCompletionSet(context, nodes, point);

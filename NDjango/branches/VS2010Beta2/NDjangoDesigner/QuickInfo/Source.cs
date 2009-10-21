@@ -36,11 +36,12 @@ namespace NDjango.Designer.QuickInfo
     /// </summary>
     class Source : IQuickInfoSource
     {
-        private INodeProviderBroker nodeProviderBroker;
-
-        public Source(INodeProviderBroker nodeProviderBroker)
+        private NodeProvider nodeProvider;
+        private ITextBuffer textBuffer;
+        public Source(INodeProviderBroker nodeProviderBroker, ITextBuffer textBuffer)
         {
-            this.nodeProviderBroker = nodeProviderBroker;
+            this.textBuffer = textBuffer;
+            nodeProvider = nodeProviderBroker.GetNodeProvider(textBuffer);
         }
         /// <summary>
         /// Generates the tooltip text 
@@ -55,12 +56,10 @@ namespace NDjango.Designer.QuickInfo
         public ReadOnlyCollection<object> GetToolTipContent(IQuickInfoSession session, out ITrackingSpan applicableToSpan)
         {
             StringBuilder message = new StringBuilder();
-            ITextBuffer buffer = session.TextView.TextBuffer;
-            int position = buffer.CurrentSnapshot.Length;
+            int position = textBuffer.CurrentSnapshot.Length;
             int length = 0;
 
-            SnapshotPoint point = session.GetTriggerPoint(buffer).GetPoint(buffer.CurrentSnapshot);
-            NodeProvider nodeProvider = nodeProviderBroker.GetNodeProvider(point.Snapshot.TextBuffer);
+            SnapshotPoint point = session.GetTriggerPoint(textBuffer).GetPoint(textBuffer.CurrentSnapshot);
 
             List<DesignerNode> quickInfoNodes = nodeProvider
                 .GetNodes(point, node => node.NodeType != NodeType.ParsingContext);

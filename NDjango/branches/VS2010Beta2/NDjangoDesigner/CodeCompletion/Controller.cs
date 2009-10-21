@@ -39,7 +39,7 @@ namespace NDjango.Designer.CodeCompletion
     /// </summary>
     class Controller : IIntellisenseController, IOleCommandTarget
     {
-        private IList<ITextBuffer> subjectBuffers;
+        private ITextBuffer buffer;
         private ITextView textView;
         private IWpfTextView WpfTextView;
         private ICompletionSession activeSession;
@@ -55,10 +55,10 @@ namespace NDjango.Designer.CodeCompletion
         /// <param name="subjectBuffers"></param>
         /// <param name="subjectTextView"></param>
         /// <param name="context"></param>
-        public Controller(ControllerProvider provider, IList<ITextBuffer> subjectBuffers, ITextView subjectTextView)
+        public Controller(ControllerProvider provider, ITextBuffer buffer, ITextView subjectTextView)
         {
             this.provider = provider;
-            this.subjectBuffers = subjectBuffers;
+            this.buffer = buffer;
             this.textView = subjectTextView;
 
             WpfTextView = subjectTextView as IWpfTextView;
@@ -85,10 +85,6 @@ namespace NDjango.Designer.CodeCompletion
 
             if (activeSession == null)
                 return;
-
-            ITrackingSpan span;
-            activeSession.Properties.TryGetProperty<ITrackingSpan>(typeof(Controller), out span);
-            string str = span.GetText(span.TextBuffer.CurrentSnapshot);
 
             switch (e.Key)
             {
@@ -142,12 +138,7 @@ namespace NDjango.Designer.CodeCompletion
 
             // determine which subject buffer is affected by looking at the caret position
             SnapshotPoint? caret = textView.Caret.Position.Point.GetPoint
-                (textBuffer => 
-                    (
-                        subjectBuffers.Contains(textBuffer) 
-                        && provider.nodeProviderBroker.IsNDjango(textBuffer)
-                    ),
-                    PositionAffinity.Predecessor);
+                (textBuffer => buffer == textBuffer, PositionAffinity.Predecessor);
 
             // return if no suitable buffer found
             if (!caret.HasValue)

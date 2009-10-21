@@ -39,7 +39,7 @@ namespace NDjango.Designer.QuickInfo
         public IQuickInfoSource TryCreateQuickInfoSource(ITextBuffer textBuffer)
         {
             if (nodeProviderBroker.IsNDjango(textBuffer))
-                return new Source(nodeProviderBroker);
+                return new Source(nodeProviderBroker, textBuffer);
             return null;
         }
 
