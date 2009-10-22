@@ -251,16 +251,16 @@ and ITag =
 and ParsingContext(provider: ITemplateManagerProvider, extra_tags: string list) =
     
     /// List (sequence) of all registered tag names. Includes all registered tags as well as 
-    member x.Tags = provider.Tags |> Map.to_seq |> Seq.map (fun tag -> tag |> fst) 
+    member x.Tags = provider.Tags |> Map.toSeq |> Seq.map (fun tag -> tag |> fst) 
 
     /// a list (sequence) of all closing tags for the context
-    member x.TagClosures = Seq.of_list extra_tags                    
+    member x.TagClosures = Seq.ofList extra_tags                    
    
    /// Parent provider owning the context
     member x.Provider = provider
    
    /// Parent provider owning the context
-    member x.Filters = provider.Filters |> Map.to_seq |> Seq.map (fun filter -> filter |> fst)
+    member x.Filters = provider.Filters |> Map.toSeq |> Seq.map (fun filter -> filter |> fst)
     
 /// A representation of a node of the template abstract syntax tree    
 type INode =
