@@ -121,10 +121,10 @@ namespace NDjango.Designer.CodeCompletion
             {
                 if (completions == null)
                     completions = NodeCompletions;
-                string prefix = getPrefix();
-                if (prefix.Length > 1)
-                    return completions.Where(c => c.DisplayText.StartsWith(prefix.Substring(0, prefix.Length - 1))).ToList();
-                else
+                //string prefix = getPrefix();
+                //if (prefix.Length > 1)
+                //    return completions.Where(c => c.DisplayText.StartsWith(prefix.Substring(0, prefix.Length - 1))).ToList();
+                //else
                     return completions;
             }
         }
