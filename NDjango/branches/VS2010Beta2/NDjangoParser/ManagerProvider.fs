@@ -30,7 +30,6 @@ open NDjango.Tags.Misc
 open NDjango.ASTNodes
 open NDjango.ParserNodes
 open NDjango.Expressions
-open NDjango.OutputHandling
 
 type Filter = {name:string; filter:ISimpleFilter}
 
