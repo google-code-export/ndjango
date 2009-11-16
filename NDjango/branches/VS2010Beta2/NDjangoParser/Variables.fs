@@ -170,10 +170,10 @@ module Variables =
             | Some v -> resolve_members v (tail)
             | None -> None
 
-    type private LiteralValue(value) =
-        member x.Resolve(context) = (value, false)
+    type private LiteralValue(value, translator:IContext->obj->obj) =
+        member x.Resolve(context) = (value |> translator context, false)
             
-    type private VariableReference (context:ParsingContext, reference:string) =
+    type private VariableReference (context:ParsingContext, reference:string, translator:IContext->obj->obj) =
 
         let var_list = List.ofArray (reference.Split(Constants.VARIABLE_ATTRIBUTE_SEPARATOR.ToCharArray()))
         let a = 
@@ -187,7 +187,6 @@ module Variables =
                 )
 
         let template_string_if_invalid = context.Provider.Settings.TryFind(Constants.TEMPLATE_STRING_IF_INVALID)
-        
         
         member x.Resolve(context:IContext) = 
             let result =
@@ -205,8 +204,11 @@ module Variables =
                     match template_string_if_invalid with
                     | Some o -> o
                     | None -> "" :> obj
-            (result, context.Autoescape)
-            
+            (result |> translator context, context.Autoescape)
+
+
+    /// Discriminating union representing a variable
+    /// can be either a Literal or a Reference            
     type private VariableContent =
     | Literal of LiteralValue
     | Reference of VariableReference
@@ -214,7 +216,6 @@ module Variables =
             match x with
             | Literal ltr -> ltr.Resolve context
             | Reference lkp -> lkp.Resolve context
-    
 
     /// <summary>
     /// A template variable, resolvable against a given context. The variable may be
@@ -241,27 +242,31 @@ module Variables =
         /// <summary>
         /// builds a VariableContent object out of the string. The object may or may not require translation
         /// </summary>        
-        let build_string_variable text needs_i18n = 
+        let build_string_variable text (translator:IContext->obj->obj) = 
             match text with
-            | Utilities.String s -> (Literal (new LiteralValue(s.Replace("\\'", "'").Replace("\\\"", "\"") :> obj)), needs_i18n)
-            | _ -> (Reference (new VariableReference(context, text)), needs_i18n)
+            | Utilities.String s -> Literal (new LiteralValue(s.Replace("\\'", "'").Replace("\\\"", "\"") :> obj, translator))
+            | _ -> Reference (new VariableReference(context, text, translator))
             
-        let error, content, translate = 
+        let dummy_translate = fun (context:IContext) value -> value
+            
+        let translate = fun (context:IContext) value -> value |> context.Translate
+
+        let error, content = 
             try
-                let content, translate =
+                let content =
                     match token.Value with
-                    | Utilities.Int i -> (Literal (new LiteralValue(i :> obj)), false)
-                    | Utilities.Float f -> (Literal (new LiteralValue(f :> obj)), false)
-                    | Utilities.IsI18N s -> build_string_variable s true
-                    | _ as s -> build_string_variable s false
-                (Error.None, content, translate)
+                    | Utilities.Int i -> Literal (new LiteralValue(i :> obj, dummy_translate))
+                    | Utilities.Float f -> Literal (new LiteralValue(f :> obj, dummy_translate))
+                    | Utilities.IsI18N s -> build_string_variable s translate
+                    | _ as s -> build_string_variable s dummy_translate
+                (Error.None, content)
             with
             | :? SyntaxError as ex -> 
                 if (context.Provider.Settings.[Constants.EXCEPTION_IF_ERROR] :?> bool)
                 then
                     raise (SyntaxException(ex.Message, Text token))
                 else
-                    (new Error(2, ex.Message), Literal (new LiteralValue(null)), false)
+                    new Error(2, ex.Message), Literal (new LiteralValue(null, dummy_translate))
             | _ -> reraise()
         
         /// <summary>
