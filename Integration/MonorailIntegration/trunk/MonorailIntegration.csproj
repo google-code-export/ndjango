@@ -72,6 +72,7 @@
   <ItemGroup>
     <Compile Include="NDjangoViewEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TemplateKeys.cs" />
     <Compile Include="TemplateLoader.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

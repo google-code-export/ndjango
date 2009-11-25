@@ -108,22 +108,27 @@ namespace NDjango.MonorailIntegration
         /// <returns></returns>
         protected IDictionary<string, object> CreateContext(IRailsEngineContext context, Controller controller)
         {
-            IDictionary<string,object> newContext = new Dictionary<string,object>();
+            IDictionary<string,object> ndjangoContext = new Dictionary<string,object>();
+            ndjangoContext.Add(TemplateKeys.Controller, controller);
+            ndjangoContext.Add(TemplateKeys.Context, context);
+            ndjangoContext.Add(TemplateKeys.Request, context.Request);
+            ndjangoContext.Add(TemplateKeys.Response, context.Response);
+            ndjangoContext.Add(TemplateKeys.Session, context.Session);
 
             if (controller.Resources != null)
             {
                 foreach (String key in controller.Resources.Keys)
                 {
-                    newContext[key] = controller.Resources[key];
+                    ndjangoContext[key] = controller.Resources[key];
                 }
             }
 
             foreach (String key in context.Params.AllKeys)
             {
-                if (key == null) continue; 
+                if (key == null) continue; // Copied from nvelocity.
                 object value = context.Params[key];
                 if (value == null) continue;
-                newContext[key] = value;
+                ndjangoContext[key] = value;
             }
 
 
@@ -132,10 +137,12 @@ namespace NDjango.MonorailIntegration
                 foreach (DictionaryEntry entry in controller.PropertyBag)
                 {
                     if (entry.Value == null) continue;
-                    newContext[(string)(entry.Key)] = entry.Value;
+                    ndjangoContext[(string)(entry.Key)] = entry.Value;
                 }
             }
-            return newContext;
+
+            ndjangoContext[TemplateKeys.SiteRoot] = context.ApplicationPath;
+            return ndjangoContext;
 
         }
 
