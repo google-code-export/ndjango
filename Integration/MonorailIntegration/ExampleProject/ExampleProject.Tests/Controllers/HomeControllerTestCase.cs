@@ -1,4 +1,4 @@
-namespace ExampleProject.Tests
+namespace MRExampleProject.Tests
 {
 	using System;
     using ExampleProject.Controllers;
@@ -33,7 +33,7 @@ namespace ExampleProject.Tests
 		}
 
 		[Test]
-		[ExpectedException(typeof(Exception),ExceptionName = "Exception thrown from a MonoRail action")]
+		[ExpectedException(ExceptionType = typeof(System.Exception),ExpectedMessage = "Exception thrown from a MonoRail action")]
 		public void BlowItAwayShouldThrowExceptionAsItsHardCodedToDoThat()
 		{
 			controller.BlowItAway();

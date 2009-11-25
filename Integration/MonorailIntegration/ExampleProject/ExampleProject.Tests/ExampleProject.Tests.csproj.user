@@ -2,6 +2,6 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <StartAction>Program</StartAction>
     <StartProgram>C:\Program Files\NUnit 2.5\bin\net-2.0\nunit.exe</StartProgram>
-    <StartArguments>ProjectTest1.Tests.dll /run</StartArguments>
+    <StartArguments>ExampleProject.Tests.dll /run</StartArguments>
   </PropertyGroup>
 </Project>
