@@ -19,20 +19,25 @@ namespace NDjango.MonorailIntegration
         /// Key to use in HttpApplicationState for storing ITemplateManager.
         /// </summary>
         internal const String cDjangoManagerKey = "_djangoManagerKey";
+        /// <summary>
+        /// Template extension
+        /// </summary>
         internal const String cTemplateExtension = ".django";
 
+        /// <summary>
+        /// Template Manager Provider will store here.
+        /// </summary>
         private TemplateManagerProvider managerProvider;
 
         #region IInitializable Members
         /// <summary>
-        /// 
+        /// initializing managerProvider and loader.
         /// </summary>
         public void Initialize()
         {
-            ITemplateLoader loader = new TemplateLoader();
             managerProvider =
                 new TemplateManagerProvider()
-                    .WithLoader(loader)
+                    .WithLoader(new TemplateLoader())
                     //.WithFilters(loader.GetFilters())
                     //.WithTags(loader.GetTags())
                     //.WithTag("url", new AspMvcUrlTag())
@@ -46,12 +51,14 @@ namespace NDjango.MonorailIntegration
 
         /// <summary>
         /// This method extracts HttpApplicationState from the context and adds ITemplateManager to it.
+        /// This should be done, because we need new instance of the ITemplateManager for each thread
         /// </summary>
         /// <param name="engineContext"></param>
         /// <returns></returns>
         private ITemplateManager GetManagerByRailsContext(IRailsEngineContext engineContext)
         {
             HttpApplicationState app = engineContext.UnderlyingContext.Application;
+            // If there's no manager - managerProvider will return new one for us.
             if (app[cDjangoManagerKey] == null)
             {
                 // Since one HttpApplication processed by a single thread - we don't need no locking here.
@@ -135,26 +142,59 @@ namespace NDjango.MonorailIntegration
         #endregion
 
         #region IViewEngine implementation
+        /// <summary>
+        /// Not Implemented - Implementors should return a generator instance if
+        /// the view engine supports JS generation.
+        /// </summary>
+        /// <param name="context">The request context.</param>
+        /// <returns>A JS generator instance</returns>
         public override object CreateJSGenerator(IRailsEngineContext context)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Not Implemented - Processes the js generation view template - using the templateName
+        /// to obtain the correct template, and using the specified <see cref="T:System.IO.TextWriter"/>
+        /// to output the result.
+        /// </summary>
+        /// <param name="output">The output.</param>
+        /// <param name="context">The request context.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="templateName">Name of the template.</param>
         public override void GenerateJS(System.IO.TextWriter output, IRailsEngineContext context, Controller controller, string templateName)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Not Implemented - Evaluates whether the specified template exists.
+        /// </summary>
+        /// <param name="templateName"></param>
+        /// <returns><c>true</c> if it exists</returns>
         public override bool HasTemplate(string templateName)
         {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Not Implemented - Gets the JS generator file extension.
+        /// </summary>
+        /// <value>The JS generator file extension.</value>
         public override string JSGeneratorFileExtension
         {
             get { throw new NotImplementedException(); }
         }
 
+        /// <summary>
+        /// Processes the view - using the templateName
+        /// to obtain the correct template
+        /// and writes the results to the System.IO.TextWriter.
+        /// </summary>
+        /// <param name="output"></param>
+        /// <param name="context"></param>
+        /// <param name="controller"></param>
+        /// <param name="templateName"></param>
         public override void Process(System.IO.TextWriter output, IRailsEngineContext context, Controller controller, string templateName)
         {
             ITemplateManager mgr = GetManagerByRailsContext(context);
@@ -184,13 +224,21 @@ namespace NDjango.MonorailIntegration
             }
         }
 
+        /// <summary>
+        /// Processes the view - using the templateName
+        /// to obtain the correct template,
+        /// and using the context's response's output to output the result. 
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="controller"></param>
+        /// <param name="templateName"></param>
         public override void Process(IRailsEngineContext context, Controller controller, string templateName)
         {
             Process(context.Response.Output, context, controller, templateName);
         }
 
         /// <summary>
-        /// Processes the contents.
+        /// Not Implemented - Processes the contents.
         /// </summary>
         /// <param name="context">The context.</param>
         /// <param name="controller">The controller.</param>
@@ -200,6 +248,14 @@ namespace NDjango.MonorailIntegration
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Not Implemented - Should process the specified partial. The partial name must contains
+        /// the path relative to the views folder.
+        /// </summary>
+        /// <param name="output">The output.</param>
+        /// <param name="context">The request context.</param>
+        /// <param name="controller">The controller.</param>
+        /// <param name="partialName">The partial name.</param>
         public override void ProcessPartial(System.IO.TextWriter output, IRailsEngineContext context, Controller controller, string partialName)
         {
             throw new NotImplementedException();
