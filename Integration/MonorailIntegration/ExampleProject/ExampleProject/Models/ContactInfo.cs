@@ -1,6 +1,7 @@
 namespace ExampleProject.Models
 {
 	using Castle.Components.Validator;
+    using System;
 
 	public class ContactInfo
 	{
@@ -16,7 +17,7 @@ namespace ExampleProject.Models
 		[ValidateNonEmpty, ValidateEmail]
 		public string Email
 		{
-			get { return email; }
+            get { return email; }
 			set { email = value; }
 		}
 

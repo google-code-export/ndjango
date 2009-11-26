@@ -4,7 +4,7 @@
     New Template
 {% endblock %}
 {% block body %}
-    Hello world. {{ AccessDate }}
+    Hello world. Test email:{{ testData.Email }}
 {% endblock %}
 
 

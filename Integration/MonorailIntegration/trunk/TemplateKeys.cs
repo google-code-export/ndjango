@@ -5,16 +5,15 @@ using System.Text;
 
 namespace NDjango.MonorailIntegration
 {
-    public sealed class TemplateKeys
+    /// <summary>
+    /// Class containing constants for use in the context dictionary and in the template.
+    /// </summary>
+    public static class TemplateKeys
     {
-        private TemplateKeys() { throw new InvalidOperationException(); }
-
-        public static readonly String ChildContent = "childContent";
-        public static readonly String Context = "context";
-        public static readonly String Request = "request";
-        public static readonly String Response = "response";
-        public static readonly String Session = "session";
-        public static readonly String Controller = "controller";
-        public static readonly String SiteRoot = "siteroot";
+        public const String Context = "context";
+        public const String Request = "request";
+        public const String Response = "response";
+        public const String Session = "session";
+        public const String Controller = "controller";
     }
 }
