@@ -2,30 +2,36 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Web;
+using System.IO;
+using System.Collections;
+using System.Reflection;
 using Castle.MonoRail.Framework;
 using Castle.Core;
 using NDjango;
 using NDjango.Interfaces;
-using NDjango.FiltersCS;
-using System.Web;
-using System.IO;
-using System.Collections;
+
 
 namespace NDjango.MonorailIntegration
 {
+    /// <summary>
+    /// Implements a view engine using NDjango rendering engine. 
+    /// 
+    /// For details - see http://www.ndjango.org
+    /// </summary>
     public class NDjangoViewEngine : ViewEngineBase, IInitializable
     {
         /// <summary>
         /// Key to use in HttpApplicationState for storing ITemplateManager.
         /// </summary>
-        internal const String cDjangoManagerKey = "_djangoManagerKey";
+        private const String cDjangoManagerKey = "_djangoManagerKey";
         /// <summary>
         /// Template extension
         /// </summary>
-        internal const String cTemplateExtension = ".django";
+        private const String cTemplateExtension = ".django";
 
         /// <summary>
-        /// Template Manager Provider will store here.
+        /// Template Manager Provider stored here.
         /// </summary>
         private TemplateManagerProvider managerProvider;
 
@@ -35,69 +41,61 @@ namespace NDjango.MonorailIntegration
         /// </summary>
         public void Initialize()
         {
+            string path = typeof(TemplateManagerProvider).Assembly.CodeBase;
+            List<Tag> tags = new List<Tag>();
+            List<Filter> filters = new List<Filter>();
+            if (path.StartsWith("file:///"))
+                foreach (string file in
+                    Directory.GetFiles(
+                        Path.GetDirectoryName(path.Substring(8)),
+                        "*.NDjangoExtension.dll",
+                        SearchOption.AllDirectories))
+                {
+                    AssemblyName name = new AssemblyName();
+                    name.CodeBase = file;
+                    foreach (Type t in Assembly.Load(name).GetExportedTypes())
+                    {
+                        if (typeof(ITag).IsAssignableFrom(t))
+                            CreateEntry<Tag>(tags, t);
+                        if (typeof(ISimpleFilter).IsAssignableFrom(t))
+                            CreateEntry<Filter>(filters, t);
+                    }
+                }
+
+
             managerProvider =
                 new TemplateManagerProvider()
                     .WithLoader(new TemplateLoader())
-                    //.WithFilters(loader.GetFilters())
-                    //.WithTags(loader.GetTags())
-                    //.WithTag("url", new AspMvcUrlTag())
-                    .WithFilters(FilterManager.GetFilters());
+                    .WithFilters(filters)
+                    .WithTags(tags)
+                    .WithTag("url", new MonorailUrlTag(HttpRuntime.AppDomainAppVirtualPath));
         }
-
-        #endregion
-
-        #region HttpApplication and IRailsEngineContext
-        
 
         /// <summary>
-        /// This method extracts HttpApplicationState from the context and adds ITemplateManager to it.
-        /// This should be done, because we need new instance of the ITemplateManager for each thread
+        /// Creates the class instance and adds it to the list
         /// </summary>
-        /// <param name="engineContext"></param>
-        /// <returns></returns>
-        private ITemplateManager GetManagerByRailsContext(IRailsEngineContext engineContext)
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list">The list.</param>
+        /// <param name="t">The type to create instance of.</param>
+        private void CreateEntry<T>(List<T> list, Type t) where T : class
         {
-            HttpApplicationState app = engineContext.UnderlyingContext.Application;
-            // If there's no manager - managerProvider will return new one for us.
-            if (app[cDjangoManagerKey] == null)
-            {
-                // Since one HttpApplication processed by a single thread - we don't need no locking here.
-                app[cDjangoManagerKey] = managerProvider.GetNewManager();
-            }
-            ITemplateManager mgr = app[cDjangoManagerKey] as ITemplateManager;
-            if (mgr == null)
-            {
-                if (Logger.IsErrorEnabled)
-                {
-                    Logger.Error("Couldn't get ITemplateManager from the HttpApplicationState");
-                }
-                else
-                {
-                    throw new ApplicationException("Couldn't get ITemplateManager from the HttpApplicationState");
-                }
-            }
-            return mgr;
+            if (t.IsAbstract)
+                return;
+            if (t.IsInterface)
+                return;
+
+            var attrs = t.GetCustomAttributes(typeof(NameAttribute), false) as NameAttribute[];
+            if (attrs.Length == 0)
+                return;
+
+            if (t.GetConstructor(new Type[] { }) == null)
+                return;
+
+            list.Add((T)Activator.CreateInstance(typeof(T), attrs[0].Name, Activator.CreateInstance(t)));
         }
 
         #endregion
 
-        #region Template names
-        /// <summary>
-        /// Resolves the template name into a velocity template file name.
-        /// </summary>
-        protected string ResolveTemplateName(string templateName)
-        {
-            if (Path.HasExtension(templateName))
-            {
-                return templateName;
-            }
-            else
-            {
-                return templateName + cTemplateExtension;
-            }
-        }
-
-        #endregion
 
         #region Context creation
         /// <summary>
@@ -106,8 +104,9 @@ namespace NDjango.MonorailIntegration
         /// <param name="context">The context.</param>
         /// <param name="controller">The controller.</param>
         /// <returns></returns>
-        protected IDictionary<string, object> CreateContext(IRailsEngineContext context, Controller controller)
+        private IDictionary<string, object> CreateContext(IRailsEngineContext context, Controller controller)
         {
+            // Ndjango context is actually a dictionary with string keys.
             IDictionary<string,object> ndjangoContext = new Dictionary<string,object>();
             ndjangoContext.Add(TemplateKeys.Controller, controller);
             ndjangoContext.Add(TemplateKeys.Context, context);
@@ -115,6 +114,7 @@ namespace NDjango.MonorailIntegration
             ndjangoContext.Add(TemplateKeys.Response, context.Response);
             ndjangoContext.Add(TemplateKeys.Session, context.Session);
 
+            // Drop in controller's resources
             if (controller.Resources != null)
             {
                 foreach (String key in controller.Resources.Keys)
@@ -123,25 +123,24 @@ namespace NDjango.MonorailIntegration
                 }
             }
 
+            // All context parameters
             foreach (String key in context.Params.AllKeys)
             {
-                if (key == null) continue; // Copied from nvelocity.
+                if (key == null) continue; 
                 object value = context.Params[key];
-                if (value == null) continue;
-                ndjangoContext[key] = value;
             }
 
-
+            // And finally - the property bag of the controller
             if (controller.PropertyBag != null)
             {
                 foreach (DictionaryEntry entry in controller.PropertyBag)
                 {
-                    if (entry.Value == null) continue;
-                    ndjangoContext[(string)(entry.Key)] = entry.Value;
+                    String entryKey = entry.Key as string;
+                    if (entryKey == null) continue;
+                    ndjangoContext[entryKey] = entry.Value;
                 }
             }
 
-            ndjangoContext[TemplateKeys.SiteRoot] = context.ApplicationPath;
             return ndjangoContext;
 
         }
@@ -204,10 +203,32 @@ namespace NDjango.MonorailIntegration
         /// <param name="templateName"></param>
         public override void Process(System.IO.TextWriter output, IRailsEngineContext context, Controller controller, string templateName)
         {
-            ITemplateManager mgr = GetManagerByRailsContext(context);
+
+            HttpApplicationState app = context.UnderlyingContext.Application;
+            // If there's no manager - managerProvider will return new one for us.
+            if (app[cDjangoManagerKey] == null)
+            {
+                // Since one HttpApplication processed by a single thread - we don't need no locking here.
+                app[cDjangoManagerKey] = managerProvider.GetNewManager();
+            }
+
+            ITemplateManager mgr = app[cDjangoManagerKey] as ITemplateManager;
+            if (mgr == null)
+            {
+                if (Logger.IsErrorEnabled)
+                {
+                    Logger.Error("Couldn't get ITemplateManager from the HttpApplicationState");
+                }
+                else
+                {
+                    throw new RailsException("Couldn't get ITemplateManager from the HttpApplicationState");
+                }
+            }
+            
+            
             AdjustContentType(context);
 
-            string resolvedName = ResolveTemplateName(templateName);
+            string resolvedName = Path.HasExtension(templateName) ? templateName : templateName + cTemplateExtension;
 
             var djangoContext = CreateContext(context,controller);
 

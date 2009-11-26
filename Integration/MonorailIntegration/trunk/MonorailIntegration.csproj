@@ -35,17 +35,18 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Castle-Source\Castle-SourceCode\MonoRail\bin\temp\Castle.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Castle.MicroKernel, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL" />
     <Reference Include="Castle.MonoRail.Framework, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Castle-Source\Castle-SourceCode\MonoRail\bin\temp\Castle.MonoRail.Framework.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\FSharp-1.9.7.8\bin\FSharp.Core.dll</HintPath>
+      <HintPath>lib\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.PowerPack, Version=1.9.7.8, Culture=neutral, PublicKeyToken=a19089b1c74d0809, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\FSharp-1.9.7.8\bin\FSharp.PowerPack.dll</HintPath>
+      <HintPath>lib\FSharp.PowerPack.dll</HintPath>
     </Reference>
     <Reference Include="NDjango.Core, Version=0.9.5.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -70,6 +71,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MonorailUrlTag.cs" />
     <Compile Include="NDjangoViewEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TemplateKeys.cs" />
