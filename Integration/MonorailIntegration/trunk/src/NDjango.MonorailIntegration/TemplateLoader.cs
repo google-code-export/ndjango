@@ -28,6 +28,11 @@ namespace NDjango.MonorailIntegration
     /// </summary>
     internal class TemplateLoader : ITemplateLoader
     {
+		/// <summary>
+		/// Views directory - templates are stored here.
+		/// </summary>
+		private string rootDir;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TemplateLoader"/> class.
         /// Sets initial directory, where templates are.
@@ -36,11 +41,6 @@ namespace NDjango.MonorailIntegration
         {
             rootDir = HttpRuntime.AppDomainAppPath + "Views\\";
         }
-
-        /// <summary>
-        /// Views directory - templates are stored here.
-        /// </summary>
-        private string rootDir;
 
         #region ITemplateLoader Members
 
