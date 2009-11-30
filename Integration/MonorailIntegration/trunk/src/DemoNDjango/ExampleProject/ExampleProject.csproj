@@ -82,15 +82,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\css\style.css" />
-    <Content Include="Content\images\ar.jpg" />
     <Content Include="Content\images\mr.png" />
-    <Content Include="Content\images\top_bar.jpg" />
-    <Content Include="Content\images\windsor.jpg" />
-    <Content Include="Content\js\behaviour.js" />
-    <Content Include="Content\js\formhelper.js" />
-    <Content Include="Content\js\prototype.js" />
-    <Content Include="Content\js\scriptaculous.js" />
     <Content Include="Default.aspx" />
     <Content Include="global.asax" />
     <Content Include="Web.config" />
@@ -111,6 +103,12 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{B4F97281-0DBD-4835-9ED8-7DFB966E87FF}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\NDjango.MonorailIntegration\NDjango.MonorailIntegration.csproj">
+      <Project>{64D8A354-DCEE-44E2-B25C-C1D1A1E7BF58}</Project>
+      <Name>NDjango.MonorailIntegration</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v9.0\WebApplications\Microsoft.WebApplication.targets" Condition="" />
