@@ -5,7 +5,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleProject", "DemoNDjan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleProject.Tests", "DemoNDjango\ExampleProject.Tests\ExampleProject.Tests.csproj", "{183C97C7-7985-4D57-B7BD-6CF545797C25}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NDjango.MonorailIntegration", "NDjango.MonorailIntegration\NDjango.MonorailIntegration.csproj", "{64D8A354-DCEE-44E2-B25C-C1D1A1E7BF58}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Castle.Monorail.Views.NDjangoView", "Castle.Monorail.Views.NDjangoView\Castle.Monorail.Views.NDjangoView.csproj", "{64D8A354-DCEE-44E2-B25C-C1D1A1E7BF58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
