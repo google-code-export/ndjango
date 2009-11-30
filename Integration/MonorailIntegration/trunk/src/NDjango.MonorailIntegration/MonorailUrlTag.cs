@@ -27,6 +27,9 @@ namespace NDjango.MonorailIntegration
     /// </summary>
     internal class MonorailUrlTag : NDjango.Tags.Abstract.UrlTag
     {
+		/// <summary>
+		/// Root directory
+		/// </summary>
         private string rootDir;
 
         /// <summary>
@@ -35,7 +38,7 @@ namespace NDjango.MonorailIntegration
         /// <param name="rootDir">The application virtual path.</param>
         internal MonorailUrlTag(string rootDir)
         {
-            // trim to guarantee it's not there, then add to not do it every time
+            // trim "/" to guarantee it's not there, then add to not to do it every time
             this.rootDir = rootDir.TrimEnd('/') + '/';
         }
 
