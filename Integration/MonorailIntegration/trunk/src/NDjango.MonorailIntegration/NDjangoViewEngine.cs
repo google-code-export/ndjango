@@ -59,6 +59,7 @@ namespace NDjango.MonorailIntegration
 			List<NDjango.Filter> filters = new List<NDjango.Filter>();
 			// Searching for NDjango tags and filters in the dll's.
 			if (path.StartsWith("file:///"))
+			{
 				foreach (string file in
 					Directory.GetFiles(
 						Path.GetDirectoryName(path.Substring(8)),
@@ -67,7 +68,7 @@ namespace NDjango.MonorailIntegration
 				{
 					AssemblyName name = new AssemblyName();
 					name.CodeBase = file;
-					try 
+					try
 					{
 						foreach (Type t in Assembly.Load(name).GetExportedTypes())
 						{
@@ -83,6 +84,7 @@ namespace NDjango.MonorailIntegration
 					{
 					}
 				}
+			}
 
 			managerProvider =
 				new TemplateManagerProvider()
@@ -118,55 +120,7 @@ namespace NDjango.MonorailIntegration
 		#endregion
 
 
-		#region Context creation
-		/// <summary>
-		/// Creates the context form the Rails Context and the controller.
-		/// </summary>
-		/// <param name="context">The context.</param>
-		/// <param name="controller">The controller.</param>
-		/// <returns></returns>
-		private IDictionary<string, object> CreateContext(IRailsEngineContext context, Controller controller)
-		{
-			// Ndjango context is actually a dictionary with string keys.
-			IDictionary<string,object> ndjangoContext = new Dictionary<string,object>();
-			ndjangoContext.Add(TemplateKeys.Controller, controller);
-			ndjangoContext.Add(TemplateKeys.Context, context);
-			ndjangoContext.Add(TemplateKeys.Request, context.Request);
-			ndjangoContext.Add(TemplateKeys.Response, context.Response);
-			ndjangoContext.Add(TemplateKeys.Session, context.Session);
 
-			// Drop in controller's resources
-			if (controller.Resources != null)
-			{
-				foreach (String key in controller.Resources.Keys)
-				{
-					ndjangoContext[key] = controller.Resources[key];
-				}
-			}
-
-			// All context parameters
-			foreach (String key in context.Params.AllKeys)
-			{
-				if (key == null) continue; 
-				object value = context.Params[key];
-			}
-
-			// And finally - the property bag of the controller
-			if (controller.PropertyBag != null)
-			{
-				foreach (DictionaryEntry entry in controller.PropertyBag)
-				{
-					String entryKey = entry.Key as string;
-					if (entryKey == null) continue;
-					ndjangoContext[entryKey] = entry.Value;
-				}
-			}
-
-			return ndjangoContext;
-
-		}
-
-		#endregion
 
 		#region IViewEngine implementation
 		/// <summary>
@@ -327,5 +281,56 @@ namespace NDjango.MonorailIntegration
 			get { return cTemplateExtension; }
 		}
 		#endregion
+
+		#region Context creation
+		/// <summary>
+		/// Creates the context form the Rails Context and the controller.
+		/// </summary>
+		/// <param name="context">The context.</param>
+		/// <param name="controller">The controller.</param>
+		/// <returns></returns>
+		private IDictionary<string, object> CreateContext(IRailsEngineContext context, Controller controller)
+		{
+			// Ndjango context is actually a dictionary with string keys.
+			IDictionary<string, object> ndjangoContext = new Dictionary<string, object>();
+			ndjangoContext.Add(TemplateKeys.Controller, controller);
+			ndjangoContext.Add(TemplateKeys.Context, context);
+			ndjangoContext.Add(TemplateKeys.Request, context.Request);
+			ndjangoContext.Add(TemplateKeys.Response, context.Response);
+			ndjangoContext.Add(TemplateKeys.Session, context.Session);
+
+			// Drop in controller's resources
+			if (controller.Resources != null)
+			{
+				foreach (String key in controller.Resources.Keys)
+				{
+					ndjangoContext[key] = controller.Resources[key];
+				}
+			}
+
+			// All context parameters
+			foreach (String key in context.Params.AllKeys)
+			{
+				if (key == null) continue;
+				object value = context.Params[key];
+			}
+
+			// And finally - the property bag of the controller
+			if (controller.PropertyBag != null)
+			{
+				foreach (DictionaryEntry entry in controller.PropertyBag)
+				{
+					String entryKey = entry.Key as string;
+					if (entryKey == null) continue;
+					ndjangoContext[entryKey] = entry.Value;
+				}
+			}
+
+			return ndjangoContext;
+
+		}
+
+		#endregion
+
 	}
 }
