@@ -33,27 +33,27 @@
   <ItemGroup>
     <Reference Include="Castle.Core, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\Castle\Castle.Core.dll</HintPath>
+      <HintPath>..\..\bin\Castle\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="Castle.MonoRail.Framework, Version=1.0.3.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\Castle\Castle.MonoRail.Framework.dll</HintPath>
+      <HintPath>..\..\bin\Castle\Castle.MonoRail.Framework.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\NDjango\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\bin\NDjango\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.PowerPack, Version=1.9.7.8, Culture=neutral, PublicKeyToken=a19089b1c74d0809, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\NDjango\FSharp.PowerPack.dll</HintPath>
+      <HintPath>..\..\bin\NDjango\FSharp.PowerPack.dll</HintPath>
     </Reference>
     <Reference Include="NDjango.Core, Version=0.9.6.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\NDjango\NDjango.Core.dll</HintPath>
+      <HintPath>..\..\bin\NDjango\NDjango.Core.dll</HintPath>
     </Reference>
     <Reference Include="NDjangoFilters.NDjangoExtension, Version=0.9.6.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\bin\NDjango\NDjangoFilters.NDjangoExtension.dll</HintPath>
+      <HintPath>..\..\bin\NDjango\NDjangoFilters.NDjangoExtension.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
