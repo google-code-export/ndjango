@@ -1,0 +1,10 @@
+﻿{% extends "Common/base.django" %}
+
+{% block Title %}
+    New Template
+{% endblock %}
+{% block body %}
+    Hello world. Test email:{{ testData.Email }}
+{% endblock %}
+
+
