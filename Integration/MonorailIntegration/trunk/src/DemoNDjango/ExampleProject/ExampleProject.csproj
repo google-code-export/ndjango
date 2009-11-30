@@ -105,9 +105,9 @@
     <Service Include="{B4F97281-0DBD-4835-9ED8-7DFB966E87FF}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\NDjango.MonorailIntegration\NDjango.MonorailIntegration.csproj">
+    <ProjectReference Include="..\..\Castle.Monorail.Views.NDjangoView\Castle.Monorail.Views.NDjangoView.csproj">
       <Project>{64D8A354-DCEE-44E2-B25C-C1D1A1E7BF58}</Project>
-      <Name>NDjango.MonorailIntegration</Name>
+      <Name>Castle.Monorail.Views.NDjangoView</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
