@@ -82,6 +82,7 @@ namespace NDjango.ASPMVCIntegration
 
             requestContext.Add("modelState", modelState);
             requestContext.Add("fullModelState", viewContext.ViewData.ModelState);
+            requestContext.Add("user", viewContext.HttpContext.User);
             requestContext.Add("htmlHelper", 
                 new HtmlHelper(viewContext, new ViewDataContainerWrapper(viewContext.ViewData)));
 
