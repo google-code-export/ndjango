@@ -84,7 +84,6 @@ namespace NDjango.ASPMVCIntegration
             base.PartialViewLocationFormats = base.ViewLocationFormats;
             rootDir = HttpRuntime.AppDomainAppPath;
 
-            ViewEngines.Engines.Clear();
             ViewEngines.Engines.Add(this);
         }
 
