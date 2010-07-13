@@ -1,8 +1,8 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using System.ComponentModel.Design;
 using Microsoft.Win32;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -33,7 +33,6 @@ namespace NewViewGenerator
     public sealed class NewViewGeneratorPackage : Package
     {
         private AddViewDlg viewDialog;
-        //private Interaction.SelectionHandler handler;
         /// <summary>
         /// Default constructor of the package.
         /// Inside this method you can place any initialization code that does not require 
@@ -72,6 +71,7 @@ namespace NewViewGenerator
             Trace.WriteLine (string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", this.ToString()));
             base.Initialize();
             OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
+
             if (null != mcs)
             {
                 CommandID addViewCommandID = new CommandID(GuidList.guidNewViewGeneratorCmdSet, (int)GuidList.cmdidNewViewGenerator);
