@@ -36,6 +36,8 @@
             this.chkInheritance = new System.Windows.Forms.CheckBox();
             this.checkedListBase = new System.Windows.Forms.CheckedListBox();
             this.btnAdd = new System.Windows.Forms.Button();
+            this.checkedListBlocks = new System.Windows.Forms.CheckedListBox();
+            this.lblBlocks = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // lblViewName
@@ -49,9 +51,9 @@
             // 
             // tbViewName
             // 
-            this.tbViewName.Location = new System.Drawing.Point(13, 26);
+            this.tbViewName.Location = new System.Drawing.Point(18, 26);
             this.tbViewName.Name = "tbViewName";
-            this.tbViewName.Size = new System.Drawing.Size(176, 20);
+            this.tbViewName.Size = new System.Drawing.Size(267, 20);
             this.tbViewName.TabIndex = 1;
             // 
             // lblViewModel
@@ -66,29 +68,30 @@
             // comboModel
             // 
             this.comboModel.FormattingEnabled = true;
-            this.comboModel.Location = new System.Drawing.Point(13, 70);
+            this.comboModel.Location = new System.Drawing.Point(18, 70);
             this.comboModel.Name = "comboModel";
-            this.comboModel.Size = new System.Drawing.Size(176, 21);
+            this.comboModel.Size = new System.Drawing.Size(267, 21);
             this.comboModel.TabIndex = 3;
             // 
             // lblBaseTemplate
             // 
             this.lblBaseTemplate.AutoSize = true;
-            this.lblBaseTemplate.Location = new System.Drawing.Point(15, 147);
+            this.lblBaseTemplate.Location = new System.Drawing.Point(18, 147);
             this.lblBaseTemplate.Name = "lblBaseTemplate";
-            this.lblBaseTemplate.Size = new System.Drawing.Size(135, 13);
+            this.lblBaseTemplate.Size = new System.Drawing.Size(138, 13);
             this.lblBaseTemplate.TabIndex = 4;
-            this.lblBaseTemplate.Text = "Select  templates to extend";
+            this.lblBaseTemplate.Text = "Select  templates to extend:";
             // 
             // chkInheritance
             // 
             this.chkInheritance.AutoSize = true;
-            this.chkInheritance.Location = new System.Drawing.Point(15, 109);
+            this.chkInheritance.Location = new System.Drawing.Point(18, 109);
             this.chkInheritance.Name = "chkInheritance";
             this.chkInheritance.Size = new System.Drawing.Size(180, 17);
             this.chkInheritance.TabIndex = 5;
             this.chkInheritance.Text = "The template will use inheritance";
             this.chkInheritance.UseVisualStyleBackColor = true;
+            this.chkInheritance.CheckStateChanged += new System.EventHandler(this.chkInheritance_CheckStateChanged);
             // 
             // checkedListBase
             // 
@@ -96,24 +99,45 @@
             this.checkedListBase.FormattingEnabled = true;
             this.checkedListBase.Location = new System.Drawing.Point(18, 172);
             this.checkedListBase.Name = "checkedListBase";
-            this.checkedListBase.Size = new System.Drawing.Size(171, 34);
+            this.checkedListBase.Size = new System.Drawing.Size(242, 79);
             this.checkedListBase.TabIndex = 6;
             // 
             // btnAdd
             // 
-            this.btnAdd.Location = new System.Drawing.Point(18, 231);
+            this.btnAdd.Location = new System.Drawing.Point(18, 297);
             this.btnAdd.Name = "btnAdd";
-            this.btnAdd.Size = new System.Drawing.Size(75, 23);
+            this.btnAdd.Size = new System.Drawing.Size(89, 35);
             this.btnAdd.TabIndex = 7;
             this.btnAdd.Text = "Add";
             this.btnAdd.UseVisualStyleBackColor = true;
             this.btnAdd.Click += new System.EventHandler(this.btnAdd_Click);
             // 
+            // checkedListBlocks
+            // 
+            this.checkedListBlocks.FormattingEnabled = true;
+            this.checkedListBlocks.Location = new System.Drawing.Point(306, 172);
+            this.checkedListBlocks.Name = "checkedListBlocks";
+            this.checkedListBlocks.Size = new System.Drawing.Size(166, 154);
+            this.checkedListBlocks.TabIndex = 8;
+            this.checkedListBlocks.Visible = false;
+            // 
+            // lblBlocks
+            // 
+            this.lblBlocks.AutoSize = true;
+            this.lblBlocks.Location = new System.Drawing.Point(303, 147);
+            this.lblBlocks.Name = "lblBlocks";
+            this.lblBlocks.Size = new System.Drawing.Size(134, 13);
+            this.lblBlocks.TabIndex = 9;
+            this.lblBlocks.Text = "Choose Blocks to override:";
+            this.lblBlocks.Visible = false;
+            // 
             // AddViewDlg
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(292, 266);
+            this.ClientSize = new System.Drawing.Size(484, 345);
+            this.Controls.Add(this.lblBlocks);
+            this.Controls.Add(this.checkedListBlocks);
             this.Controls.Add(this.btnAdd);
             this.Controls.Add(this.checkedListBase);
             this.Controls.Add(this.chkInheritance);
@@ -122,9 +146,11 @@
             this.Controls.Add(this.lblViewModel);
             this.Controls.Add(this.tbViewName);
             this.Controls.Add(this.lblViewName);
+            this.Location = new System.Drawing.Point(50, 50);
+            this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "AddViewDlg";
-            this.Text = "AddViewDlg";
+            this.Text = "Add Django View";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -140,5 +166,7 @@
         private System.Windows.Forms.CheckBox chkInheritance;
         private System.Windows.Forms.CheckedListBox checkedListBase;
         private System.Windows.Forms.Button btnAdd;
+        private System.Windows.Forms.CheckedListBox checkedListBlocks;
+        private System.Windows.Forms.Label lblBlocks;
     }
 }

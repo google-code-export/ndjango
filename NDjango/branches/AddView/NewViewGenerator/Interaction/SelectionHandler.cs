@@ -11,19 +11,14 @@ namespace NewViewGenerator.Interaction
     public class SelectionHandler : IVsSelectionEvents
     {
 
-        public static EnvDTE.DTE dte;
-        public IVsProject curHier;
-        public string root;
-        public  uint viewsfolderId;
-        private static IVsMonitorSelection SelectionService;
         private static uint ContextCookie = RegisterContext();
         private static uint RegisterContext()
         {
-            SelectionService = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
-            dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
+            ProjectData.SelectionService = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
+            ProjectData.dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
             uint retVal;
             Guid uiContext = GuidList.UICONTEXT_ViewsSelected;
-            SelectionService.GetCmdUIContextCookie(ref uiContext, out retVal);
+            ProjectData.SelectionService.GetCmdUIContextCookie(ref uiContext, out retVal);
             return retVal;
 
         }
@@ -43,20 +38,25 @@ namespace NewViewGenerator.Interaction
 
             if (pHierNew != null)
             {
-                object itemName;
-                string projectName;
-                pHierNew.GetProperty(itemidNew, (int)__VSHPROPID.VSHPROPID_Name, out itemName);
-                if (itemName != null && itemName.ToString().Contains("Views"))
+                string itemName;
+                //pHierNew.GetProperty(itemidNew, (int)__VSHPROPID.VSHPROPID_Name, out itemName);
+                pHierNew.GetCanonicalName(itemidNew, out itemName);
+                if (itemName != null )//&& itemName.ToString().Contains("Views"))
                 {
-                    curHier = (IVsProject)pHierNew;
-                    pHierNew.GetCanonicalName(VSConstants.VSITEMID_ROOT, out projectName);
-                    root = projectName.Substring(0, projectName.LastIndexOf('\\') + 1);
-                    viewsfolderId = itemidNew;
-                    SelectionService.SetCmdUIContext(ContextCookie, 1);
+                    object temp;
+                    ProjectData.curHier = (IVsProject)pHierNew;
+                    pHierNew.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out temp);
+                    ProjectData.projectDir = temp.ToString();
+                    //root = projectFullName.Substring(0, projectFullName.LastIndexOf('\\') + 1);
+                    pHierNew.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ProjectName, out temp);
+                    ProjectData.projectName = temp.ToString();
+                    ProjectData.viewsFolderId = itemidNew;
+                    ProjectData.viewsFolderName = itemName.ToString();
+                    ProjectData.SelectionService.SetCmdUIContext(ContextCookie, 1);
                 }
             }
             else
-                SelectionService.SetCmdUIContext(ContextCookie, 0);
+                ProjectData.SelectionService.SetCmdUIContext(ContextCookie, 0);
             return VSConstants.S_OK;
 
         }
