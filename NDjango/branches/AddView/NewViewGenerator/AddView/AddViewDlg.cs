@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -11,10 +12,11 @@ namespace NewViewGenerator
 {
     public partial class AddViewDlg : Form
     {
+        ProjectManager manager;
         public AddViewDlg()
         {
+            manager = new ProjectManager();
             InitializeComponent();
-            ProjectData.SetProjectHandler();
             FillModelList();
             FillBaseTemplates();
         }
@@ -23,12 +25,10 @@ namespace NewViewGenerator
         {
             try
             {
-                List<Assembly> assmlist = ProjectData.GetReferences();
+                List<Assembly> assmlist = manager.GetReferences();
                 foreach (Assembly assm in assmlist)
                 {
                     var types= assm.GetTypes();
-                    int i = 0;
-                    int j = types.Length;
                     foreach (Type t in types)
                         comboModel.Items.Add(t.FullName);
                 }
@@ -41,8 +41,8 @@ namespace NewViewGenerator
         }
         private void FillBaseTemplates()
         {
-            IEnumerable<string> allTemplates =  ProjectData.handler.TemplateManager.GetTemplates("");
-            IEnumerable<string> recentTemplates = ProjectData.handler.TemplateManager.Recent5Templates;
+            IEnumerable<string> allTemplates =  manager.handler.TemplateManager.GetTemplates("");
+            IEnumerable<string> recentTemplates = manager.handler.TemplateManager.Recent5Templates;
             foreach(string item in recentTemplates)
                 checkedListBase.Items.Add(item);
             foreach (string item in allTemplates)
@@ -51,25 +51,41 @@ namespace NewViewGenerator
         }
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            int rootLen = manager.ProjectDir.Length;
+            string folderName = manager.ViewsFolderName.Substring(rootLen + 1, manager.ViewsFolderName.Length - rootLen - 1);
+            string itemName = tbViewName.Text + ".django";
+            string templateFile = Path.GetTempFileName();
+            StreamWriter sw = new StreamWriter(templateFile);
+            if (checkedListBase.CheckedItems.Count > 0)
+            {
+                foreach (string item in checkedListBase.CheckedItems)
+                {
+                    sw.WriteLine("{% extends \"" + item + "\" %}");
+                    manager.handler.TemplateManager.RegisterInserted(item);
+                }
+            }
+            if (comboModel.SelectedItem != null)
+                sw.WriteLine("{% model " + comboModel.SelectedItem.ToString() + " %}");
+            sw.WriteLine("{% block A %}");
+            sw.WriteLine("{% endblock %}");
+            sw.Close();
+            manager.GetTemplateBlocks(templateFile);
             //VSADDRESULT[] pResult = null;
             //string[] filesToOpen = new string[1];
-            //filesToOpen[0] = "General\\Text File";
-            //handler.curHier.AddItem(handler.viewsfolderId, VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE,
+            //filesToOpen[0] = templateFile;
+            
+            //ProjectData.curHier.AddItem(ProjectData.viewsFolderId, VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE,
             //    itemName, 1, filesToOpen, IntPtr.Zero, pResult);
-            foreach (string item in checkedListBase.CheckedItems)
-            {
-                ProjectData.GetTemplateBlocks(item);
-                ProjectData.handler.TemplateManager.RegisterInserted(item);
-            }
-            string itemName = ProjectData.projectDir + "\\" + ProjectData.viewsFolderName + "\\" + tbViewName.Text + ".django";
+
             //ProjectData.AddNewItemFromVsTemplate("NDjangoTemplate2010.zip", "CSharp/Web", itemName);
-            Close();
+            manager.AddFromFile(templateFile,folderName,itemName);
+            File.Delete(templateFile);
+            this.Close();
         }
 
         private void chkInheritance_CheckStateChanged(object sender, EventArgs e)
         {
-            checkedListBase.Enabled = lblBaseTemplate.Enabled = lblBlocks.Visible = 
-                checkedListBlocks.Visible = chkInheritance.Checked;
+            checkedListBase.Enabled = checkedListBlocks.Enabled = chkInheritance.Checked;
         }
     }
 }

@@ -114,28 +114,27 @@
             // 
             // checkedListBlocks
             // 
+            this.checkedListBlocks.Enabled = false;
             this.checkedListBlocks.FormattingEnabled = true;
-            this.checkedListBlocks.Location = new System.Drawing.Point(306, 172);
+            this.checkedListBlocks.Location = new System.Drawing.Point(287, 172);
             this.checkedListBlocks.Name = "checkedListBlocks";
             this.checkedListBlocks.Size = new System.Drawing.Size(166, 154);
             this.checkedListBlocks.TabIndex = 8;
-            this.checkedListBlocks.Visible = false;
             // 
             // lblBlocks
             // 
             this.lblBlocks.AutoSize = true;
-            this.lblBlocks.Location = new System.Drawing.Point(303, 147);
+            this.lblBlocks.Location = new System.Drawing.Point(284, 147);
             this.lblBlocks.Name = "lblBlocks";
             this.lblBlocks.Size = new System.Drawing.Size(134, 13);
             this.lblBlocks.TabIndex = 9;
             this.lblBlocks.Text = "Choose Blocks to override:";
-            this.lblBlocks.Visible = false;
             // 
             // AddViewDlg
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 345);
+            this.ClientSize = new System.Drawing.Size(462, 345);
             this.Controls.Add(this.lblBlocks);
             this.Controls.Add(this.checkedListBlocks);
             this.Controls.Add(this.btnAdd);
@@ -146,7 +145,7 @@
             this.Controls.Add(this.lblViewModel);
             this.Controls.Add(this.tbViewName);
             this.Controls.Add(this.lblViewName);
-            this.Location = new System.Drawing.Point(50, 50);
+            this.Location = new System.Drawing.Point(150, 150);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "AddViewDlg";

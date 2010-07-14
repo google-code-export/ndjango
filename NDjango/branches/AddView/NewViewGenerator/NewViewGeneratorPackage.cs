@@ -29,11 +29,11 @@ namespace NewViewGenerator
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     // This attribute is needed to let the shell know that this package exposes some menus.
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_guid.ToString())]
     [Guid(GuidList.guidNewViewGeneratorPkgString)]
     public sealed class NewViewGeneratorPackage : Package
     {
         private AddViewDlg viewDialog;
-        //private Interaction.SelectionHandler handler;
         /// <summary>
         /// Default constructor of the package.
         /// Inside this method you can place any initialization code that does not require 
@@ -53,8 +53,6 @@ namespace NewViewGenerator
         /// </summary>
         private void ShowAddView(object sender, EventArgs e)
         {
-            if (null == viewDialog)
-                viewDialog = new AddViewDlg();
             viewDialog.ShowDialog();
         }
 
@@ -77,10 +75,7 @@ namespace NewViewGenerator
                 CommandID addViewCommandID = new CommandID(GuidList.guidNewViewGeneratorCmdSet, (int)GuidList.cmdidNewViewGenerator);
                 mcs.AddCommand(new MenuCommand(ShowAddView, addViewCommandID));
             }
-            IVsMonitorSelection selectionService = (IVsMonitorSelection)this.GetService(typeof(SVsShellMonitorSelection));
-            uint cookie;
-            selectionService.AdviseSelectionEvents(new Interaction.SelectionHandler(), out cookie);
-
+            viewDialog = new AddViewDlg();
         }
         #endregion
 
