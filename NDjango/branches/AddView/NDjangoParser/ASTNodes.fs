@@ -115,7 +115,7 @@ module internal ASTNodes =
         
         member x.Name = name.RawText
 
-        override x.elements = BlockNameNode(parsing_context, Text name) :> INode :: base.elements
+        override x.elements = BlockNameNode(parsing_context, Text name) :> INode  :: base.elements
         
         override x.walk manager walker =
 

@@ -19,7 +19,8 @@ namespace NDjango.Designer.Parsing
     /// parser. Implements additional methods/properties necessary for designer
     /// </remarks>
     [DebuggerDisplay("{NodeType} {snapshotSpan}")]
-    class DesignerNode : INode, IDisposable
+    [Export]
+    public class DesignerNode : INode, IDisposable
     {
         public NodeProvider Provider { get; private set; }
         private INode node;
