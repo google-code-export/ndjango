@@ -1,43 +1,66 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
 using Microsoft.VisualStudio.Utilities;
+using NDjango;
 using NDjango.Interfaces;
 using NDjango.Designer;
 using NDjango.Designer.Parsing;
 using EnvDTE;
 
-namespace NewViewGenerator.Interaction
+namespace NewViewGenerator
 {
-    public class ProjectManager: IVsSelectionEvents
+    public class ViewWizard: IVsSelectionEvents
     {
-        public static IVsProject Hierarchy { get; private set; }
+        public ViewWizard()
+        {
+            SelectionService.AdviseSelectionEvents(this, out SelectionCookie);
+            ContextCookie = RegisterContext();
+            uint pitemid;
+            IVsMultiItemSelect ppMIS;
+            IntPtr ppHier,ppSC;
+            object directory = "";
+            if (ErrorHandler.Succeeded(SelectionService.GetCurrentSelection(out ppHier, out pitemid, out ppMIS, out ppSC)))
+            {
+                try
+                {
+                    Hierarchy = (IVsHierarchy)Marshal.GetObjectForIUnknown(ppHier);
+                    Hierarchy.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out directory);
+                    ProjectDir = directory.ToString();
+                }
+                finally
+                {
+                    Marshal.Release(ppHier);
+                }
+            }
+            template_loader = new TemplateLoader(ProjectDir);
+            parser = InitializeParser();
+            templatesDir = new TemplateDirectory();
+            templatesDir.selectionTracker = SelectionService;
+        }
+        
+        IVsMonitorSelection SelectionService = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
+        DTE  dte = (DTE)Package.GetGlobalService(typeof(DTE));
+
         public string ProjectDir { get; private set; }
         public string ProjectName { get; private set; }
-        public string ViewsFolderName;
-        public uint ViewsFolderId;
-        [Import]
-        NDjango.Designer.GlobalServices services;
-        [Import]
-        private NodeProviderBroker broker;
-        public ProjectHandler handler;
-        private uint ContextCookie;
-        private uint SelectionCookie;
-        public ProjectManager()
-        {
-            ContextCookie = RegisterContext();
-            handler = CreateHandler();
-            GlobalServices.SelectionService.AdviseSelectionEvents(this, out SelectionCookie);
-        }
+        public string ViewsFolderName { get; private set; }
+        uint ContextCookie;
+        uint SelectionCookie;
+        INode blockNameNode = null;
+        ProjectItems ViewsFolder;
+        IVsHierarchy Hierarchy;
+        ITemplateManager parser;
+        TemplateDirectory templatesDir; 
 
         int IVsSelectionEvents.OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
         {
@@ -58,19 +81,18 @@ namespace NewViewGenerator.Interaction
                 if (itemName != null )//&& itemName.ToString().Contains("Views"))
                 {
                     object temp;
-                    Hierarchy = (IVsProject)pHierNew;
+                    Hierarchy = pHierNew;
                     pHierNew.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out temp);
                     ProjectDir = temp.ToString();
                     //root = projectFullName.Substring(0, projectFullName.LastIndexOf('\\') + 1);
                     pHierNew.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ProjectName, out temp);
                     ProjectName = temp.ToString();
-                    ViewsFolderId = itemidNew;
                     ViewsFolderName = itemName.ToString();
-                    GlobalServices.SelectionService.SetCmdUIContext(ContextCookie, 1);
+                    SelectionService.SetCmdUIContext(ContextCookie, 1);
                 }
             }
             else
-                GlobalServices.SelectionService.SetCmdUIContext(ContextCookie, 0);
+                SelectionService.SetCmdUIContext(ContextCookie, 0);
             return VSConstants.S_OK;
 
         }
@@ -79,23 +101,23 @@ namespace NewViewGenerator.Interaction
             if (name == null)
                 throw new ArgumentException("name");
             int activeProject = GetActiveProject();
-            ProjectItems parent = GlobalServices.DTE.Solution.Projects.Item(activeProject).ProjectItems;
+            ProjectItems parent = dte.Solution.Projects.Item(activeProject).ProjectItems;
             if (parent == null)
                 throw new ArgumentException("project");
 
-            EnvDTE80.Solution2 sol = GlobalServices.DTE.Solution as EnvDTE80.Solution2;
+            EnvDTE80.Solution2 sol = dte.Solution as EnvDTE80.Solution2;
             string filename = sol.GetProjectItemTemplate(templateName, language);
             parent.AddFromTemplate(filename, name);
         }
         public void AddFromFile(string fileName,string folder,string itemName)
         {
-            ProjectItems parent = GlobalServices.DTE.Solution.Projects.Item(GetActiveProject()).ProjectItems;
-            SearchFolder(folder, parent);
-            parent.AddFromTemplate(fileName, itemName);
+            ViewsFolder = dte.Solution.Projects.Item(GetActiveProject()).ProjectItems; ;//default ViewsFolder is  the root of the project
+            SearchFolder(folder, ViewsFolder);//find the real folder the new view must be inserted to
+            ViewsFolder.AddFromTemplate(fileName, itemName);
         }
         public List<Assembly> GetReferences()
         {
-            Project project = GlobalServices.DTE.Solution.Projects.Item(1);
+            Project project = dte.Solution.Projects.Item(1);
             List<Assembly> list = new List<Assembly>();
             if (project.Object is VSLangProj.VSProject)
             {
@@ -132,72 +154,56 @@ namespace NewViewGenerator.Interaction
             return list;
 
         }
-        public void GetTemplateBlocks(string template)
+        public IEnumerable<string> GetTemplates(string root)
         {
-            var nodes = handler.ParseTemplate(template, new NDjango.TypeResolver.DefaultTypeResolver());
-            List<string> result;
+            return templatesDir.GetTemplates(root);
+        }
+        public IEnumerable<string> Recent5Templates
+        {
+            get { return templatesDir.Recent5Templates; }
+        }
+        public void RegisterInserted(string inserted)
+        {
+            templatesDir.RegisterInserted(inserted);
+        }
+        public List<string> GetTemplateBlocks(string template)
+        {
+            var nodes = parser.GetTemplate(template, new NDjango.TypeResolver.DefaultTypeResolver()).Nodes;
+            List<string> blocks = new List<string>();
             foreach (INode node in nodes)
             {
-                //if (node.NodeType == NodeType.BlockName)
-                //    result.AddRange(node.Context.BodyContext)
- 
-                //while (node.Nodes != null)
-                //{
-                //    foreach (KeyValuePair<string,INode> child in node.Nodes)
-                //    {
-                //    }
-                //}
+                if (node.NodeType == NodeType.BlockName)
+                    break;
+                else
+                    for (int i = 0; i < node.Nodes.Count; i++ )
+                        FindBlockNameNode(node.Nodes.Values.ElementAt(i));
             }
-            //var snapshot = handler.GetSnapshot(template);
-            //StreamReader reader = new StreamReader(template);
-            //ITextBuffer buffer = GlobalServices.TextBufferFactory.CreateTextBuffer(reader,GlobalServices.ContentRegistryService.GetContentType("html"));
-            //NodeProvider provider = broker.GetNodeProvider(buffer);
-            //List<DesignerNode> designer_nodes = nodes.Aggregate(
-            //                new List<DesignerNode>(),
-            //                (list, node) => { list.Add(new DesignerNode(provider, null, snapshot, (INode)node)); return list; }
-            //            );
-            #region alternative recursive function
-            //List<string> blockNames = new List<string>();
-            //foreach (var node in nodes)
-            //{
-            //    switch (((INode)node).NodeType)
-            //    {
-            //        case NodeType.ParsingContext:
-            //            break;
-            //        case NodeType.BlockName:
-            //            blockNames.Add(node.Token.TextToken.Value);
-            //            break;
-            //        case NodeType.TemplateName:
-            //            string s = node.Token.TextToken.Value;
-            //            break;
-            //        default:
-            //            if (node.Token != null && node.Token.IsBlock)
-            //            {
-            //                blockNames.Add(node.Token.TextToken.Value);
-            //            }
-            //            break;
+            if (blockNameNode != null)
+            {
+                var completion_provider = blockNameNode as ICompletionValuesProvider;
+                if (completion_provider != null)
+                blocks.AddRange(completion_provider.Values); 
 
-            //    }
-            //}
-            #endregion
+            }
+            return blocks;
         }
         private int GetActiveProject()
         {
             int i = 1;
-            foreach (Project p in GlobalServices.DTE.Solution.Projects)
+            foreach (Project p in dte.Solution.Projects)
                 if (String.Compare(p.Name, ProjectName) == 0)
                     return i;
                 else
                     i++;
             return 1;
         }
-        private ProjectItems SearchFolder(string folder, ProjectItems parent)
+        private void SearchFolder(string folder, ProjectItems parent)
         {
             if (String.IsNullOrEmpty(folder))
-                return parent;
+                return;
             foreach (ProjectItem pi in parent)
             {
-                if (folder.StartsWith(pi.Name, true, CultureInfo.CurrentCulture))
+                if (folder.StartsWith(pi.Name, true, System.Globalization.CultureInfo.CurrentCulture))
                 {
                     if (String.Compare(folder, pi.Name, true) != 0)
                     {
@@ -208,42 +214,57 @@ namespace NewViewGenerator.Interaction
                     }
                     else
                     {
-                        return pi.ProjectItems;
+                        ViewsFolder =  pi.ProjectItems;
                     }
                 }
             }
-            return parent;
-
-        }
-        private ProjectHandler CreateHandler()
-        {
-            ProjectHandler handler = null;
-            broker = new NodeProviderBroker();
-            TemplateDirectory templatesDir = new TemplateDirectory();
-            templatesDir.selectionTracker = GlobalServices.SelectionService;
-            List<NDjango.Tag> tags = new List<NDjango.Tag>() { };
-            List<NDjango.Filter> filters = new List<NDjango.Filter>() { };
-            IntPtr ppHier;
-            uint pitemid;
-            IVsMultiItemSelect ppMIS;
-            IntPtr ppSC;
-            object directory = "";
-            if (ErrorHandler.Succeeded(GlobalServices.SelectionService.GetCurrentSelection(out ppHier, out pitemid, out ppMIS, out ppSC)))
-            {
-                handler = new ProjectHandler(broker, templatesDir, tags, filters, directory.ToString());
-                ProjectDir = directory.ToString();
-            }
-            return handler;
 
         }
         private uint RegisterContext()
         {
             uint retVal;
             Guid uiContext = GuidList.UICONTEXT_ViewsSelected;
-            NDjango.Designer.GlobalServices.SelectionService.GetCmdUIContextCookie(ref uiContext, out retVal);
+            SelectionService.GetCmdUIContextCookie(ref uiContext, out retVal);
             return retVal;
 
         }
+        void FindBlockNameNode(IEnumerable<INode> nodes)
+        {
+            foreach (INode subnode in nodes)
+            {
+                if (subnode.NodeType == NodeType.BlockName)
+                {
+                    blockNameNode = subnode;
+                    break;
+                }
+                else
+                    for (int i = 0; i < subnode.Nodes.Values.Count; i++)
+                    {
+                        FindBlockNameNode(subnode.Nodes.Values.ElementAt(i));
+                    }
+            }
+        }
+        
+        TemplateLoader template_loader;
+        private List<Tag> tags = new List<Tag>();
+        private List<Filter> filters = new List<Filter>();
+
+        private ITemplateManager InitializeParser()
+        {
+
+            TemplateManagerProvider provider = new TemplateManagerProvider();
+            return provider
+                    .WithTags(tags)
+                    .WithFilters(filters)
+                    .WithSetting(NDjango.Constants.EXCEPTION_IF_ERROR, false)
+                    .WithLoader(template_loader)
+                    .GetNewManager();
+
+        }
+
+        
+
+        
 
     }
 }
