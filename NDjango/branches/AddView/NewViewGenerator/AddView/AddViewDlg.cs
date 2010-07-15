@@ -5,27 +5,30 @@ using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell.Interop;
-using NewViewGenerator.Interaction;
 namespace NewViewGenerator
 {
     public partial class AddViewDlg : Form
     {
-        ProjectManager manager;
+        ViewWizard wizard = new ViewWizard();
+        StringBuilder templateMem = new StringBuilder();
         public AddViewDlg()
         {
-            manager = new ProjectManager();
+            
             InitializeComponent();
             FillModelList();
-            FillBaseTemplates();
+            FillAllTemplates();
+            comboBaseTemplate.SelectedIndex = 0;//none value
+            comboModel.SelectedIndex = 0;//none value
         }
 
         private void FillModelList()
         {
             try
             {
-                List<Assembly> assmlist = manager.GetReferences();
+                List<Assembly> assmlist = wizard.GetReferences();
                 foreach (Assembly assm in assmlist)
                 {
                     var types= assm.GetTypes();
@@ -39,53 +42,75 @@ namespace NewViewGenerator
             }
 
         }
-        private void FillBaseTemplates()
+        private void PopRecentTemplates()
         {
-            IEnumerable<string> allTemplates =  manager.handler.TemplateManager.GetTemplates("");
-            IEnumerable<string> recentTemplates = manager.handler.TemplateManager.Recent5Templates;
-            foreach(string item in recentTemplates)
-                checkedListBase.Items.Add(item);
+            int i = 0;
+            foreach (string item in wizard.Recent5Templates)
+            {
+                comboBaseTemplate.Items.Insert(i++, item);
+            }
+        }
+        private void FillAllTemplates()
+        {
+            IEnumerable<string> allTemplates = wizard.GetTemplates("");
             foreach (string item in allTemplates)
-                if (!checkedListBase.Items.Contains(item))
-                    checkedListBase.Items.Add(item);
+                //if (!comboBaseTemplate.Items.Contains(item))
+                    comboBaseTemplate.Items.Add(item);
+        }
+        private void ModifyTemplate()
+        {
+            templateMem.Clear();
+            templateMem.AppendLine("temp://{% extends \"" + comboBaseTemplate.SelectedItem + "\" %}");
+            templateMem.AppendLine("{% block A %}");
+            templateMem.AppendLine("{% endblock %}");
+
         }
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            int rootLen = manager.ProjectDir.Length;
-            string folderName = manager.ViewsFolderName.Substring(rootLen + 1, manager.ViewsFolderName.Length - rootLen - 1);
+            int rootLen = wizard.ProjectDir.Length;
+            string folderName = wizard.ViewsFolderName.Substring(rootLen + 1, wizard.ViewsFolderName.Length - rootLen - 1);
             string itemName = tbViewName.Text + ".django";
+            wizard.RegisterInserted(comboBaseTemplate.SelectedItem.ToString());
             string templateFile = Path.GetTempFileName();
             StreamWriter sw = new StreamWriter(templateFile);
-            if (checkedListBase.CheckedItems.Count > 0)
+            if (comboModel.SelectedItem != null)
+                sw.WriteLine("{% model " + comboModel.SelectedItem + " %}");
+            if (IsInheritance)
             {
-                foreach (string item in checkedListBase.CheckedItems)
+                sw.WriteLine("{% extends \"" + comboBaseTemplate.SelectedItem + "\" %}");
+                if (checkedListBlocks.CheckedItems.Count > 0)
                 {
-                    sw.WriteLine("{% extends \"" + item + "\" %}");
-                    manager.handler.TemplateManager.RegisterInserted(item);
+                    foreach (string name in checkedListBlocks.CheckedItems)
+                    {
+                        sw.WriteLine("{% block " + name + " %}");
+                        sw.WriteLine("{% endblock " + name + " %}");
+                    }
                 }
             }
-            if (comboModel.SelectedItem != null)
-                sw.WriteLine("{% model " + comboModel.SelectedItem.ToString() + " %}");
-            sw.WriteLine("{% block A %}");
-            sw.WriteLine("{% endblock %}");
             sw.Close();
-            manager.GetTemplateBlocks(templateFile);
-            //VSADDRESULT[] pResult = null;
-            //string[] filesToOpen = new string[1];
-            //filesToOpen[0] = templateFile;
-            
-            //ProjectData.curHier.AddItem(ProjectData.viewsFolderId, VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE,
-            //    itemName, 1, filesToOpen, IntPtr.Zero, pResult);
-
-            //ProjectData.AddNewItemFromVsTemplate("NDjangoTemplate2010.zip", "CSharp/Web", itemName);
-            manager.AddFromFile(templateFile,folderName,itemName);
+            wizard.AddFromFile(templateFile, folderName, itemName);
             File.Delete(templateFile);
             this.Close();
         }
 
-        private void chkInheritance_CheckStateChanged(object sender, EventArgs e)
+        private void btnCancel_Click(object sender, EventArgs e)
         {
-            checkedListBase.Enabled = checkedListBlocks.Enabled = chkInheritance.Checked;
+            this.Close();
         }
+        private bool IsInheritance { get { return (comboBaseTemplate.SelectedItem != null && comboBaseTemplate.SelectedItem.ToString() != "none"); } }
+        private void comboBaseTemplate_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (IsInheritance)
+            {
+                ModifyTemplate();
+                List<string> blockNames = wizard.GetTemplateBlocks(templateMem.ToString());
+                checkedListBlocks.Items.Clear();
+                foreach (string item in blockNames)
+                    checkedListBlocks.Items.Add(item);
+
+            }
+            checkedListBlocks.Visible = IsInheritance;
+        }
+
     }
 }

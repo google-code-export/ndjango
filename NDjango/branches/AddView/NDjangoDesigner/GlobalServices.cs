@@ -23,14 +23,8 @@ namespace NDjango.Designer
         public static TaskProvider TaskList {get; private set;}
 
         public static DynamicTypeService TypeService { get; private set; }
-        public static IVsMonitorSelection SelectionService { get; private set; }
-
-        public static EnvDTE.DTE DTE { get; private set; }
-
 
         private static SVsServiceProvider serviceProvider;
-        private static ITextBufferFactoryService bufferFactory;
-        private static IContentTypeRegistryService contentService;
         [Import]
         private SVsServiceProvider ServiceProvider
         {
@@ -40,22 +34,8 @@ namespace NDjango.Designer
                 serviceProvider = value;
                 TaskList = new TaskProvider(serviceProvider);
                 RDT = GetService<IVsRunningDocumentTable>(typeof(SVsRunningDocumentTable));
-                SelectionService = GetService<IVsMonitorSelection>(typeof(SVsShellMonitorSelection));
-                DTE = GetService<EnvDTE.DTE>();
                 TypeService = GetService<DynamicTypeService>();
             }
-        }
-        [Import]
-        public static ITextBufferFactoryService TextBufferFactory
-        {
-            get { return bufferFactory; }
-            set { bufferFactory = value; }
-        }
-        [Import]
-        public static IContentTypeRegistryService ContentRegistryService
-        {
-            get { return contentService; }
-            set { contentService = value; }
         }
 
         public T GetService<T>()

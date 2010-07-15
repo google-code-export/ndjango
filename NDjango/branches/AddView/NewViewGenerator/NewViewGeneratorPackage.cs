@@ -29,7 +29,7 @@ namespace NewViewGenerator
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     // This attribute is needed to let the shell know that this package exposes some menus.
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_guid.ToString())]
+    //[ProvideAutoLoad("7686279e-0421-4c87-8ed3-a484a22b58f3")]
     [Guid(GuidList.guidNewViewGeneratorPkgString)]
     public sealed class NewViewGeneratorPackage : Package
     {
