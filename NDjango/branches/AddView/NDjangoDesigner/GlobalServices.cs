@@ -7,8 +7,6 @@ using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Design;
-using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Utilities;
 
 namespace NDjango.Designer
 {
@@ -25,6 +23,7 @@ namespace NDjango.Designer
         public static DynamicTypeService TypeService { get; private set; }
 
         private static SVsServiceProvider serviceProvider;
+
         [Import]
         private SVsServiceProvider ServiceProvider
         {

@@ -166,43 +166,43 @@ namespace NDjango.UnitTests
 
         private void ValidateSyntaxTree(NDjango.Interfaces.ITemplateManager manager)
         {
-            //ITemplate template = manager.GetTemplate(Template);
+            ITemplate template = manager.GetTemplate(Template);
             
-            ////the same logic responsible for retriving nodes as in NodeProvider class (DjangoDesigner).
-            //List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll
-            //    (node => (INode)node)).FindAll(node =>
-            //        (node is ICompletionProvider) 
-            //        || (node.NodeType == NodeType.ParsingContext) 
-            //        || (node.ErrorMessage.Message != ""));
-            //List<DesignerData> actualResult = nodes.ConvertAll(
-            //    node =>
-            //    {
-            //        var value_provider = node as ICompletionProvider;
-            //        var values =
-            //            value_provider == null ?
-            //                new List<string>()
-            //                : value_provider.Values;
-            //        List<string> contextValues = new List<string>(values);
-            //        if (node.NodeType == NodeType.ParsingContext)
-            //        {
-            //            contextValues.InsertRange(0 ,(node.Context.TagClosures));
-            //            return new DesignerData(node.Position, node.Length, contextValues.ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message);
-            //        }
-            //        else
-            //            return new DesignerData(node.Position, node.Length, new List<string>(values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message);
-            //    });
+            //the same logic responsible for retriving nodes as in NodeProvider class (DjangoDesigner).
+            List<INode> nodes = GetNodes(template.Nodes.ToList<INodeImpl>().ConvertAll
+                (node => (INode)node)).FindAll(node =>
+                    (node is ICompletionValuesProvider) 
+                    || (node.NodeType == NodeType.ParsingContext) 
+                    || (node.ErrorMessage.Message != ""));
+            List<DesignerData> actualResult = nodes.ConvertAll(
+                node =>
+                {
+                    var value_provider = node as ICompletionValuesProvider;
+                    var values =
+                        value_provider == null ?
+                            new List<string>()
+                            : value_provider.Values;
+                    List<string> contextValues = new List<string>(values);
+                    if (node.NodeType == NodeType.ParsingContext)
+                    {
+                        contextValues.InsertRange(0 ,(node.Context.TagClosures));
+                        return new DesignerData(node.Position, node.Length, contextValues.ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message);
+                    }
+                    else
+                        return new DesignerData(node.Position, node.Length, new List<string>(values).ToArray(), node.ErrorMessage.Severity, node.ErrorMessage.Message);
+                });
             
-            //for (int i = 0; i < actualResult.Count; i++)
-            //{
-            //    if (actualResult[i].Values.Length == 0)
-            //        continue;
+            for (int i = 0; i < actualResult.Count; i++)
+            {
+                if (actualResult[i].Values.Length == 0)
+                    continue;
 
-            //    Assert.AreEqual(actualResult[i].Length, ResultForDesigner[i].Length, "Invalid Length");
-            //    Assert.AreEqual(actualResult[i].Position, ResultForDesigner[i].Position, "Invalid Position");
-            //    Assert.AreEqual(actualResult[i].Severity, ResultForDesigner[i].Severity, "Invalid Severity");
-            //    Assert.AreEqual(actualResult[i].ErrorMessage, ResultForDesigner[i].ErrorMessage, "Invalid ErrorMessage");
-            //    Assert.AreEqual(actualResult[i].Values, ResultForDesigner[i].Values, "Invalid Values Array");
-            //}            
+                Assert.AreEqual(actualResult[i].Length, ResultForDesigner[i].Length, "Invalid Length");
+                Assert.AreEqual(actualResult[i].Position, ResultForDesigner[i].Position, "Invalid Position");
+                Assert.AreEqual(actualResult[i].Severity, ResultForDesigner[i].Severity, "Invalid Severity");
+                Assert.AreEqual(actualResult[i].ErrorMessage, ResultForDesigner[i].ErrorMessage, "Invalid ErrorMessage");
+                Assert.AreEqual(actualResult[i].Values, ResultForDesigner[i].Values, "Invalid Values Array");
+            }            
         }
 
         //the same logic responsible for retriving nodes as in NodeProvider class (DjangoDesigner).
