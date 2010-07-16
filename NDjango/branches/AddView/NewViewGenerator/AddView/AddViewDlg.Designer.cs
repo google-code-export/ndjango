@@ -80,9 +80,9 @@
             this.lblBaseTemplate.AutoSize = true;
             this.lblBaseTemplate.Location = new System.Drawing.Point(18, 106);
             this.lblBaseTemplate.Name = "lblBaseTemplate";
-            this.lblBaseTemplate.Size = new System.Drawing.Size(138, 13);
+            this.lblBaseTemplate.Size = new System.Drawing.Size(133, 13);
             this.lblBaseTemplate.TabIndex = 4;
-            this.lblBaseTemplate.Text = "Select  templates to extend:";
+            this.lblBaseTemplate.Text = "Select  template to extend:";
             // 
             // btnAdd
             // 
