@@ -23,8 +23,8 @@ namespace NewViewGenerator
     {
         public ViewWizard()
         {
-            SelectionService.AdviseSelectionEvents(this, out SelectionCookie);
-            ContextCookie = RegisterContext();
+            SelectionService.AdviseSelectionEvents(this, out selectionCookie);
+            contextCookie = RegisterContext();
             uint pitemid;
             IVsMultiItemSelect ppMIS;
             IntPtr ppHier,ppSC;
@@ -33,34 +33,33 @@ namespace NewViewGenerator
             {
                 try
                 {
-                    Hierarchy = (IVsHierarchy)Marshal.GetObjectForIUnknown(ppHier);
-                    Hierarchy.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out directory);
-                    ProjectDir = directory.ToString();
+                    hierarchy = (IVsHierarchy)Marshal.GetObjectForIUnknown(ppHier);
+                    hierarchy.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out directory);
+                    projectDir = directory.ToString();
                 }
                 finally
                 {
                     Marshal.Release(ppHier);
                 }
             }
-            template_loader = new TemplateLoader(ProjectDir);
             parser = InitializeParser();
             templatesDir = new TemplateDirectory();
             templatesDir.selectionTracker = SelectionService;
         }
-        
+        #region private fields
+        string projectDir;
+        string projectName;
+        string viewsFolderName;
         IVsMonitorSelection SelectionService = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
-        DTE  dte = (DTE)Package.GetGlobalService(typeof(DTE));
-
-        public string ProjectDir { get; private set; }
-        public string ProjectName { get; private set; }
-        public string ViewsFolderName { get; private set; }
-        uint ContextCookie;
-        uint SelectionCookie;
+        DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+        uint contextCookie;
+        uint selectionCookie;
         INode blockNameNode = null;
-        ProjectItems ViewsFolder;
-        IVsHierarchy Hierarchy;
+        ProjectItems viewsFolder;
+        IVsHierarchy hierarchy;
         ITemplateManager parser;
-        TemplateDirectory templatesDir; 
+        TemplateDirectory templatesDir;
+        #endregion
 
         int IVsSelectionEvents.OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
         {
@@ -81,18 +80,25 @@ namespace NewViewGenerator
                 if (itemName != null )//&& itemName.ToString().Contains("Views"))
                 {
                     object temp;
-                    Hierarchy = pHierNew;
+                    hierarchy = pHierNew;
                     pHierNew.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out temp);
-                    ProjectDir = temp.ToString();
+                    projectDir = temp.ToString();
                     //root = projectFullName.Substring(0, projectFullName.LastIndexOf('\\') + 1);
                     pHierNew.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ProjectName, out temp);
-                    ProjectName = temp.ToString();
-                    ViewsFolderName = itemName.ToString();
-                    SelectionService.SetCmdUIContext(ContextCookie, 1);
+                    projectName = temp.ToString();
+                    viewsFolderName = itemName.ToString();
+                    SelectionService.SetCmdUIContext(contextCookie, 1);
                 }
             }
             else
-                SelectionService.SetCmdUIContext(ContextCookie, 0);
+                try
+                {
+                    SelectionService.SetCmdUIContext(contextCookie, 0);
+                }
+                catch (Exception ex)
+                {
+                    //it is a temporary try/catch-need to unadvise selection events earler
+                }
             return VSConstants.S_OK;
 
         }
@@ -109,11 +115,23 @@ namespace NewViewGenerator
             string filename = sol.GetProjectItemTemplate(templateName, language);
             parent.AddFromTemplate(filename, name);
         }
-        public void AddFromFile(string fileName,string folder,string itemName)
+        
+        public void AddFromFile(string fileName,string itemName)
         {
-            ViewsFolder = dte.Solution.Projects.Item(GetActiveProject()).ProjectItems; ;//default ViewsFolder is  the root of the project
-            SearchFolder(folder, ViewsFolder);//find the real folder the new view must be inserted to
-            ViewsFolder.AddFromTemplate(fileName, itemName);
+            int rootLen = projectDir.Length;
+            string folderName = viewsFolderName.Substring(rootLen + 1, viewsFolderName.Length - rootLen - 1);
+            int index = GetActiveProject();
+            if (index > 0)
+            {
+                viewsFolder = dte.Solution.Projects.Item(index).ProjectItems; ;//default ViewsFolder is  the root of the project
+                SearchFolder(folderName, viewsFolder);//find the real folder the new view must be inserted to
+                viewsFolder.AddFromTemplate(fileName, itemName);
+                int i = 1;
+                for(; i < viewsFolder.Count;i++)
+                    if (viewsFolder.Item(i).Name == itemName)
+                        break;
+                viewsFolder.Item(i).Open(EnvDTE.Constants.vsViewKindCode).Visible = true;
+            }
         }
         public List<Assembly> GetReferences()
         {
@@ -154,6 +172,7 @@ namespace NewViewGenerator
             return list;
 
         }
+
         public IEnumerable<string> GetTemplates(string root)
         {
             return templatesDir.GetTemplates(root);
@@ -166,6 +185,12 @@ namespace NewViewGenerator
         {
             templatesDir.RegisterInserted(inserted);
         }
+        
+        /// <summary>
+        /// Gets a list of block names recursively from base template using ASTNode - BlockNameNode 
+        /// </summary>
+        /// <param name="template">temporary template to parse or file path to that template</param>
+        /// <returns></returns>
         public List<string> GetTemplateBlocks(string template)
         {
             var nodes = parser.GetTemplate(template, new NDjango.TypeResolver.DefaultTypeResolver()).Nodes;
@@ -187,16 +212,25 @@ namespace NewViewGenerator
             }
             return blocks;
         }
+        /// <summary>
+        /// In case when the solution has several project - necessary to find out the index of the active project
+        /// </summary>
+        /// <returns>index in Solution.Projects collection</returns>
         private int GetActiveProject()
         {
             int i = 1;
             foreach (Project p in dte.Solution.Projects)
-                if (String.Compare(p.Name, ProjectName) == 0)
+                if (String.Compare(p.Name, projectName) == 0)
                     return i;
                 else
                     i++;
-            return 1;
+            return -1;//if there is no project with specified name in the collection
         }
+        /// <summary>
+        /// Helper method to walk through the project tree and find folder with the specified name
+        /// </summary>
+        /// <param name="folder">name of the folder to search in the project hierarchy</param>
+        /// <param name="parent">recursion step variable,node in the project hierarchy</param>
         private void SearchFolder(string folder, ProjectItems parent)
         {
             if (String.IsNullOrEmpty(folder))
@@ -205,7 +239,8 @@ namespace NewViewGenerator
             {
                 if (folder.StartsWith(pi.Name, true, System.Globalization.CultureInfo.CurrentCulture))
                 {
-                    if (String.Compare(folder, pi.Name, true) != 0)
+                    if (String.Compare(folder, pi.Name, true) != 0
+                        && String.Compare(folder,pi.Name + "\\",true) != 0)
                     {
                         folder = folder.Remove(0, pi.Name.Length + 1);
                         if (folder.EndsWith("\\"))
@@ -214,12 +249,17 @@ namespace NewViewGenerator
                     }
                     else
                     {
-                        ViewsFolder =  pi.ProjectItems;
+                        viewsFolder =  pi.ProjectItems;
                     }
                 }
             }
 
         }
+        /// <summary>
+        /// Creates custom UICONTEXT for MenuCommand visibility tracking.
+        /// For example,it is possible to set the restriction to add new view only in Views folder and its subfolders
+        /// </summary>
+        /// <returns>cookie of the registered custom UICONTEXT</returns>
         private uint RegisterContext()
         {
             uint retVal;
@@ -228,7 +268,11 @@ namespace NewViewGenerator
             return retVal;
 
         }
-        void FindBlockNameNode(IEnumerable<INode> nodes)
+        /// <summary>
+        /// Helper method to walk through parsed template AST
+        /// </summary>
+        /// <param name="nodes">parameter for the next step of recursion</param>
+        private void FindBlockNameNode(IEnumerable<INode> nodes)
         {
             foreach (INode subnode in nodes)
             {
@@ -244,14 +288,13 @@ namespace NewViewGenerator
                     }
             }
         }
-        
-        TemplateLoader template_loader;
-        private List<Tag> tags = new List<Tag>();
-        private List<Filter> filters = new List<Filter>();
-
         private ITemplateManager InitializeParser()
         {
 
+            TemplateLoader template_loader  = new TemplateLoader(projectDir);
+            ;
+            List<Tag> tags = new List<Tag>();
+            List<Filter> filters = new List<Filter>();
             TemplateManagerProvider provider = new TemplateManagerProvider();
             return provider
                     .WithTags(tags)

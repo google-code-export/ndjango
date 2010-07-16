@@ -67,13 +67,11 @@ namespace NewViewGenerator
         }
         private void btnAdd_Click(object sender, EventArgs e)
         {
-            int rootLen = wizard.ProjectDir.Length;
-            string folderName = wizard.ViewsFolderName.Substring(rootLen + 1, wizard.ViewsFolderName.Length - rootLen - 1);
             string itemName = tbViewName.Text + ".django";
             wizard.RegisterInserted(comboBaseTemplate.SelectedItem.ToString());
             string templateFile = Path.GetTempFileName();
             StreamWriter sw = new StreamWriter(templateFile);
-            if (comboModel.SelectedItem != null)
+            if (IsViewModel)
                 sw.WriteLine("{% model " + comboModel.SelectedItem + " %}");
             if (IsInheritance)
             {
@@ -88,7 +86,7 @@ namespace NewViewGenerator
                 }
             }
             sw.Close();
-            wizard.AddFromFile(templateFile, folderName, itemName);
+            wizard.AddFromFile(templateFile, itemName);
             File.Delete(templateFile);
             this.Close();
         }
@@ -98,6 +96,7 @@ namespace NewViewGenerator
             this.Close();
         }
         private bool IsInheritance { get { return (comboBaseTemplate.SelectedItem != null && comboBaseTemplate.SelectedItem.ToString() != "none"); } }
+        private bool IsViewModel { get { return comboModel.SelectedItem != null && comboModel.SelectedItem.ToString() != "none"; } }
         private void comboBaseTemplate_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (IsInheritance)
@@ -109,7 +108,8 @@ namespace NewViewGenerator
                     checkedListBlocks.Items.Add(item);
 
             }
-            checkedListBlocks.Visible = IsInheritance;
+
+            lblBlocks.Visible = checkedListBlocks.Visible = IsInheritance;
         }
 
     }
