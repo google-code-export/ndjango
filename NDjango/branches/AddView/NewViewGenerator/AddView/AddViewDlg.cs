@@ -18,14 +18,18 @@ namespace NewViewGenerator
         {
             
             InitializeComponent();
+        }
+        public void FillDialogControls()
+        {
             FillModelList();
             FillAllTemplates();
             comboBaseTemplate.SelectedIndex = 0;//none value
             comboModel.SelectedIndex = 0;//none value
-        }
 
+        }
         private void FillModelList()
         {
+            comboModel.Items.Clear();
             try
             {
                 List<Assembly> assmlist = wizard.GetReferences();
@@ -52,6 +56,7 @@ namespace NewViewGenerator
         }
         private void FillAllTemplates()
         {
+            comboBaseTemplate.Items.Clear();
             IEnumerable<string> allTemplates = wizard.GetTemplates("");
             foreach (string item in allTemplates)
                 //if (!comboBaseTemplate.Items.Contains(item))
@@ -109,7 +114,7 @@ namespace NewViewGenerator
 
             }
 
-            lblBlocks.Visible = checkedListBlocks.Visible = IsInheritance;
+            lblBlocks.Visible = checkedListBlocks.Visible = IsInheritance && checkedListBlocks.Items.Count > 0;
         }
 
     }
