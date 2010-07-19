@@ -55,10 +55,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NDjangoDesigner\NDjangoDesigner.csproj">
-      <Project>{3AC5B05C-E4FF-4C90-89CA-A1158F0815E5}</Project>
-      <Name>NDjangoDesigner</Name>
-    </ProjectReference>
     <ProjectReference Include="..\NDjangoParser\NDjangoParser2010.fsproj">
       <Project>{B75384C4-C545-4511-A7FE-93D438B8AFA4}</Project>
       <Name>NDjangoParser2010</Name>
