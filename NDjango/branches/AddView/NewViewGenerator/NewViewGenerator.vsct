@@ -69,8 +69,8 @@
           <CommandName>cmdidAddView</CommandName>
           <ButtonText>Add Django View</ButtonText>
         </Strings>
-        <!--<CommandFlag>DefaultInvisible</CommandFlag>
-        <CommandFlag>DynamicVisibility</CommandFlag>-->
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>DynamicVisibility</CommandFlag>
         <!--<CommandFlag>TextChanges</CommandFlag>-->
 
       </Button>
@@ -91,10 +91,10 @@
  
   </Commands>
 
-  <!--<VisibilityConstraints>
+  <VisibilityConstraints>
     <VisibilityItem guid="guidNewViewGeneratorCmdSet" id="cmdidAddView" context="UICONTEXT_ViewsSelected"></VisibilityItem>
-    <VisibilityItem guid="guidNewViewGeneratorCmdSet" id="cmdidAddView" context="guidMVC_Project"></VisibilityItem>
-  </VisibilityConstraints>-->
+    <!--<VisibilityItem guid="guidNewViewGeneratorCmdSet" id="cmdidAddView" context="guidMVC_Project"></VisibilityItem>-->
+  </VisibilityConstraints>
 
   <Symbols>
     <!-- This is the package guid. -->

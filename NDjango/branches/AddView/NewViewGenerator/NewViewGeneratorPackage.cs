@@ -29,7 +29,7 @@ namespace NewViewGenerator
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     // This attribute is needed to let the shell know that this package exposes some menus.
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    //[ProvideAutoLoad("7686279e-0421-4c87-8ed3-a484a22b58f3")]
+    [ProvideAutoLoad("f1536ef8-92ec-443c-9ed7-fdadf150da82")]
     [Guid(GuidList.guidNewViewGeneratorPkgString)]
     public sealed class NewViewGeneratorPackage : Package
     {
@@ -53,6 +53,7 @@ namespace NewViewGenerator
         /// </summary>
         private void ShowAddView(object sender, EventArgs e)
         {
+            viewDialog.FillDialogControls();
             viewDialog.ShowDialog();
         }
 
@@ -73,7 +74,9 @@ namespace NewViewGenerator
             if (null != mcs)
             {
                 CommandID addViewCommandID = new CommandID(GuidList.guidNewViewGeneratorCmdSet, (int)GuidList.cmdidNewViewGenerator);
-                mcs.AddCommand(new MenuCommand(ShowAddView, addViewCommandID));
+                OleMenuCommand cmd = new OleMenuCommand(ShowAddView, addViewCommandID);
+                cmd.Visible = false;
+                mcs.AddCommand(cmd);
             }
             viewDialog = new AddViewDlg();
         }

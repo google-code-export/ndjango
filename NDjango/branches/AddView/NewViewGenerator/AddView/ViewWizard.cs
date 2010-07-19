@@ -25,6 +25,9 @@ namespace NewViewGenerator
         {
             SelectionService.AdviseSelectionEvents(this, out selectionCookie);
             contextCookie = RegisterContext();
+        }
+        public void Initialize()
+        {
             uint pitemid;
             IVsMultiItemSelect ppMIS;
             IntPtr ppHier,ppSC;
@@ -34,7 +37,7 @@ namespace NewViewGenerator
                 try
                 {
                     hierarchy = (IVsHierarchy)Marshal.GetObjectForIUnknown(ppHier);
-                    hierarchy.GetProperty(VSConstants.VSITEMID_ROOT,(int)__VSHPROPID.VSHPROPID_ProjectDir, out directory);
+                    hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ProjectDir, out directory);
                     projectDir = directory.ToString();
                 }
                 finally
@@ -42,9 +45,13 @@ namespace NewViewGenerator
                     Marshal.Release(ppHier);
                 }
             }
-            parser = InitializeParser();
-            templatesDir = new TemplateDirectory();
-            templatesDir.selectionTracker = SelectionService;
+            if (parser == null)
+                parser = InitializeParser();
+            if (templatesDir == null)
+            {
+                templatesDir = new TemplateDirectory();
+                templatesDir.selectionTracker = SelectionService;
+            }
         }
         #region private fields
         string projectDir;
@@ -77,7 +84,8 @@ namespace NewViewGenerator
                 string itemName;
                 //pHierNew.GetProperty(itemidNew, (int)__VSHPROPID.VSHPROPID_Name, out itemName);
                 pHierNew.GetCanonicalName(itemidNew, out itemName);
-                if (itemName != null )//&& itemName.ToString().Contains("Views"))
+                bool activectx = itemName != null && (itemName.ToString().Contains("Views") ||itemName.ToString().Contains("views"));
+                if (activectx)
                 {
                     object temp;
                     hierarchy = pHierNew;
@@ -87,18 +95,12 @@ namespace NewViewGenerator
                     pHierNew.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ProjectName, out temp);
                     projectName = temp.ToString();
                     viewsFolderName = itemName.ToString();
-                    SelectionService.SetCmdUIContext(contextCookie, 1);
+                    Initialize();
                 }
+                int factive = (activectx)? 1 : 0;
+                SelectionService.SetCmdUIContext(contextCookie, factive);
+
             }
-            else
-                try
-                {
-                    SelectionService.SetCmdUIContext(contextCookie, 0);
-                }
-                catch (Exception ex)
-                {
-                    //it is a temporary try/catch-need to unadvise selection events earler
-                }
             return VSConstants.S_OK;
 
         }
@@ -292,7 +294,6 @@ namespace NewViewGenerator
         {
 
             TemplateLoader template_loader  = new TemplateLoader(projectDir);
-            ;
             List<Tag> tags = new List<Tag>();
             List<Filter> filters = new List<Filter>();
             TemplateManagerProvider provider = new TemplateManagerProvider();
