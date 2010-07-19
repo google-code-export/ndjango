@@ -10,7 +10,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Utilities;
 using NDjango;
 using NDjango.Interfaces;
 using NDjango.Designer;
