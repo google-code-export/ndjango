@@ -129,6 +129,8 @@ namespace NDjango.Designer.Parsing
 
         public bool IsUpdated(string path, DateTime timestamp)
         {
+            if (path.StartsWith("temp://"))
+                return false;
             path = get_absolute_path(path);
             BufferRecord record;
             if (templates.TryGetValue(path, out record) && record.Item1 != null)

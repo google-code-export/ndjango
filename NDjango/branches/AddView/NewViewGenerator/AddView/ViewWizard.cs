@@ -21,12 +21,16 @@ namespace NewViewGenerator
 {
     public class ViewWizard: IVsSelectionEvents
     {
+        public static IVsMonitorSelection SelectionService = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
+        public static DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
+        public static uint contextCookie;
+        public static uint selectionCookie;
         public ViewWizard()
         {
             SelectionService.AdviseSelectionEvents(this, out selectionCookie);
             contextCookie = RegisterContext();
         }
-        public void Initialize()
+        public void Update()
         {
             uint pitemid;
             IVsMultiItemSelect ppMIS;
@@ -57,10 +61,6 @@ namespace NewViewGenerator
         string projectDir;
         string projectName;
         string viewsFolderName;
-        IVsMonitorSelection SelectionService = (IVsMonitorSelection)Package.GetGlobalService(typeof(SVsShellMonitorSelection));
-        DTE dte = (DTE)Package.GetGlobalService(typeof(DTE));
-        uint contextCookie;
-        uint selectionCookie;
         INode blockNameNode = null;
         ProjectItems viewsFolder;
         IVsHierarchy hierarchy;
@@ -95,7 +95,6 @@ namespace NewViewGenerator
                     pHierNew.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID.VSHPROPID_ProjectName, out temp);
                     projectName = temp.ToString();
                     viewsFolderName = itemName.ToString();
-                    Initialize();
                 }
                 int factive = (activectx)? 1 : 0;
                 SelectionService.SetCmdUIContext(contextCookie, factive);
@@ -129,10 +128,11 @@ namespace NewViewGenerator
                 SearchFolder(folderName, viewsFolder);//find the real folder the new view must be inserted to
                 viewsFolder.AddFromTemplate(fileName, itemName);
                 int i = 1;
-                for(; i < viewsFolder.Count;i++)
+                for (; i < viewsFolder.Count; i++)
                     if (viewsFolder.Item(i).Name == itemName)
                         break;
                 viewsFolder.Item(i).Open(EnvDTE.Constants.vsViewKindCode).Visible = true;
+                
             }
         }
         public List<Assembly> GetReferences()

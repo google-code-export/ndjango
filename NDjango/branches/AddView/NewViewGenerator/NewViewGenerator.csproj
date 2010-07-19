@@ -103,6 +103,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddView\AddViewCommand.cs" />
     <Compile Include="AddView\AddViewDlg.cs">
       <SubType>Form</SubType>
     </Compile>
