@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell.Interop;
+using System.Runtime.InteropServices;
 namespace NewViewGenerator
 {
     public partial class AddViewDlg : Form
@@ -21,6 +22,7 @@ namespace NewViewGenerator
         }
         public void FillDialogControls()
         {
+            wizard.Update();
             FillModelList();
             FillAllTemplates();
             comboBaseTemplate.SelectedIndex = 0;//none value
@@ -91,9 +93,21 @@ namespace NewViewGenerator
                 }
             }
             sw.Close();
-            wizard.AddFromFile(templateFile, itemName);
-            File.Delete(templateFile);
-            this.Close();
+            try
+            {
+
+                wizard.AddFromFile(templateFile, itemName);
+                this.Close();
+
+            }
+            catch (COMException ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                File.Delete(templateFile);
+            }
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
@@ -116,6 +130,7 @@ namespace NewViewGenerator
 
             lblBlocks.Visible = checkedListBlocks.Visible = IsInheritance && checkedListBlocks.Items.Count > 0;
         }
+
 
     }
 }

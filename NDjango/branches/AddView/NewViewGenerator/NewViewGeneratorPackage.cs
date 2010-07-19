@@ -73,10 +73,9 @@ namespace NewViewGenerator
             OleMenuCommandService mcs = GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
             if (null != mcs)
             {
-                CommandID addViewCommandID = new CommandID(GuidList.guidNewViewGeneratorCmdSet, (int)GuidList.cmdidNewViewGenerator);
-                OleMenuCommand cmd = new OleMenuCommand(ShowAddView, addViewCommandID);
-                cmd.Visible = false;
-                mcs.AddCommand(cmd);
+                //CommandID addViewCommandID = new CommandID(GuidList.guidNewViewGeneratorCmdSet, (int)GuidList.cmdidNewViewGenerator);
+                //OleMenuCommand cmd = new OleMenuCommand(ShowAddView, addViewCommandID);
+                mcs.AddCommand(new AddView.AddViewCommand());
             }
             viewDialog = new AddViewDlg();
         }
