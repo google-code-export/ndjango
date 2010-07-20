@@ -29,6 +29,7 @@ namespace NewViewGenerator
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)]
     // This attribute is needed to let the shell know that this package exposes some menus.
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    //auto load package if UICONTEXT_SolutionExists
     [ProvideAutoLoad("f1536ef8-92ec-443c-9ed7-fdadf150da82")]
     [Guid(GuidList.guidNewViewGeneratorPkgString)]
     public sealed class NewViewGeneratorPackage : Package

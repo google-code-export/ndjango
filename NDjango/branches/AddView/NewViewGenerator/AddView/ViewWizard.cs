@@ -130,7 +130,8 @@ namespace NewViewGenerator
                 for (; i < viewsFolder.Count; i++)
                     if (viewsFolder.Item(i).Name == itemName)
                         break;
-                viewsFolder.Item(i).Open(EnvDTE.Constants.vsViewKindCode).Visible = true;
+                //EnvDTE.Constants.vsViewKindCode = {7651A701-06E5-11D1-8EBD-00A0C90F26EA}
+                viewsFolder.Item(i).Open("{7651A701-06E5-11D1-8EBD-00A0C90F26EA}").Visible = true;
                 
             }
         }
