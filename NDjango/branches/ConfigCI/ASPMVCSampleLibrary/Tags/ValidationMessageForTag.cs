@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using NDjango.Interfaces;
+using System.Web.Mvc;
+using System.Web.Mvc.Html;
+using NDjango.ASPMVC;
+
+namespace ASPMVCSampleLibrary
+{
+    [NDjango.ParserNodes.Description("Django wrapper around HtmlHelper.ValidationMessageFor")]
+    [Name("validation-message-for")]
+    public class ValidationMessageForlTag : HtmlHelperTag
+    {
+        public ValidationMessageForlTag()
+            : base(false, 1)
+        { }
+
+        public override MvcHtmlString ProcessTag(HtmlHelper htmlHelper, IContext context, string content, object[] parms)
+        {
+            return htmlHelper.ValidationMessage(parms[0].ToString());
+        }
+
+    }
+}
