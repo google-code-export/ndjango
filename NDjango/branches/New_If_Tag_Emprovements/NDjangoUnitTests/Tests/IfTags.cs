@@ -23,6 +23,12 @@ namespace NDjango.UnitTests
             IList<TestDescriptor> lst = new List<TestDescriptor>();
 
             // ### IF TAG ################################################################
+            lst.Add(new TestDescriptor("if-tag new 01", "{% if foo<bar %}yes{% else %}no{% endif %}", ContextObjects.p("foo", 1, "bar", 2), ContextObjects.p("yes")));
+            lst.Add(new TestDescriptor("if-tag new 02", "{% if foo < bar %}yes{% else %}no{% endif %}", ContextObjects.p("foo", 1, "bar", 1), ContextObjects.p("no")));
+            lst.Add(new TestDescriptor("if-tag new 03", "{% if foo < bar %}yes{% else %}no{% endif %}", ContextObjects.p("foo", 2, "bar", 1), ContextObjects.p("no")));
+            lst.Add(new TestDescriptor("if-tag new 04", "{% if foo > bar %}yes{% else %}no{% endif %}", ContextObjects.p("foo", 1, "bar", 2), ContextObjects.p("no")));
+
+            // ### IF TAG ################################################################
             lst.Add(new TestDescriptor("if-tag01", "{% if foo %}yes{% else %}no{% endif %}", ContextObjects.p("foo", true), ContextObjects.p("yes")));
             lst.Add(new TestDescriptor("if-tag02", "{% if foo %}yes{% else %}no{% endif %}", ContextObjects.p("foo", false), ContextObjects.p("no")));
             lst.Add(new TestDescriptor("if-tag02-1", "{% if foo %}yes{% else %}no{% endif %}", ContextObjects.p("foo", null), ContextObjects.p("no")));
